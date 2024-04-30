@@ -87,17 +87,6 @@ public class CartController {
     @GetMapping("detail/{cartItemId}")
     public String goCartItemDetail(@PathVariable Long cartItemId, Model model){
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = authentication.getName();
-
-        Member member = memberRepository.findByUsername(currentUsername);
-
-        Long sessionId = null;
-
-        if(member != null){
-            sessionId = member.getId();
-        }
-
         CartItem CartItem = cartService.getAllCartItemInfo(cartItemId);
         model.addAttribute("CartItem", CartItem);
         return "cartItemList/detail";

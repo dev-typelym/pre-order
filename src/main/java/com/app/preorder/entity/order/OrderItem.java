@@ -1,9 +1,12 @@
 package com.app.preorder.entity.order;
 
 import com.app.preorder.entity.audit.Period;
+import com.app.preorder.entity.cart.Cart;
 import com.app.preorder.entity.product.Product;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDateTime;
 
@@ -12,8 +15,9 @@ import java.time.LocalDateTime;
 @Setter
 @ToString
 @Table(name = "tbl_order_item")
+@DynamicUpdate
+@DynamicInsert
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-
 public class OrderItem extends Period {
 
     @Id
@@ -30,9 +34,14 @@ public class OrderItem extends Period {
     private Order order;
 
     private Long quantity;
-    private Long orderPrice;
     private LocalDateTime regDate;
     private LocalDateTime updateDate;
 
+    @Builder
+    public OrderItem(Product product, Long quantity, LocalDateTime regDate) {
+        this.product = product;
+        this.quantity = quantity;
+        this.regDate = regDate;
+    }
 
 }

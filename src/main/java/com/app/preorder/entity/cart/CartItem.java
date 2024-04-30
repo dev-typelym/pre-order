@@ -5,13 +5,16 @@ import com.app.preorder.entity.product.Product;
 import com.app.preorder.type.Role;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 
 @Entity
 @ToString
 @Table(name = "tbl_cart_item")
 @Getter
+@DynamicUpdate
+@DynamicInsert
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-
 public class CartItem {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

@@ -6,6 +6,8 @@ import com.app.preorder.entity.member.Member;
 import com.app.preorder.type.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,12 +18,14 @@ import java.util.List;
 @ToString
 @Table(name = "tbl_order")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@DynamicUpdate
+@DynamicInsert
 public class Order extends Period {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @EqualsAndHashCode.Include
     private Long id;
-
+    private Long orderPrice;
     private LocalDateTime orderDate;
 
     @Enumerated(EnumType.STRING)
@@ -45,6 +49,15 @@ public class Order extends Period {
     public void addOrderItem(OrderItem orderItem) {
         orderItems.add(orderItem);
         orderItem.setOrder(this);
+    }
+
+
+    @Builder
+    public Order(LocalDateTime orderDate, OrderStatus status, Member member, Long orderPrice) {
+        this.orderDate = orderDate;
+        this.status = status;
+        this.member = member;
+        this.orderPrice = orderPrice;
     }
 
 }

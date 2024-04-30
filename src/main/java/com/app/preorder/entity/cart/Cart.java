@@ -3,6 +3,8 @@ package com.app.preorder.entity.cart;
 import com.app.preorder.entity.member.Member;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +14,8 @@ import java.util.List;
 @ToString
 @Table(name = "tbl_cart")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-
+@DynamicUpdate
+@DynamicInsert
 public class Cart{
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

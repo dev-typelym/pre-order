@@ -1,5 +1,6 @@
 package com.app.preorder.repository.member;
 
+import com.app.preorder.entity.member.Member;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
@@ -9,6 +10,12 @@ import static com.app.preorder.entity.member.QMember.member;
 public class MemberQueryDslImpl implements MemberQueryDsl {
 
     private final JPAQueryFactory query;
+
+    // 멤버 아이디로 멤버 찾기
+    @Override
+    public Member findMemberById(Long memberId){
+        return query.select(member).from(member).where(member.id.eq(memberId)).fetchOne();
+    }
 
     // 아이디 중복 체크
     @Override
