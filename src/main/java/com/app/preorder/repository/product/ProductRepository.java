@@ -1,5 +1,6 @@
 package com.app.preorder.repository.product;
 
+import com.app.preorder.entity.member.Member;
 import com.app.preorder.entity.product.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 

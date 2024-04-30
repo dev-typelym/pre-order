@@ -24,8 +24,6 @@ public class QOrder extends EntityPathBase<Order> {
 
     public final com.app.preorder.entity.audit.QPeriod _super = new com.app.preorder.entity.audit.QPeriod(this);
 
-    public final com.app.preorder.entity.delivery.QDelivery delivery;
-
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final com.app.preorder.entity.member.QMember member;
@@ -61,7 +59,6 @@ public class QOrder extends EntityPathBase<Order> {
 
     public QOrder(Class<? extends Order> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
-        this.delivery = inits.isInitialized("delivery") ? new com.app.preorder.entity.delivery.QDelivery(forProperty("delivery"), inits.get("delivery")) : null;
         this.member = inits.isInitialized("member") ? new com.app.preorder.entity.member.QMember(forProperty("member"), inits.get("member")) : null;
     }
 

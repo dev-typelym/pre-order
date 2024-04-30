@@ -67,22 +67,18 @@ public class Member {
     @NotNull @Enumerated(EnumType.STRING)
     private SleepType memberSleep;
 
-
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "member")
-    private List<Product> products;
-
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "member")
     // Member의 입장에서, Order은 일대다 관계(연관관계 표시)
     // Order table의 Member field에 의해 매핑됨(Mapped). 연관관계의 주인은 Member가 아닌 Order
     private List<Order> orders = new ArrayList<>();
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "member")
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "member", cascade = CascadeType.ALL)
     private List<RandomKey> randomKeys;
 
-    @OneToMany(mappedBy = "member")
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ProductLike> productLikes = new ArrayList<>();
 
-    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Cart cart;
 
     @OneToOne(cascade = CascadeType.ALL)

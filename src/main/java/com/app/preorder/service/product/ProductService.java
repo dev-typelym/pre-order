@@ -1,8 +1,8 @@
 package com.app.preorder.service.product;
 
-import com.app.preorder.domain.product.ProductListDTO;
-import com.app.preorder.domain.product.ProductListSearch;
-import com.app.preorder.domain.stock.ProductStockDTO;
+import com.app.preorder.domain.productDTO.ProductListDTO;
+import com.app.preorder.domain.productDTO.ProductListSearch;
+import com.app.preorder.domain.stockDTO.ProductStockDTO;
 import com.app.preorder.entity.product.Product;
 import com.app.preorder.entity.product.Stock;
 import com.app.preorder.type.CatergoryType;

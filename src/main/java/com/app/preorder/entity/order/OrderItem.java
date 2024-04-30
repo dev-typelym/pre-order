@@ -33,4 +33,6 @@ public class OrderItem extends Period {
     private Long orderPrice;
     private LocalDateTime regDate;
     private LocalDateTime updateDate;
+
+
 }

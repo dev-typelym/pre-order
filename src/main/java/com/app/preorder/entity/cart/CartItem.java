@@ -1,6 +1,8 @@
 package com.app.preorder.entity.cart;
 
+import com.app.preorder.entity.member.Member;
 import com.app.preorder.entity.product.Product;
+import com.app.preorder.type.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,10 +27,16 @@ public class CartItem {
 
     private Long count;
 
+    public CartItem updateCount(Long count){
+        this.count = count;
+        return this;
+    }
+
     @Builder
     public CartItem(Cart cart, Product product, Long count) {
         this.cart = cart;
         this.product = product;
         this.count = count;
     }
+
 }

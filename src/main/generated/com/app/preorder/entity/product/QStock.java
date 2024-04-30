@@ -46,7 +46,7 @@ public class QStock extends EntityPathBase<Stock> {
 
     public QStock(Class<? extends Stock> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
-        this.product = inits.isInitialized("product") ? new QProduct(forProperty("product"), inits.get("product")) : null;
+        this.product = inits.isInitialized("product") ? new QProduct(forProperty("product")) : null;
     }
 
 }

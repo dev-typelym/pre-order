@@ -1,13 +1,12 @@
 package com.app.preorder.controller.product;
 
-import com.app.preorder.domain.product.ProductListDTO;
-import com.app.preorder.domain.product.ProductListSearch;
+import com.app.preorder.domain.productDTO.ProductListDTO;
+import com.app.preorder.domain.productDTO.ProductListSearch;
 import com.app.preorder.service.product.ProductService;
 import com.app.preorder.type.CatergoryType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

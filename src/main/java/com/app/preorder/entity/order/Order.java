@@ -2,7 +2,6 @@ package com.app.preorder.entity.order;
 
 
 import com.app.preorder.entity.audit.Period;
-import com.app.preorder.entity.delivery.Delivery;
 import com.app.preorder.entity.member.Member;
 import com.app.preorder.type.OrderStatus;
 import jakarta.persistence.*;
@@ -32,12 +31,8 @@ public class Order extends Period {
     @JoinColumn(name = "member_id")
     private Member member;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval= true)
     private List<OrderItem> orderItems = new ArrayList<>();
-
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "delivery_id") // Order이 Delivery와의 연관관계의 주인이 된다.
-    private Delivery delivery;
 
     private LocalDateTime regDate;
     private LocalDateTime updateDate;
@@ -52,9 +47,4 @@ public class Order extends Period {
         orderItem.setOrder(this);
     }
 
-    public void setDelivery(Delivery delivery) {
-        this.delivery = delivery;
-        delivery.setOrder(this);
-
-    }
 }

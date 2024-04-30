@@ -1,8 +1,10 @@
 package com.app.preorder.service.member;
 
 import com.app.preorder.domain.memberDTO.MemberDTO;
+import com.app.preorder.entity.cart.Cart;
 import com.app.preorder.entity.member.Member;
 import com.app.preorder.entity.member.Salt;
+import com.app.preorder.repository.cart.CartRepository;
 import com.app.preorder.repository.member.MemberRepository;
 import com.app.preorder.repository.member.SaltRepository;
 import com.app.preorder.service.email.EmailService;
@@ -42,6 +44,9 @@ public class MemberServiceImpl implements MemberService{
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private CartRepository cartRepository;
+
     @Override
     public Member findByUsername(String username) throws NotFoundException {
         Member member = memberRepository.findByUsername(username);
@@ -49,6 +54,7 @@ public class MemberServiceImpl implements MemberService{
         return member;
     }
 
+    // 회원가입
     @Override
     public void signUpUser(MemberDTO memberDTO) {
         String password = memberDTO.getMemberPassword();
@@ -75,9 +81,12 @@ public class MemberServiceImpl implements MemberService{
         memberDTO.setMemberSleep(SleepType.AWAKE);
         memberDTO.setMemberRegisterDate(LocalDateTime.now());
         Member member = toMemberEntity(memberDTO);
+        Cart cart = Cart.builder().member(member).build();
         memberRepository.save(member);
+        cartRepository.save(cart);
     }
 
+    // 로그인
     @Override
     public Member loginUser(String id, String password) throws Exception{
         Member member = memberRepository.findByUsername(encryptUtil.encrypt(id));
@@ -109,6 +118,7 @@ public class MemberServiceImpl implements MemberService{
         return (memberRepository.overlapByMemberPhone_QueryDSL(memberPhone));
     }
 
+    // 이메일 인증
     @Override
     public void sendVerificationMail(Member member) throws NotFoundException {
         String VERIFICATION_LINK = "http://localhost:8081/member/verify/";

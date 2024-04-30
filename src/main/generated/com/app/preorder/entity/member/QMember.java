@@ -46,8 +46,6 @@ public class QMember extends EntityPathBase<Member> {
 
     public final ListPath<com.app.preorder.entity.like.ProductLike, com.app.preorder.entity.like.QProductLike> productLikes = this.<com.app.preorder.entity.like.ProductLike, com.app.preorder.entity.like.QProductLike>createList("productLikes", com.app.preorder.entity.like.ProductLike.class, com.app.preorder.entity.like.QProductLike.class, PathInits.DIRECT2);
 
-    public final ListPath<com.app.preorder.entity.product.Product, com.app.preorder.entity.product.QProduct> products = this.<com.app.preorder.entity.product.Product, com.app.preorder.entity.product.QProduct>createList("products", com.app.preorder.entity.product.Product.class, com.app.preorder.entity.product.QProduct.class, PathInits.DIRECT2);
-
     public final ListPath<RandomKey, QRandomKey> randomKeys = this.<RandomKey, QRandomKey>createList("randomKeys", RandomKey.class, QRandomKey.class, PathInits.DIRECT2);
 
     public final QSalt salt;

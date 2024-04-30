@@ -4,6 +4,9 @@ import com.app.preorder.entity.member.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 @ToString
@@ -19,6 +22,9 @@ public class Cart{
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MEMBER_ID")
     private Member member;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy= "cart", cascade = CascadeType.ALL, orphanRemoval= true)
+    private List<CartItem> cartItems = new ArrayList<CartItem>();
 
     @Builder
     public Cart(Long id , Member member){

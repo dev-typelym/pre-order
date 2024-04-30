@@ -1,6 +1,6 @@
 package com.app.preorder.repository.product;
 
-import com.app.preorder.domain.product.ProductListSearch;
+import com.app.preorder.domain.productDTO.ProductListSearch;
 import com.app.preorder.entity.product.Product;
 import com.app.preorder.entity.product.QProduct;
 import com.app.preorder.type.CatergoryType;
@@ -12,7 +12,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import java.util.Optional;
 
 import static com.app.preorder.entity.product.QProduct.product;
 
@@ -20,6 +19,14 @@ import static com.app.preorder.entity.product.QProduct.product;
 public class ProductQueryDslImpl implements ProductQueryDsl{
 
     private final JPAQueryFactory query;
+
+    // 상품아이디로 상품조회
+    @Override
+    public Product findProductByProductId_queryDSL(Long productId){
+        return query.selectFrom(product)
+                .where(product.id.eq(productId))
+                .fetchOne();
+    }
 
     // 상품 목록
     @Override

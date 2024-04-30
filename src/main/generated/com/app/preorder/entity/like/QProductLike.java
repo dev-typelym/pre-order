@@ -47,7 +47,7 @@ public class QProductLike extends EntityPathBase<ProductLike> {
     public QProductLike(Class<? extends ProductLike> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
         this.member = inits.isInitialized("member") ? new com.app.preorder.entity.member.QMember(forProperty("member"), inits.get("member")) : null;
-        this.product = inits.isInitialized("product") ? new com.app.preorder.entity.product.QProduct(forProperty("product"), inits.get("product")) : null;
+        this.product = inits.isInitialized("product") ? new com.app.preorder.entity.product.QProduct(forProperty("product")) : null;
     }
 
 }

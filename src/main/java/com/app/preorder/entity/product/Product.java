@@ -36,11 +36,6 @@ public class Product {
     @Enumerated(EnumType.STRING)
     private CatergoryType category;
 
-    @Setter
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private Member member;
-
     @OneToMany(mappedBy = "product")
     private List<Stock> stocks = new ArrayList<>();
 

@@ -1,7 +1,6 @@
-package com.app.preorder.domain.product;
+package com.app.preorder.domain.productDTO;
 
-import com.app.preorder.domain.stock.ProductStockDTO;
-import com.app.preorder.entity.product.Stock;
+import com.app.preorder.domain.stockDTO.ProductStockDTO;
 import com.app.preorder.type.CatergoryType;
 import lombok.Builder;
 import lombok.Data;
