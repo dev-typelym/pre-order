@@ -66,7 +66,7 @@ public class CartController {
     // 카트 목록 페이징 조회
     @GetMapping("cartItemList/{page}")
     @ResponseBody
-    public Page<CartItemListDTO> getParentsBoard(@PathVariable("page") int page){
+    public Page<CartItemListDTO> getCartItemList(@PathVariable("page") int page){
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();
@@ -87,8 +87,8 @@ public class CartController {
     @GetMapping("detail/{cartItemId}")
     public String goCartItemDetail(@PathVariable Long cartItemId, Model model){
 
-        CartItem CartItem = cartService.getAllCartItemInfo(cartItemId);
-        model.addAttribute("CartItem", CartItem);
+        CartItem cartItem = cartService.getAllCartItemInfo(cartItemId);
+        model.addAttribute("CartItem", cartItem);
         return "cartItemList/detail";
     }
 }

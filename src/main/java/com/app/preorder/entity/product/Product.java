@@ -8,6 +8,7 @@ import lombok.*;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.springframework.ws.soap.addressing.server.annotation.Address;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +28,7 @@ public class Product {
     private String productName;
 
     @NotNull
-    private Long productPrice;
+    private BigDecimal productPrice;
 
     @NotNull
     private String description;

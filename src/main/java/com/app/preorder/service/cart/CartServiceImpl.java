@@ -108,8 +108,8 @@ public class CartServiceImpl implements CartService{
     @Override
     public CartItem getAllCartItemInfo(Long cartItemId) {
 
-        CartItem CartItem = cartItemRepository.findCartItemById_queryDSL(cartItemId);
-        return CartItem;
+        CartItem cartItem = cartItemRepository.findCartItemById_queryDSL(cartItemId);
+        return cartItem;
     }
 
 

@@ -3,12 +3,14 @@ package com.app.preorder.entity.order;
 
 import com.app.preorder.entity.audit.Period;
 import com.app.preorder.entity.member.Member;
+import com.app.preorder.entity.product.Stock;
 import com.app.preorder.type.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +27,7 @@ public class Order extends Period {
     @GeneratedValue(strategy = GenerationType.AUTO)
     @EqualsAndHashCode.Include
     private Long id;
-    private Long orderPrice;
+    private BigDecimal orderPrice;
     private LocalDateTime orderDate;
 
     @Enumerated(EnumType.STRING)
@@ -51,9 +53,14 @@ public class Order extends Period {
         orderItem.setOrder(this);
     }
 
+    public Order updateOrderPrice(BigDecimal orderPrice){
+        this.orderPrice = orderPrice;
+        return this;
+    }
+
 
     @Builder
-    public Order(LocalDateTime orderDate, OrderStatus status, Member member, Long orderPrice) {
+    public Order(LocalDateTime orderDate, OrderStatus status, Member member, BigDecimal orderPrice) {
         this.orderDate = orderDate;
         this.status = status;
         this.member = member;

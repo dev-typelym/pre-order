@@ -1,6 +1,7 @@
 package com.app.preorder.entity.product;
 
 
+import com.app.preorder.entity.cart.CartItem;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,5 +22,10 @@ public class Stock {
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
+
+    public Stock updateStockQuantity(Long stockQuantity){
+        this.stockQuantity = stockQuantity;
+        return this;
+    }
 
 }
