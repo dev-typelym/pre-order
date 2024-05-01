@@ -17,6 +17,37 @@ public class MemberQueryDslImpl implements MemberQueryDsl {
         return query.select(member).from(member).where(member.id.eq(memberId)).fetchOne();
     }
 
+    // 개인정보 변경
+    public void changeMemberInfo_QueryDSL(String name, String email, String phone, String address, String addressDetail, String addressSubDetail, String postCode, Long memberId){
+        long updatedRows = query.update(member)
+                .set(member.name, name)
+                .set(member.memberEmail, email)
+                .set(member.memberPhone, phone)
+                .set(member.memberAddress.address, address)
+                .set(member.memberAddress.addressDetail, addressDetail)
+                .set(member.memberAddress.addressSubDetail, addressSubDetail)
+                .set(member.memberAddress.postcode, postCode)
+                .where(member.id.eq(memberId))
+                .execute();
+
+        if (updatedRows != 1) {
+            throw new IllegalStateException("Failed to update password for member ID: " + memberId);
+        }
+    }
+
+    // 회원 비밀번호 변경
+    @Override
+    public void changePassword_QueryDSL(String password, Long memberId){
+        long updatedRows = query.update(member)
+                .set(member.memberPassword, password)
+                .where(member.id.eq(memberId))
+                .execute();
+
+        if (updatedRows != 1) {
+            throw new IllegalStateException("Failed to update password for member ID: " + memberId);
+        }
+    }
+
     // 아이디 중복 체크
     @Override
     public Long overlapByMemberId_QueryDSL(String username) {

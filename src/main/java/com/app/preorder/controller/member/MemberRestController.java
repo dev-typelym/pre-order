@@ -4,6 +4,7 @@ import com.app.preorder.domain.memberDTO.MemberDTO;
 import com.app.preorder.entity.member.Member;
 import com.app.preorder.entity.member.RequestLoginUser;
 import com.app.preorder.entity.member.RequestVerifyEmail;
+import com.app.preorder.repository.member.MemberRepository;
 import com.app.preorder.service.member.MemberService;
 import com.app.preorder.util.*;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
@@ -20,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.servlet.view.RedirectView;
 
 @RestController
 @RequestMapping("/members/*")
@@ -38,7 +42,8 @@ public class MemberRestController {
     private EncryptUtil encryptUtil;
     @Autowired
     AuthenticationManager authenticationManager;
-
+    @Autowired
+    private MemberRepository memberRepository;
 
 
     //  아이디 중복 체크
@@ -82,6 +87,38 @@ public class MemberRestController {
 //            return new Response("error", "로그인에 실패했습니다.", e.getMessage());
 //        }
 //    }
+    
+    // 개인정보 변경
+    @PostMapping("changMemberInfo")
+    public Response changPassword(String name, String email, String phone, String address, String addressDetail, String addressSubDetail, String postCode) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+
+        Member member = memberRepository.findByUsername(currentUsername);
+
+        try {
+            memberService.changeMemberInfo(name, email, phone, address, addressDetail, addressSubDetail, postCode, member.getId());
+            return new Response("success", "개인정보를 변경하였습니다.", "개인정보 변경 성공");
+        } catch (Exception e) {
+            return new Response("error", "개인정보 변경에 실패했습니다.", e.getMessage());
+        }
+    }
+
+    // 비밀번호 변경
+    @PostMapping("changPassword")
+    public Response changPassword(String password) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+
+        Member member = memberRepository.findByUsername(currentUsername);
+
+        try {
+            memberService.changePassword(password, member.getId());
+            return new Response("success", "비밀번호 변경하였습니다.", "비밀번호 성공");
+        } catch (Exception e) {
+            return new Response("error", "비밀번호 변경에 실패했습니다.", e.getMessage());
+        }
+    }
 
     /* 인증 이메일 보내기*/
     @PostMapping("verify")

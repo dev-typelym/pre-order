@@ -126,26 +126,26 @@ public class OrderServiceImpl implements OrderService {
     public void orderCancel(Long orderId) {
         Order order = orderRepository.findOrderByOrderId_queryDSL(orderId);
 
-        if (order.getStatus() == OrderStatus.ORDER_COMPLETE) {
-            order.updateOrderStatus(OrderStatus.ORDER_CANCEL);
-
-            // 주문 항목에 대해 반복
-            for (OrderItem item : order.getOrderItems()) {
-                Product product = item.getProduct();
-                long quantity = item.getQuantity();
-
-                // 해당 상품의 재고를 찾아서 주문 수량만큼 재고를 복원
-                Stock stock = stockRepository.findStockByProductId_queryDSL(product.getId());
-                if (stock != null) {
-                    long updatedQuantity = stock.getStockQuantity() + quantity;
-                    stock.updateStockQuantity(updatedQuantity);
-                } else {
-                    throw new IllegalStateException("No stock record found for product ID: " + product.getId());
-                }
-            }
-        } else {
+        if (order.getStatus() != OrderStatus.ORDER_COMPLETE) {
             throw new IllegalStateException("Only completed orders can be canceled.");
         }
 
+        order.updateOrderStatus(OrderStatus.ORDER_CANCEL);
+
+        // 주문 항목에 대해 반복하여 재고 복원
+        order.getOrderItems().forEach(item -> {
+            Product product = item.getProduct();
+            long quantity = item.getQuantity();
+
+            // 해당 상품의 재고를 찾아서 주문 수량만큼 재고를 복원
+            Stock stock = stockRepository.findStockByProductId_queryDSL(product.getId());
+            if (stock != null) {
+                long updatedQuantity = stock.getStockQuantity() + quantity;
+                stock.updateStockQuantity(updatedQuantity);
+            } else {
+                throw new IllegalStateException("No stock record found for product ID: " + product.getId());
+            }
+        });
     }
+
 }

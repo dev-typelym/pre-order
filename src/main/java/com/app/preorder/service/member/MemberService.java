@@ -13,6 +13,12 @@ public interface MemberService {
 
     Member loginUser(String id, String password) throws Exception;
 
+    /* 비밀번호 변경 */
+    public void changeMemberInfo(String name, String email, String phone, String address, String addressDetail, String addressSubDetail, String postCode, Long memberId) throws Exception;
+
+    /* 비밀번호 변경 */
+    public void changePassword(String password, Long memberId) throws Exception;
+
     /* 아이디 중복 검사 */
     public Long overlapByMemberId(String username);
 

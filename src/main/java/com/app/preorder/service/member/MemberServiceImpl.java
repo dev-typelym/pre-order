@@ -54,6 +54,18 @@ public class MemberServiceImpl implements MemberService{
         return member;
     }
 
+    // 회원 정보 변경
+    @Override
+    public void changeMemberInfo(String name, String email, String phone, String address, String addressDetail, String addressSubDetail, String postCode, Long memberId) {
+        memberRepository.changeMemberInfo_QueryDSL(name, email, phone, address, addressDetail, addressSubDetail, postCode, memberId);
+    }
+
+    // 비밀번호 변경
+    @Override
+    public void changePassword(String password, Long memberId) {
+        memberRepository.changePassword_QueryDSL(password, memberId);
+    }
+
     // 회원가입
     @Override
     public void signUpUser(MemberDTO memberDTO) {

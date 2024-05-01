@@ -7,6 +7,12 @@ public interface MemberQueryDsl {
     // 멤버 아이디로 멤버 찾기
     public Member findMemberById(Long memberId);
 
+    // 개인정보 변경
+    public void changeMemberInfo_QueryDSL(String name, String email, String phone, String address, String addressDetail, String addressSubDetail, String postCode, Long memberId);
+
+    // 비밀번호 변경
+    public void changePassword_QueryDSL(String password, Long memberId);
+
     // 아이디 중복 체크
     public Long overlapByMemberId_QueryDSL(String memberEmail);
 
