@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface OrderQueryDsl {
+    // 주문 아이디로 주문 찾기
+    public Order findOrderByOrderId_queryDSL(Long orderId);
 
     //  상품 목록 조회
     public Page<Order> findAllOrder_queryDSL(Pageable pageable, Long memberId);

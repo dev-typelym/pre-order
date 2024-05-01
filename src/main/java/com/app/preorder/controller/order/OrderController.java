@@ -99,9 +99,8 @@ public class OrderController {
     @PostMapping("cancel")
     @ResponseBody
     public void cancelOrder(@RequestParam Long orderId) {
-        orderService.cancelOrder(orderId);
+        orderService.orderCancel(orderId);
     }
-
     // 배송중, 배송완료
 
     // 반품 신청

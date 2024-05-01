@@ -24,7 +24,7 @@ public interface OrderService {
     public OrderListDTO getOrderItemsInOrder(Long orderId);
 
     // 주문 취소
-//    public void orderCancel(Long orderId);
+    public void orderCancel(Long orderId);
 
     default OrderListDTO toOrderListDTO(Order order) {
         return OrderListDTO.builder()

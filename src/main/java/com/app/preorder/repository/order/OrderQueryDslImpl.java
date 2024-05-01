@@ -17,6 +17,14 @@ public class OrderQueryDslImpl implements OrderQueryDsl {
 
     private final JPAQueryFactory query;
 
+    // 주문 아이디로 주문 찾기
+    public Order findOrderByOrderId_queryDSL(Long orderId){
+        QOrder order = QOrder.order;
+        return query.selectFrom(order)
+                .where(order.id.eq(orderId))
+                .fetchOne();
+    }
+
     // 주문 목록
     @Override
     public Page<Order> findAllOrder_queryDSL(Pageable pageable, Long memberId) {

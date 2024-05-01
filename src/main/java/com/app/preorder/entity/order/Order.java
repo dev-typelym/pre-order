@@ -58,6 +58,11 @@ public class Order extends Period {
         return this;
     }
 
+    public Order updateOrderStatus(OrderStatus status){
+        this.status = status;
+        return this;
+    }
+
 
     @Builder
     public Order(LocalDateTime orderDate, OrderStatus status, Member member, BigDecimal orderPrice) {
