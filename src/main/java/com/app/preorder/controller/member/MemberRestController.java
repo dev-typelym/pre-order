@@ -87,7 +87,18 @@ public class MemberRestController {
 //            return new Response("error", "로그인에 실패했습니다.", e.getMessage());
 //        }
 //    }
-    
+
+    // 로그아웃
+    @GetMapping
+    public Response logout(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            memberService.logoutUser(request, response);
+            return new Response("success", "로그아웃 성공.", "로그아웃 성공");
+        } catch (Exception e) {
+            return new Response("error", "로그아웃 실패.", e.getMessage());
+        }
+    }
+
     // 개인정보 변경
     @PostMapping("changMemberInfo")
     public Response changPassword(String name, String email, String phone, String address, String addressDetail, String addressSubDetail, String postCode) {

@@ -7,6 +7,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -25,6 +26,10 @@ public class JwtUtil {
 
     @Value("${spring.jwt.secret}")
     private String SECRET_KEY;
+
+    @Autowired
+    private RedisUtil redisUtil;
+
 
     private Key getSigningKey(String secretKey) {
         byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
@@ -75,5 +80,12 @@ public class JwtUtil {
         final String username = getUsername(token);
 
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+    public void invalidateToken(String token) {
+        // Redis에 토큰을 추가하여 무효화
+        redisUtil.setDataExpire(token, "INVALIDATED", TOKEN_VALIDATION_SECOND);
+        // 로그 출력
+        System.out.println("Token invalidated: " + token);
     }
 }

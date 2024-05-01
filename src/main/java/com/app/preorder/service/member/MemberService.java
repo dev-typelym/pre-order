@@ -3,6 +3,8 @@ package com.app.preorder.service.member;
 import com.app.preorder.domain.memberDTO.MemberDTO;
 import com.app.preorder.entity.member.Member;
 import com.app.preorder.type.Role;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import javassist.NotFoundException;
 
 public interface MemberService {
@@ -12,6 +14,9 @@ public interface MemberService {
     void signUpUser(MemberDTO memberDTO);
 
     Member loginUser(String id, String password) throws Exception;
+
+    /* 로그아웃 */
+    public boolean logoutUser(HttpServletRequest request, HttpServletResponse response) throws Exception;
 
     /* 비밀번호 변경 */
     public void changeMemberInfo(String name, String email, String phone, String address, String addressDetail, String addressSubDetail, String postCode, Long memberId) throws Exception;

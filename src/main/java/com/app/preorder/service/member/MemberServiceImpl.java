@@ -10,14 +10,15 @@ import com.app.preorder.repository.member.SaltRepository;
 import com.app.preorder.service.email.EmailService;
 import com.app.preorder.type.Role;
 import com.app.preorder.type.SleepType;
-import com.app.preorder.util.EncryptUtil;
-import com.app.preorder.util.RedisUtil;
-import com.app.preorder.util.SaltUtil;
+import com.app.preorder.util.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import javassist.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.servlet.http.Cookie;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -46,6 +47,12 @@ public class MemberServiceImpl implements MemberService{
 
     @Autowired
     private CartRepository cartRepository;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private CookieUtil cookieUtil;
 
     @Override
     public Member findByUsername(String username) throws NotFoundException {
@@ -109,6 +116,30 @@ public class MemberServiceImpl implements MemberService{
         if(!member.getMemberPassword().equals(password))
             throw new Exception ("비밀번호가 틀립니다.");
         return member;
+    }
+
+    @Override
+    public boolean logoutUser(HttpServletRequest request, HttpServletResponse response) {
+        // 클라이언트에서 받은 토큰을 가져옵니다.
+        Cookie jwtToken = cookieUtil.getCookie(request, JwtUtil.ACCESS_TOKEN_NAME);
+
+        // 토큰이 존재하면 만료시킵니다.
+        if (jwtToken != null) {
+            jwtUtil.invalidateToken(jwtToken.getValue());
+
+            // Redis에 토큰을 추가로 저장하여 무효화합니다.
+            redisUtil.setDataExpire(jwtToken.getValue(), "INVALIDATED", JwtUtil.TOKEN_VALIDATION_SECOND);
+
+            // 클라이언트에게 새로운 토큰을 제공하지 않도록 만료된 토큰을 삭제합니다.
+            Cookie expiredCookie = new Cookie(JwtUtil.ACCESS_TOKEN_NAME, null);
+            expiredCookie.setPath("/");
+            expiredCookie.setMaxAge(0);
+            response.addCookie(expiredCookie);
+
+            return true;
+        } else {
+            return false;
+        }
     }
 
     // 아이디 중복 체크
