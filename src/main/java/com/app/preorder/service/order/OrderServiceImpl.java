@@ -1,9 +1,6 @@
 package com.app.preorder.service.order;
 
-import com.app.preorder.domain.cartDTO.CartItemListDTO;
 import com.app.preorder.domain.orderDTO.OrderListDTO;
-import com.app.preorder.entity.cart.Cart;
-import com.app.preorder.entity.cart.CartItem;
 import com.app.preorder.entity.member.Member;
 import com.app.preorder.entity.order.Order;
 import com.app.preorder.entity.order.OrderItem;
@@ -14,7 +11,12 @@ import com.app.preorder.repository.order.OrderRepository;
 import com.app.preorder.repository.product.ProductRepository;
 import com.app.preorder.repository.product.StockRepository;
 import com.app.preorder.type.OrderStatus;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.quartz.*;
+import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -40,10 +42,13 @@ public class OrderServiceImpl implements OrderService {
     private OrderRepository orderRepository;
     @Autowired
     private StockRepository stockRepository;
+    @Autowired
+    private Scheduler scheduler;
 
     // 단건 주문
     @Override
-    public void addOrder(Long memberId, Long productId, Long quantity) {
+    @Transactional
+    public Long addOrder(Long memberId, Long productId, Long quantity) {
         Member member = memberRepository.findMemberById(memberId);
         Product product = productRepository.findProductByProductId_queryDSL(productId);
         OrderItem orderItem = OrderItem.builder().quantity(quantity).product(product).regDate(LocalDateTime.now()).build();
@@ -52,13 +57,14 @@ public class OrderServiceImpl implements OrderService {
         Stock stock = stockRepository.findStockByProductId_queryDSL(productId);
         stock.updateStockQuantity(stock.getStockQuantity() - quantity);
         orderRepository.save(order);
-
+        return order.getId();
     }
 
 
     // 카트 다건 주문
     @Override
-    public void addOrderFromCart(Long memberId, List<String> productIds, List<String> quantities) {
+    @Transactional
+    public Long addOrderFromCart(Long memberId, List<String> productIds, List<String> quantities) {
         Member member = memberRepository.findMemberById(memberId);
         LocalDateTime now = LocalDateTime.now();
         BigDecimal totalPrice = BigDecimal.ZERO;
@@ -101,6 +107,7 @@ public class OrderServiceImpl implements OrderService {
 
         order.updateOrderPrice(totalPrice);
         orderRepository.save(order);
+        return order.getId();
     }
 
     // 주문 목록
@@ -146,6 +153,116 @@ public class OrderServiceImpl implements OrderService {
                 throw new IllegalStateException("No stock record found for product ID: " + product.getId());
             }
         });
+    }
+
+    // 반품 신청
+    @Override
+    public void orderReturn(Long orderId) {
+        Order order = orderRepository.findOrderByOrderId_queryDSL(orderId);
+
+        if (order.getStatus() != OrderStatus.DELIVERY_COMPLETE) {
+            throw new IllegalStateException("Only completed orders can be canceled.");
+        }
+
+        order.updateOrderStatus(OrderStatus.RETURNING);
+    }
+
+    // 스케쥴링 init
+    @PostConstruct
+    public void init() {
+        try {
+            scheduler = StdSchedulerFactory.getDefaultScheduler();
+            scheduler.start();
+        } catch (SchedulerException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        try {
+            if (scheduler != null) {
+                scheduler.shutdown();
+            }
+        } catch (SchedulerException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 주문상태 배달중으로 바꾸는 스케쥴링 메소드
+    public void scheduleOrderShipping(Long orderId) {
+        JobDetail jobDetail = JobBuilder.newJob(OrderShippingJob.class)
+                .withIdentity("OrderShippingJob-" + orderId)
+                .usingJobData("orderId", orderId)
+                .build();
+
+        Trigger trigger = TriggerBuilder.newTrigger()
+                .withIdentity("OrderShippingTrigger-" + orderId)
+                .startAt(DateBuilder.futureDate(1, DateBuilder.IntervalUnit.DAY))
+                .build();
+
+        try {
+            scheduler.scheduleJob(jobDetail, trigger);
+        } catch (SchedulerException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 주문상태 배달중에서 배달완료로 바꾸는 스케쥴링 메소드
+    public void scheduleOrderDelivered(Long orderId) {
+        JobDetail jobDetail = JobBuilder.newJob(OrderDeliveredJob.class)
+                .withIdentity("OrderDeliveredJob-" + orderId)
+                .usingJobData("orderId", orderId)
+                .build();
+
+        Trigger trigger = TriggerBuilder.newTrigger()
+                .withIdentity("OrderDeliveredTrigger-" + orderId)
+                .startAt(DateBuilder.futureDate(2, DateBuilder.IntervalUnit.DAY))
+                .build();
+
+        try {
+            scheduler.scheduleJob(jobDetail, trigger);
+        } catch (SchedulerException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 반품 신청후 처리를 스케줄링 하는 메소드
+    public void scheduleReturnProcess(Long orderId) {
+        JobDetail jobDetail = JobBuilder.newJob(ReturnProcessingJob.class)
+                .withIdentity("ReturnProcessingJob-" + orderId)
+                .usingJobData("orderId", orderId)
+                .build();
+
+        Trigger trigger = TriggerBuilder.newTrigger()
+                .withIdentity("ReturnProcessingTrigger-" + orderId)
+                .startAt(DateBuilder.futureDate(1, DateBuilder.IntervalUnit.DAY))
+                .build();
+
+        try {
+            scheduler.scheduleJob(jobDetail, trigger);
+        } catch (SchedulerException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 배송완료후 1일 이후엔 배송상태를 반품 불가로 바꾸는 메소드
+    public void scheduleNonReturnable(Long orderId) {
+        JobDetail jobDetail = JobBuilder.newJob(OrderNonReturnableJob.class)
+                .withIdentity("OrderNonReturnableJob-" + orderId)
+                .usingJobData("orderId", orderId)
+                .build();
+
+        Trigger trigger = TriggerBuilder.newTrigger()
+                .withIdentity("OrderNonReturnableTrigger-" + orderId)
+                .startAt(DateBuilder.futureDate(3, DateBuilder.IntervalUnit.DAY))
+                .build();
+
+        try {
+            scheduler.scheduleJob(jobDetail, trigger);
+        } catch (SchedulerException e) {
+            e.printStackTrace();
+        }
     }
 
 }

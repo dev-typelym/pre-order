@@ -44,7 +44,10 @@ public class OrderController {
             sessionId = member.getId();
         }
 
-        orderService.addOrder(sessionId, productId, count);
+        Long orderId = orderService.addOrder(sessionId, productId, count);
+        orderService.scheduleOrderShipping(orderId);
+        orderService.scheduleOrderDelivered(orderId);
+        orderService.scheduleNonReturnable(orderId);
     }
 
 
@@ -64,7 +67,10 @@ public class OrderController {
             sessionId = member.getId();
         }
 
-        orderService.addOrderFromCart(sessionId, productIds, quantities);
+        Long orderId = orderService.addOrderFromCart(sessionId, productIds, quantities);
+        orderService.scheduleOrderShipping(orderId);
+        orderService.scheduleOrderDelivered(orderId);
+        orderService.scheduleNonReturnable(orderId);
     }
 
     // 주문 목록
@@ -101,7 +107,13 @@ public class OrderController {
     public void cancelOrder(@RequestParam Long orderId) {
         orderService.orderCancel(orderId);
     }
-    // 배송중, 배송완료
+
 
     // 반품 신청
+    @PostMapping("return")
+    @ResponseBody
+    public void returnOrder(@RequestParam Long orderId) {
+        orderService.orderReturn(orderId);
+        orderService.scheduleReturnProcess(orderId);
+    }
 }
