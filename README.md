@@ -1,4 +1,4 @@
-# 🧸예약구매 개인 프로젝트 - 'PRE-ORDER'
+# 🛒예약구매 개인 프로젝트 - 'PRE-ORDER'
 
 ### 📆개발 기간
 
@@ -19,14 +19,20 @@
 
 -----------------------------------------------------------------------------------------------------------------------
 
-### 프로젝트 아키텍
+### 프로젝트 아키텍쳐
 
 ![neighbor-erd](https://github.com/dev-typelym/baby-baby/assets/122762472/5e384f34-a28b-4571-b48f-8df36f00cf45)
 
 ----------------------------------------------------------------------------------------------------------------------
 
-### 🛠️프로젝트 사용 툴
-<img width="1160" alt="스크린샷 2022-12-27 오전 12 23 33" src="https://github.com/dev-typelym/baby-baby/assets/122762472/d82ba185-03e3-44df-9ac5-41a9ec34ba7c" style = "width: 45%; height : 45%">
+### 🛠️기술 스택
+
+| Back-End | Database | IDE |
+| --- | --- | --- |
+| <span><img src="https://img.shields.io/badge/springboot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white"></span>  <span><img src="https://img.shields.io/badge/Spring Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white"></span>| <span><img src="https://img.shields.io/badge/MariaDB-003545?style=round-square&logo=mariadb&logoColor=white"/></span> <span><img src="https://img.shields.io/badge/MySQL-%2300f.svg?style=round-square&logo=mysql&logoColor=white"/></span> <span><img src="https://img.shields.io/badge/Oracle-F80000.svg?style=round-square&logo=mysql&logoColor=white"/></span> <span><img src="https://img.shields.io/badge/-MyBatis-orange"/></span> | <span><img src="https://img.shields.io/badge/Eclipse-2C2255.svg?style=round-square&logo=Eclipse&logoColor=white"/></span> <span><img src="https://img.shields.io/badge/Visual Studio Code-007ACC.svg?style=round-square&logo=Visual Studio Code&logoColor=white"/></span> <br> <span><img src="https://img.shields.io/badge/IntelliJ-000000.svg?style=round-square&logo=IntelliJ IDEA&logoColor=white"/></span> <span><img src="https://img.shields.io/badge/-DBeaver-brightgreen"/></span> <span><img src="https://img.shields.io/badge/Sourcetree-0052CC.svg?style=round-square&logo=Sourcetree&logoColor=white"/></span> <span><img src="https://img.shields.io/badge/Postman-FF6C37.svg?style=round-square&logo=Postman&logoColor=white"/></span> |
+
+
+
 
 ----------------------------------------------------------------------------------------------------------------------
 
