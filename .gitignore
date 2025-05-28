@@ -1,13 +1,39 @@
-HELP.md
-.gradle
+# ===============================
+# 📦 Gradle 관련
+# ===============================
+.gradle/
 build/
-application.yml
-README.MD
-!gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### STS ###
+# Gradle Wrapper - 루트만 유지하고 서브모듈 무시
+*/gradlew
+*/gradlew.bat
+*/settings.gradle
+!gradlew
+!gradlew.bat
+!settings.gradle
+!gradle/wrapper/gradle-wrapper.jar
+
+# ===============================
+# 📘 Spring 설정파일
+# ===============================
+application.yml
+
+# ===============================
+# 🧹 IntelliJ IDEA
+# ===============================
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# ===============================
+# 💻 Eclipse / STS
+# ===============================
 .apt_generated
 .classpath
 .factorypath
@@ -19,21 +45,28 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-### NetBeans ###
+# ===============================
+# 🧪 NetBeans
+# ===============================
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
 
-### VS Code ###
+# ===============================
+# 🖥 VSCode
+# ===============================
 .vscode/
+
+# ===============================
+# 📄 일반 문서/파일
+# ===============================
+HELP.md
+README.MD
+
+# ===============================
+# 🧪 로그 / 환경파일 (옵션)
+# ===============================
+*.log
+.env
