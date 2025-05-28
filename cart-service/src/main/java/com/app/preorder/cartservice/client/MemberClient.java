@@ -1,0 +1,11 @@
+package com.app.preorder.cartservice.client;
+
+import com.app.preorder.cartservice.domain.member.MemberResponse;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
+@FeignClient(name = "member-service")
+public interface MemberClient {
+    @GetMapping("/api/member/username/{username}")
+    MemberResponse getMemberByUsername(@PathVariable String username);
+}

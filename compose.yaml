@@ -1,37 +1,124 @@
-version: '3.7'
+#version: '3.7'
+#
+#services:
+#  mariadb:
+#    container_name: docker-mariadb
+#    image: mariadb:10.5.5
+#    init: true
+#    user: root
+#    restart: always
+#    command:
+#      - --default-authentication-plugin=mysql_native_password
+#      - --character-set-server=utf8mb4
+#      - --collation-server=utf8mb4_unicode_ci
+#    volumes:
+#      - ./mariadb/data:/var/lib/mysql
+#      - ./mariadb/config:/etc/mysql/conf.d
+#    ports:
+#      - 3307:3306
+#    environment:
+#      TZ: Asia/Seoul
+#      MYSQL_HOST: 127.0.0.1
+#      MYSQL_PORT: 3307
+#      MYSQL_ROOT_PASSWORD: 1234
+#      MYSQL_DATABASE: preorder
+#      MYSQL_USER: taek
+#      MYSQL_PASSWORD: 1234
+#
+#  redis:
+#    image: redis:latest
+#    container_name: redis-server
+#    ports:
+#      - "6379:6379"
+#    volumes:
+#      - redis_data:/data
+#
+#volumes:
+#  redis_data:
+
+version: '3.8'
 
 services:
   mariadb:
-    container_name: docker-mariadb
     image: mariadb:10.5.5
-    init: true
-    user: root
-    restart: always
-    command:
-      - --default-authentication-plugin=mysql_native_password
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-    volumes:
-      - ./mariadb/data:/var/lib/mysql
-      - ./mariadb/config:/etc/mysql/conf.d
     ports:
-      - 3307:3306
+      - "3307:3306"
     environment:
-      TZ: Asia/Seoul
-      MYSQL_HOST: 127.0.0.1
-      MYSQL_PORT: 3307
       MYSQL_ROOT_PASSWORD: 1234
       MYSQL_DATABASE: preorder
       MYSQL_USER: taek
       MYSQL_PASSWORD: 1234
+    volumes:
+      - ./mariadb/data:/var/lib/mysql
+      - ./mariadb/config:/etc/mysql/conf.d
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4
 
   redis:
     image: redis:latest
-    container_name: redis-server
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
 
+  member-service:
+    build:
+      context: ./member-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mariadb:3306/preorder
+      SPRING_DATASOURCE_USERNAME: taek
+      SPRING_DATASOURCE_PASSWORD: 1234
+      REDIS_HOST: redis
+    depends_on:
+      - mariadb
+      - redis
+
+  order-service:
+    build:
+      context: ./order-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mariadb:3306/preorder
+      SPRING_DATASOURCE_USERNAME: taek
+      SPRING_DATASOURCE_PASSWORD: 1234
+      REDIS_HOST: redis
+    depends_on:
+      - mariadb
+      - redis
+      - member-service
+
+  product-service:
+    build:
+      context: ./product-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mariadb:3306/preorder
+      SPRING_DATASOURCE_USERNAME: taek
+      SPRING_DATASOURCE_PASSWORD: 1234
+      REDIS_HOST: redis
+    depends_on:
+      - mariadb
+      - redis
+      - member-service
+
+  cart-service:
+    build:
+      context: ./cart-service
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mariadb:3306/preorder
+      SPRING_DATASOURCE_USERNAME: taek
+      SPRING_DATASOURCE_PASSWORD: 1234
+      REDIS_HOST: redis
+    depends_on:
+      - mariadb
+      - redis
+      - member-service
+
 volumes:
   redis_data:
+

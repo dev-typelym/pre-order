@@ -1,1 +1,6 @@
 rootProject.name = 'pre-order'
+include 'common-library'
+include 'member-service'
+include 'order-service'
+include 'product-service'
+include 'cart-service'
