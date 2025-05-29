@@ -1,4 +1,4 @@
-package com.app.preorder.memberservice.service.member;
+package com.app.preorder.authservice.service;
 
 
 import com.app.preorder.memberservice.entity.Member;
@@ -10,7 +10,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
-public class MyUserDetailsService implements UserDetailsService {
+public class CustomUserDetailsService implements UserDetailsService {
 
     @Autowired
     private MemberRepository memberRepository;

@@ -1,4 +1,4 @@
-package com.app.preorder.memberservice.config;
+package com.app.preorder.authservice.exception;
 
 import com.app.preorder.util.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;

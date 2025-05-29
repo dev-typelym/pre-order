@@ -1,4 +1,4 @@
-package com.app.preorder.memberservice.util;
+package com.app.preorder.authservice.util;
 
 
 import com.app.preorder.memberservice.entity.Member;

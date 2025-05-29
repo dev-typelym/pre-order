@@ -1,6 +1,6 @@
 package com.app.preorder.cartservice.controller;
 
-import com.app.preorder.cartservice.client.MemberClient;
+import com.app.preorder.cartservice.client.MemberServiceClient;
 import com.app.preorder.cartservice.domain.cartDTO.CartItemListDTO;
 import com.app.preorder.cartservice.domain.member.MemberResponse;
 import com.app.preorder.cartservice.entity.CartItem;
@@ -20,7 +20,7 @@ import java.util.List;
 public class CartController {
 
     private final CartService cartService;
-    private final MemberClient memberFeignClient;
+    private final MemberServiceClient memberFeignClient;
 
     // 카트에 아이템 추가
     @PostMapping("/cartItem/add/{productId}")

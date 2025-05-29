@@ -1,6 +1,7 @@
 package com.app.preorder.cartservice.repository.cart;
 
 import com.app.preorder.cartservice.entity.Cart;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
 

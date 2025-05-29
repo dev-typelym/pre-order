@@ -1,10 +1,10 @@
-package com.app.preorder.memberservice.util;
+package com.app.preorder.authservice.util;
 
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 
-@Service
+@Component
 public class CookieUtil {
 
     public Cookie createCookie(String cookieName, String value){

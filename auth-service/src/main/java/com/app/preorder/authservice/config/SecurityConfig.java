@@ -1,4 +1,4 @@
-package com.app.preorder.memberservice.config;
+package com.app.preorder.authservice.config;
 import com.app.preorder.memberservice.service.member.MyUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

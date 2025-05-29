@@ -21,11 +21,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 
 
-
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.servlet.view.RedirectView;
 
 @RestController
 @RequestMapping("/members/*")
