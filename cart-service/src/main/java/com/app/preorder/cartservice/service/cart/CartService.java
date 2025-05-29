@@ -1,12 +1,8 @@
 package com.app.preorder.cartservice.service.cart;
 
-import com.app.preorder.domain.cartDTO.CartItemListDTO;
-import com.app.preorder.domain.productDTO.ProductListDTO;
-import com.app.preorder.domain.productDTO.ProductListSearch;
-import com.app.preorder.entity.cart.Cart;
-import com.app.preorder.entity.cart.CartItem;
-import com.app.preorder.entity.product.Product;
-import com.app.preorder.type.CatergoryType;
+
+import com.app.preorder.cartservice.domain.cartDTO.CartItemListDTO;
+import com.app.preorder.cartservice.entity.CartItem;
 import org.springframework.data.domain.Page;
 
 import java.util.List;

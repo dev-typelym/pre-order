@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient(name = "member-service", url = "http://member-service:8082")
-public interface MemberClient {
+public interface MemberServiceClient {
 
     @GetMapping("/api/internal/members/{id}")
     MemberResponse getMemberById(@PathVariable("id") Long id);

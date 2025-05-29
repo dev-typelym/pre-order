@@ -1,4 +1,4 @@
-package com.app.preorder.memberservice.config;
+package com.app.preorder.authservice.exception;
 
 import com.app.preorder.service.member.SecurityMember;
 import com.app.preorder.type.Role;
