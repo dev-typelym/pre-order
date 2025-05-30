@@ -1,9 +1,9 @@
-package com.app.preorder.memberservice.entity;
+package com.app.preorder.memberservice.domain.entity;
 
 
 import com.app.preorder.memberservice.domain.type.Role;
 import com.app.preorder.memberservice.domain.type.SleepType;
-import com.app.preorder.memberservice.embeddable.Address;
+import com.app.preorder.memberservice.domain.vo.Address;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

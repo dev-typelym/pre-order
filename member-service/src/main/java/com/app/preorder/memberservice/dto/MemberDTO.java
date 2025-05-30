@@ -1,11 +1,11 @@
-package com.app.preorder.memberservice.domain;
+package com.app.preorder.memberservice.dto;
 
 
 import com.app.preorder.memberservice.domain.type.Role;
-import com.app.preorder.memberservice.embeddable.Address;
+import com.app.preorder.memberservice.domain.vo.Address;
 
-import com.app.preorder.memberservice.entity.Member;
-import com.app.preorder.memberservice.entity.Salt;
+import com.app.preorder.memberservice.domain.entity.Member;
+import com.app.preorder.memberservice.domain.entity.Salt;
 import com.app.preorder.memberservice.domain.type.SleepType;
 import lombok.Builder;
 import lombok.Data;

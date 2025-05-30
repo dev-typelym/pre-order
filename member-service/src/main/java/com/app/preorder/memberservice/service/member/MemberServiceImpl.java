@@ -1,10 +1,10 @@
 package com.app.preorder.memberservice.service.member;
 
 
-import com.app.preorder.memberservice.domain.MemberDTO;
+import com.app.preorder.memberservice.dto.MemberDTO;
 import com.app.preorder.memberservice.domain.type.Role;
-import com.app.preorder.memberservice.entity.Member;
-import com.app.preorder.memberservice.entity.Salt;
+import com.app.preorder.memberservice.domain.entity.Member;
+import com.app.preorder.memberservice.domain.entity.Salt;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.repository.SaltRepository;
 import com.app.preorder.memberservice.service.email.EmailService;

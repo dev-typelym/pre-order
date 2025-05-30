@@ -1,9 +1,9 @@
 package com.app.preorder.memberservice.controller;
 
 
-import com.app.preorder.memberservice.domain.MemberDTO;
+import com.app.preorder.memberservice.dto.MemberDTO;
 import com.app.preorder.memberservice.domain.RequestLoginUserDTO;
-import com.app.preorder.memberservice.entity.Member;
+import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.service.member.MemberService;
 import com.app.preorder.memberservice.util.CookieUtil;
 import com.app.preorder.memberservice.util.EncryptUtil;

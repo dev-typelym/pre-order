@@ -1,15 +1,12 @@
 package com.app.preorder.authservice.util;
 
 
-import com.app.preorder.memberservice.entity.Member;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -18,24 +15,47 @@ import java.util.Date;
 
 @Component
 public class JwtUtil {
-    public final static long TOKEN_VALIDATION_SECOND = 1000L * 10;
-    public final static long REFRESH_TOKEN_VALIDATION_SECOND = 1000L * 60 * 24 * 2;
 
-    final static public String ACCESS_TOKEN_NAME = "accessToken";
-    final static public String REFRESH_TOKEN_NAME = "refreshToken";
+    // Access / Refresh 토큰 유효 시간 (예시값)
+    public static final long TOKEN_VALIDATION_SECOND = 1000L * 10; // 10초
+    public static final long REFRESH_TOKEN_VALIDATION_SECOND = 1000L * 60 * 60 * 24 * 2; // 2일
+
+    public static final String ACCESS_TOKEN_NAME = "accessToken";
+    public static final String REFRESH_TOKEN_NAME = "refreshToken";
 
     @Value("${spring.jwt.secret}")
     private String SECRET_KEY;
 
-    @Autowired
-    private RedisUtil redisUtil;
-
-
+    // 서명 키 생성
     private Key getSigningKey(String secretKey) {
         byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    // AccessToken 생성
+    public String generateToken(String username) {
+        return doGenerateToken(username, TOKEN_VALIDATION_SECOND);
+    }
+
+    // RefreshToken 생성
+    public String generateRefreshToken(String username) {
+        return doGenerateToken(username, REFRESH_TOKEN_VALIDATION_SECOND);
+    }
+
+    // 토큰 생성 내부 공통 메서드
+    private String doGenerateToken(String username, long expireTime) {
+        Claims claims = Jwts.claims();
+        claims.put("username", username);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + expireTime))
+                .signWith(getSigningKey(SECRET_KEY), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    // Claims 추출
     public Claims extractAllClaims(String token) throws ExpiredJwtException {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey(SECRET_KEY))
@@ -44,48 +64,20 @@ public class JwtUtil {
                 .getBody();
     }
 
+    // username 추출
     public String getUsername(String token) {
         return extractAllClaims(token).get("username", String.class);
     }
 
-    public Boolean isTokenExpired(String token) {
+    // 토큰 만료 여부 확인
+    public boolean isTokenExpired(String token) {
         final Date expiration = extractAllClaims(token).getExpiration();
         return expiration.before(new Date());
     }
 
-    public String generateToken(Member member) {
-        return doGenerateToken(member.getUsername(), TOKEN_VALIDATION_SECOND);
-    }
-
-    public String generateRefreshToken(Member member) {
-        return doGenerateToken(member.getUsername(), REFRESH_TOKEN_VALIDATION_SECOND);
-    }
-
-    public String doGenerateToken(String username, long expireTime) {
-
-        Claims claims = Jwts.claims();
-        claims.put("username", username);
-
-        String jwt = Jwts.builder()
-                .setClaims(claims)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expireTime))
-                .signWith(getSigningKey(SECRET_KEY), SignatureAlgorithm.HS256)
-                .compact();
-
-        return jwt;
-    }
-
-    public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = getUsername(token);
-
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-    }
-
-    public void invalidateToken(String token) {
-        // Redis에 토큰을 추가하여 무효화
-        redisUtil.setDataExpire(token, "INVALIDATED", TOKEN_VALIDATION_SECOND);
-        // 로그 출력
-        System.out.println("Token invalidated: " + token);
+    // 단순 토큰 유효성 검증 (UserDetails 의존 제거)
+    public boolean validateToken(String token, String username) {
+        final String extractedUsername = getUsername(token);
+        return (extractedUsername.equals(username) && !isTokenExpired(token));
     }
 }

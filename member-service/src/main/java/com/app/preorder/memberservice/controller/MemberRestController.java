@@ -2,8 +2,8 @@ package com.app.preorder.memberservice.controller;
 
 
 import com.app.preorder.common.util.Response;
-import com.app.preorder.memberservice.domain.RequestVerifyEmailDTO;
-import com.app.preorder.memberservice.entity.Member;
+import com.app.preorder.memberservice.dto.RequestVerifyEmailDTO;
+import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.service.member.MemberService;
 import com.app.preorder.memberservice.util.CookieUtil;

@@ -1,4 +1,4 @@
-package com.app.preorder.memberservice.domain;
+package com.app.preorder.memberservice.dto;
 
 import lombok.Getter;
 import lombok.Setter;

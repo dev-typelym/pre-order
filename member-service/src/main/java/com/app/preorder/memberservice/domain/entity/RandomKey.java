@@ -1,4 +1,4 @@
-package com.app.preorder.memberservice.entity;
+package com.app.preorder.memberservice.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

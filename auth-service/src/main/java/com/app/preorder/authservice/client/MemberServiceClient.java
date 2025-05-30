@@ -1,11 +1,13 @@
 package com.app.preorder.authservice.client;
 
+import com.app.preorder.authservice.dto.VerifyPasswordRequest;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 @FeignClient(name = "member-service", path = "/internal/members")
 public interface MemberServiceClient {
 
-    @GetMapping("/{username}")
-    MemberAuthDTO getMemberByUsername(@PathVariable("username") String username);
-
-    @GetMapping("/{username}/salt")
-    String getSaltByUsername(@PathVariable("username") String username);
+    @PostMapping("/verify-password")
+    boolean verifyPassword(@RequestBody VerifyPasswordRequest request);
 }

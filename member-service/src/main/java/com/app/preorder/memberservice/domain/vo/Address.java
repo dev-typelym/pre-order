@@ -1,9 +1,7 @@
-package com.app.preorder.memberservice.embeddable;
+package com.app.preorder.memberservice.domain.vo;
 
 import jakarta.persistence.Embeddable;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 

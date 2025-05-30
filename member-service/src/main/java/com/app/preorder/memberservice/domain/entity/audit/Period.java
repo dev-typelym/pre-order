@@ -1,4 +1,4 @@
-package com.app.preorder.memberservice.entity.audit;
+package com.app.preorder.memberservice.domain.entity.audit;
 
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;

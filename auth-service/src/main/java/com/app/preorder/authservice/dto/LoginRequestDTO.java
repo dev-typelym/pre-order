@@ -1,4 +1,4 @@
-package com.app.preorder.authservice.domain;
+package com.app.preorder.authservice.dto;
 
 import lombok.Getter;
 import lombok.Setter;
