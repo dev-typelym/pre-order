@@ -1,7 +1,7 @@
 package com.app.preorder.memberservice.controller;
 
-import com.app.preorder.memberservice.domain.MemberResponseDTO;
-import com.app.preorder.memberservice.entity.Member;
+import com.app.preorder.memberservice.dto.MemberResponseDTO;
+import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

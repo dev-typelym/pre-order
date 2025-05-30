@@ -1,9 +1,9 @@
 package com.app.preorder.memberservice.service.member;
 
 
-import com.app.preorder.memberservice.domain.MemberDTO;
+import com.app.preorder.memberservice.dto.MemberDTO;
 import com.app.preorder.memberservice.domain.type.Role;
-import com.app.preorder.memberservice.entity.Member;
+import com.app.preorder.memberservice.domain.entity.Member;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.data.crossstore.ChangeSetPersister;

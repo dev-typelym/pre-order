@@ -1,6 +1,6 @@
-package com.app.preorder.memberservice.domain;
+package com.app.preorder.memberservice.dto;
 
-import com.app.preorder.memberservice.entity.Member;
+import com.app.preorder.memberservice.domain.entity.Member;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
