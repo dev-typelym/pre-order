@@ -1,4 +1,4 @@
-package com.app.preorder.cartservice.entity;
+package com.app.preorder.cartservice.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

@@ -1,12 +1,14 @@
-package com.app.preorder.cartservice.domain.product;
+package com.app.preorder.common.dto;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-@Data
+@Getter
+@NoArgsConstructor
 public class ProductResponse {
-    private Long id;
+    private Long productId;
     private String productName;
     private BigDecimal productPrice;
     private String description;

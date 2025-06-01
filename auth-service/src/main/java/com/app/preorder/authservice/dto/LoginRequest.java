@@ -1,5 +1,6 @@
 package com.app.preorder.authservice.dto;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,7 +8,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class VerifyPasswordRequest {
+public class LoginRequest {
     private String username;
     private String password;
 }
+

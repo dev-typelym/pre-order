@@ -1,12 +1,10 @@
-package com.app.preorder.cartservice.domain.member;
+package com.app.preorder.cartservice.dto.member;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Data
+@Getter
 @NoArgsConstructor
-@AllArgsConstructor
 public class MemberResponse {
     private Long id;
     private String username;

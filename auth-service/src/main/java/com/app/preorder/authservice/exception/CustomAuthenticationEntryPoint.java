@@ -1,6 +1,6 @@
 package com.app.preorder.authservice.exception;
 
-import com.app.preorder.util.Response;
+import com.app.preorder.common.util.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

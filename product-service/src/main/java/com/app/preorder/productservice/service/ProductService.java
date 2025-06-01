@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 
 public interface ProductService {
 
+
+
     //   상품 목록
     public Page<ProductListDTO> getProductListWithPaging(int page, ProductListSearch productListSearch, CatergoryType catergoryType);
 
