@@ -1,5 +1,8 @@
-    package com.app.preorder.productservice.entity;
+    package com.app.preorder.productservice.domain.entity;
 
+
+    import jakarta.persistence.*;
+    import lombok.*;
 
     @Entity
     @Getter

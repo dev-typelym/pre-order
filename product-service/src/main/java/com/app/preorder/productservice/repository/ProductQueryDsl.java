@@ -1,8 +1,8 @@
 package com.app.preorder.productservice.repository;
 
-import com.app.preorder.domain.productDTO.ProductListSearch;
-import com.app.preorder.entity.product.Product;
-import com.app.preorder.type.CatergoryType;
+import com.app.preorder.common.type.CategoryType;
+import com.app.preorder.productservice.dto.productDTO.ProductListSearch;
+import com.app.preorder.productservice.domain.entity.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -14,7 +14,7 @@ public interface ProductQueryDsl {
     public Product findProductByProductId_queryDSL(Long productId);
 
     //    상품 목록 조회
-    public Page<Product> findAllProduct_queryDSL(Pageable pageable, ProductListSearch productListSearch, CatergoryType catergoryType);
+    public Page<Product> findAllProduct_queryDSL(Pageable pageable, ProductListSearch productListSearch, CategoryType categoryType);
 
     //    상품 상세
     public List<Product> findAllProductDetail_queryDSL();

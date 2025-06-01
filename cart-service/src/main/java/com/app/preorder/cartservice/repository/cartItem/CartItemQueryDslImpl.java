@@ -1,4 +1,4 @@
-package com.app.preorder.cartservice.repository.cart;
+package com.app.preorder.cartservice.repository.cartItem;
 
 
 import com.app.preorder.cartservice.domain.entity.CartItem;

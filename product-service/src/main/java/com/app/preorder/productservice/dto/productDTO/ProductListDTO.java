@@ -1,7 +1,7 @@
-package com.app.preorder.productservice.domain.productDTO;
+package com.app.preorder.productservice.dto.productDTO;
 
-import com.app.preorder.productservice.domain.stockDTO.ProductStockDTO;
-import com.app.preorder.type.CatergoryType;
+import com.app.preorder.productservice.dto.stockDTO.ProductStockDTO;
+import com.app.preorder.common.type.CategoryType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -16,6 +16,6 @@ public class ProductListDTO {
     private String productName;
     private BigDecimal productPrice;
     private String description;
-    private CatergoryType category;
+    private CategoryType category;
     private List<ProductStockDTO> productStockDTOS;
 }

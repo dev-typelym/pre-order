@@ -1,11 +1,13 @@
 package com.app.preorder.productservice.service;
 
-import com.app.preorder.domain.productDTO.ProductListDTO;
-import com.app.preorder.domain.productDTO.ProductListSearch;
-import com.app.preorder.domain.stockDTO.ProductStockDTO;
-import com.app.preorder.entity.product.Product;
-import com.app.preorder.entity.product.Stock;
-import com.app.preorder.type.CatergoryType;
+
+import com.app.preorder.common.dto.ProductResponse;
+import com.app.preorder.common.type.CategoryType;
+import com.app.preorder.productservice.dto.productDTO.ProductListDTO;
+import com.app.preorder.productservice.dto.productDTO.ProductListSearch;
+import com.app.preorder.productservice.dto.stockDTO.ProductStockDTO;
+import com.app.preorder.productservice.domain.entity.Product;
+import com.app.preorder.productservice.domain.entity.Stock;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
@@ -15,11 +17,14 @@ public interface ProductService {
 
 
 
-    //   상품 목록
-    public Page<ProductListDTO> getProductListWithPaging(int page, ProductListSearch productListSearch, CatergoryType catergoryType);
+    //  상품 목록
+    public Page<ProductListDTO> getProductListWithPaging(int page, ProductListSearch productListSearch, CategoryType categoryType);
 
-    //    상품 상세 보기
+    //  상품 상세 보기
     public List<ProductListDTO> getProductDetail();
+
+    //  상품 다건 조회
+    public List<ProductResponse> getProductsByIds(List<Long> productIds);
 
     //  상품 DTO로 바꾸기
     default ProductListDTO toProductListDTO(Product product) {
@@ -43,5 +48,17 @@ public interface ProductService {
                         .build())
                 .collect(Collectors.toList());
     }
+
+    // default 변환 메서드 추가
+    default ProductResponse toProductResponse(Product product) {
+        return ProductResponse.builder()
+                .productId(product.getId())
+                .productName(product.getProductName())
+                .productPrice(product.getProductPrice())
+                .description(product.getDescription())
+                .category(product.getCategory())
+                .build();
+    }
+
 }
 
