@@ -6,7 +6,7 @@ import com.app.preorder.cartservice.dto.cart.CartItemListDTO;
 import com.app.preorder.cartservice.domain.entity.Cart;
 import com.app.preorder.cartservice.domain.entity.CartItem;
 import com.app.preorder.common.dto.ProductResponse;
-import com.app.preorder.cartservice.repository.cart.CartItemRepository;
+import com.app.preorder.cartservice.repository.cartItem.CartItemRepository;
 import com.app.preorder.cartservice.repository.cart.CartRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

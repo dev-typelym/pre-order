@@ -1,9 +1,8 @@
 package com.app.preorder.productservice.repository;
 
-import com.app.preorder.domain.productDTO.ProductListSearch;
-import com.app.preorder.entity.product.Product;
-import com.app.preorder.entity.product.QProduct;
-import com.app.preorder.type.CatergoryType;
+import com.app.preorder.common.type.CategoryType;
+import com.app.preorder.productservice.dto.productDTO.ProductListSearch;
+import com.app.preorder.productservice.domain.entity.Product;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -13,12 +12,12 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
-import static com.app.preorder.entity.product.QProduct.product;
 
 @RequiredArgsConstructor
 public class ProductQueryDslImpl implements ProductQueryDsl{
 
     private final JPAQueryFactory query;
+    private final QProduct product = QProduct.product;
 
     // 상품아이디로 상품조회
     @Override
@@ -30,10 +29,9 @@ public class ProductQueryDslImpl implements ProductQueryDsl{
 
     // 상품 목록
     @Override
-    public Page<Product> findAllProduct_queryDSL(Pageable pageable, ProductListSearch productListSearch, CatergoryType productCategory) {
+    public Page<Product> findAllProduct_queryDSL(Pageable pageable, ProductListSearch productListSearch, CategoryType productCategory) {
         BooleanExpression productNameEq = productListSearch.getProductName() == null ? null : product.productName.like("%" + productListSearch.getProductName()    + "%");
 
-        QProduct product = QProduct.product;
         List<Product> foundAnnouncement = query.select(product)
                 .from(product)
                 .where((productCategory != null ? product.category.eq(productCategory) : product.category.isNotNull()).and(productNameEq))

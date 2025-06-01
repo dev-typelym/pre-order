@@ -1,7 +1,10 @@
-package com.app.preorder.productservice.entity;
+package com.app.preorder.productservice.domain.entity;
 
-import com.app.preorder.type.CatergoryType;
+import com.app.preorder.common.type.CategoryType;
+import jakarta.persistence.*;
+import lombok.*;
 import org.antlr.v4.runtime.misc.NotNull;
+
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -30,7 +33,7 @@ public class Product {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private CatergoryType category;
+    private CategoryType category;
 
     @OneToMany(mappedBy = "product")
     private List<Stock> stocks = new ArrayList<>();

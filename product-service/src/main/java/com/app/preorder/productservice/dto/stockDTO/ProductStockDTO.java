@@ -1,4 +1,4 @@
-package com.app.preorder.productservice.domain.stockDTO;
+package com.app.preorder.productservice.dto.stockDTO;
 
 import lombok.Builder;
 import lombok.Data;
