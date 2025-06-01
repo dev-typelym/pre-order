@@ -1,10 +1,11 @@
 package com.app.preorder.common.util;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
-@Setter
+@Builder
 public class Response {
 
     private String status;

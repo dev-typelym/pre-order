@@ -2,13 +2,13 @@ package com.app.preorder.memberservice.service.member;
 
 
 import com.app.preorder.memberservice.dto.MemberDTO;
-import com.app.preorder.memberservice.domain.type.Role;
+import com.app.preorder.common.type.Role;
 import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.domain.entity.Salt;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.repository.SaltRepository;
 import com.app.preorder.memberservice.service.email.EmailService;
-import com.app.preorder.memberservice.domain.type.SleepType;
+import com.app.preorder.memberservice.domain.type.MemberStatus;
 import com.app.preorder.memberservice.util.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -96,7 +96,7 @@ public class MemberServiceImpl implements MemberService{
         memberDTO.setUsername(encodedUserName);
         memberDTO.setMemberPhone(encodedPhone);
         memberDTO.setMemberRole(Role.ROLE_NOT_PERMITTED);
-        memberDTO.setMemberSleep(SleepType.AWAKE);
+        memberDTO.setMemberSleep(MemberStatus.ACTIVE);
         memberDTO.setMemberRegisterDate(LocalDateTime.now());
         Member member = toMemberEntity(memberDTO);
         Cart cart = Cart.builder().member(member).build();

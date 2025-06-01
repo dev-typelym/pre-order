@@ -1,6 +1,6 @@
 package com.app.preorder.cartservice.repository.cart;
 
-import com.app.preorder.cartservice.entity.CartItem;
+import com.app.preorder.cartservice.domain.entity.CartItem;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

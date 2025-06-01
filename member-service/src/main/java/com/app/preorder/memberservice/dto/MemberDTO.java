@@ -1,12 +1,12 @@
 package com.app.preorder.memberservice.dto;
 
 
-import com.app.preorder.memberservice.domain.type.Role;
+import com.app.preorder.common.type.Role;
 import com.app.preorder.memberservice.domain.vo.Address;
 
 import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.domain.entity.Salt;
-import com.app.preorder.memberservice.domain.type.SleepType;
+import com.app.preorder.memberservice.domain.type.MemberStatus;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,7 +29,7 @@ public class MemberDTO {
     private Salt salt;
     private LocalDateTime memberRegisterDate;
     private Role memberRole;
-    private SleepType memberSleep;
+    private MemberStatus memberSleep;
 
     public MemberDTO(Member member) {
         this.username = member.getUsername();

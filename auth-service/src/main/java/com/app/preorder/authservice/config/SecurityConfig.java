@@ -4,7 +4,6 @@ import com.app.preorder.authservice.exception.CustomAccessDeniedHandler;
 import com.app.preorder.authservice.exception.CustomAuthenticationEntryPoint;
 import com.app.preorder.authservice.filter.JwtRequestFilter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,6 +1,6 @@
-package com.app.preorder.cartservice.domain.cartDTO;
+package com.app.preorder.cartservice.dto.cart;
 
-import com.app.preorder.cartservice.domain.product.ProductResponse;
+import com.app.preorder.common.dto.ProductResponse;
 import lombok.Builder;
 import lombok.Data;
 

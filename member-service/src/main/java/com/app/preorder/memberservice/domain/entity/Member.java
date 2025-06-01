@@ -1,8 +1,8 @@
 package com.app.preorder.memberservice.domain.entity;
 
 
-import com.app.preorder.memberservice.domain.type.Role;
-import com.app.preorder.memberservice.domain.type.SleepType;
+import com.app.preorder.common.type.Role;
+import com.app.preorder.memberservice.domain.type.MemberStatus;
 import com.app.preorder.memberservice.domain.vo.Address;
 
 import jakarta.persistence.*;
@@ -60,7 +60,7 @@ public class Member {
 
     /* 탈퇴(sleep)가 true*/
     @NotNull @Enumerated(EnumType.STRING)
-    private SleepType memberSleep;
+    private MemberStatus memberSleep;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "member")
     // Member의 입장에서, Order은 일대다 관계(연관관계 표시)
@@ -96,7 +96,7 @@ public class Member {
 
 
     @Builder
-    public Member(Salt salt, String name, String memberEmail, String username, String memberPassword, String memberPhone, Address memberAddress, Role memberRole, SleepType memberSleep, LocalDateTime memberRegisterDate) {
+    public Member(Salt salt, String name, String memberEmail, String username, String memberPassword, String memberPhone, Address memberAddress, Role memberRole, MemberStatus memberSleep, LocalDateTime memberRegisterDate) {
         this.memberEmail = memberEmail;
         this.username = username;
         this.name = name;
@@ -126,7 +126,7 @@ public class Member {
         this.memberAddress = memberAddress;
     }
 
-    public void setMemberSleep(SleepType memberSleep) {
+    public void setMemberSleep(MemberStatus memberSleep) {
         this.memberSleep = memberSleep;
     }
 

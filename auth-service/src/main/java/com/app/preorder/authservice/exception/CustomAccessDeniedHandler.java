@@ -1,6 +1,7 @@
 package com.app.preorder.authservice.exception;
 
 
+import com.app.preorder.common.type.Role;
 import com.app.preorder.common.util.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,15 +31,22 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType("application/json;charset=utf-8");
-        Response result = new Response("error", "접근가능한 권한을 가지고 있지 않습니다.", null);
+
+        String message = "접근가능한 권한을 가지고 있지 않습니다.";
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof User user) {
             Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
             if (hasRole(authorities, Role.ROLE_NOT_PERMITTED.name())) {
-                result.setMessage("사용자 인증메일을 받지 않았습니다.");
+                message = "사용자 인증메일을 받지 않았습니다.";
             }
         }
+
+        Response result = Response.builder()
+                .status("error")
+                .message(message)
+                .data(null)
+                .build();
 
         PrintWriter out = response.getWriter();
         out.print(objectMapper.writeValueAsString(result));

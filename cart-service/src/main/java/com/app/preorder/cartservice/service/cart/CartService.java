@@ -1,8 +1,9 @@
 package com.app.preorder.cartservice.service.cart;
 
 
-import com.app.preorder.cartservice.domain.cartDTO.CartItemListDTO;
-import com.app.preorder.cartservice.entity.CartItem;
+import com.app.preorder.cartservice.dto.cart.CartItemListDTO;
+import com.app.preorder.cartservice.domain.entity.CartItem;
+import com.app.preorder.common.dto.ProductResponse;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
@@ -24,12 +25,12 @@ public interface CartService {
     // 카트 아이템 하나 전체 조회
     public CartItem getAllCartItemInfo(Long cartItemId);
 
-    default CartItemListDTO toCartItemListDTO(CartItem cartItem) {
+    default CartItemListDTO toCartItemListDTO(CartItem cartItem, ProductResponse productResponse) {
         return CartItemListDTO.builder()
                 .id(cartItem.getId())
                 .count(cartItem.getCount())
-                .cart(cartItem.getCart())
-                .product(cartItem.getProduct())
+                .cartId(cartItem.getCart().getId())
+                .product(productResponse)
                 .build();
     }
 }

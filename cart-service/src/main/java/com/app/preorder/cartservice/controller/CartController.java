@@ -1,9 +1,9 @@
 package com.app.preorder.cartservice.controller;
 
 import com.app.preorder.cartservice.client.MemberServiceClient;
-import com.app.preorder.cartservice.domain.cartDTO.CartItemListDTO;
-import com.app.preorder.cartservice.domain.member.MemberResponse;
-import com.app.preorder.cartservice.entity.CartItem;
+import com.app.preorder.cartservice.dto.cart.CartItemListDTO;
+import com.app.preorder.cartservice.dto.member.MemberResponse;
+import com.app.preorder.cartservice.domain.entity.CartItem;
 import com.app.preorder.cartservice.service.cart.CartService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
