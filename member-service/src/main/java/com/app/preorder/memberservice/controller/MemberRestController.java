@@ -9,7 +9,7 @@ import com.app.preorder.memberservice.service.member.MemberService;
 import com.app.preorder.memberservice.util.CookieUtil;
 import com.app.preorder.memberservice.util.EncryptUtil;
 import com.app.preorder.memberservice.util.JwtUtil;
-import com.app.preorder.memberservice.util.RedisUtil;
+import com.app.preorder.common.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,37 +66,6 @@ public class MemberRestController {
         return memberService.overlapByMemberPhone(memberPhone);
     }
 
-
-//    /* 로그인*/
-//    @PostMapping("loginProcess")
-//    public Response login(@RequestBody RequestLoginUser user,
-//                          HttpServletRequest req,
-//                          HttpServletResponse res) {
-//        try {
-//            final Member member = memberService.loginUser(user.getUsername(), user.getPassword());
-//            final String token = jwtUtil.generateToken(member);
-//            final String refreshJwt = jwtUtil.generateRefreshToken(member);
-//            Cookie accessToken = cookieUtil.createCookie(JwtUtil.ACCESS_TOKEN_NAME, token);
-//            Cookie refreshToken = cookieUtil.createCookie(JwtUtil.REFRESH_TOKEN_NAME, refreshJwt);
-//            redisUtil.setDataExpire(refreshJwt, member.getUsername(), JwtUtil.REFRESH_TOKEN_VALIDATION_SECOND);
-//            res.addCookie(accessToken);
-//            res.addCookie(refreshToken);
-//            return new Response("success", "로그인에 성공했습니다.", token);
-//        } catch (Exception e) {
-//            return new Response("error", "로그인에 실패했습니다.", e.getMessage());
-//        }
-//    }
-
-    // 로그아웃
-    @GetMapping
-    public Response logout(HttpServletRequest request, HttpServletResponse response) {
-        try {
-            memberService.logoutUser(request, response);
-            return new Response("success", "로그아웃 성공.", "로그아웃 성공");
-        } catch (Exception e) {
-            return new Response("error", "로그아웃 실패.", e.getMessage());
-        }
-    }
 
     // 개인정보 변경
     @PostMapping("changMemberInfo")

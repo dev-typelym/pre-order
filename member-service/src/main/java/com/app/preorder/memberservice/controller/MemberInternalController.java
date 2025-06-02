@@ -31,4 +31,28 @@ public class MemberInternalController {
         }
         return ResponseEntity.ok(MemberResponseDTO.from(member));
     }
+
+
+
+    @GetMapping("/{username}")
+    public MemberDTO getMemberByUsername(@PathVariable String username) {
+        Member member = memberRepository.findByUsername(username);
+        if (member == null) {
+            throw new UserNotFoundException("존재하지 않는 회원입니다.");
+        }
+        return convertToDTO(member);
+    }
+
+    @PostMapping("/verify-password")
+    public boolean verifyPassword(@RequestParam String username, @RequestParam String password) {
+        Member member = memberRepository.findByUsername(username);
+        if (member == null) {
+            return false;
+        }
+        return member.checkPassword(password);  // 비밀번호 검증 로직
+    }
+
+    private MemberDTO convertToDTO(Member member) {
+        return new MemberDTO(member.getUsername(), member.getEmail());
+    }
 }

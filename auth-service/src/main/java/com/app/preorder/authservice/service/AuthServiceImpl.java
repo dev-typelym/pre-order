@@ -1,8 +1,10 @@
 package com.app.preorder.authservice.service;
 
 import com.app.preorder.authservice.client.MemberServiceClient;
+import com.app.preorder.authservice.dto.LoginResponse;
 import com.app.preorder.authservice.dto.VerifyPasswordRequest;
 import com.app.preorder.authservice.util.JwtUtil;
+import com.app.preorder.common.exception.InvalidPasswordException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,18 +14,32 @@ public class AuthServiceImpl implements AuthService {
 
     private final MemberServiceClient memberServiceClient;
     private final JwtUtil jwtUtil;
+    private final RedisUtil redisUtil;
+
+    private final long refreshTokenExpireTimeInSeconds = 60 * 60 * 24 * 7;
 
     @Override
-    public String login(String username, String password) {
-        VerifyPasswordRequest request = new VerifyPasswordRequest();
-        request.setUsername(username);
-        request.setPassword(password);
+    public LoginResponse login(String username, String password) {
+        try {
+            memberServiceClient.getMemberByUsername(username);
 
-        boolean isValid = memberServiceClient.verifyPassword(request);
-        if (!isValid) {
-            throw new RuntimeException("아이디 또는 비밀번호가 올바르지 않습니다.");
+            boolean isValid = memberServiceClient.verifyPassword(username, password);
+            if (!isValid) {
+                throw new InvalidPasswordException("비밀번호가 일치하지 않습니다.");
+            }
+
+            String accessToken = jwtUtil.generateToken(username);
+            String refreshToken = jwtUtil.generateRefreshToken(username);
+            redisUtil.setDataExpire(refreshToken, username, refreshTokenExpireTimeInSeconds);
+
+            return new LoginResponse(accessToken, refreshToken);
+        } catch (FeignException.NotFound e) {
+            throw new UserNotFoundException("존재하지 않는 회원입니다.");
         }
+    }
 
-        return jwtUtil.generateToken(username);
+    @Override
+    public void logout(String refreshToken) {
+        redisUtil.deleteData(refreshToken);
     }
 }
