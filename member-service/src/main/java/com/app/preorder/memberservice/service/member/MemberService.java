@@ -15,11 +15,6 @@ public interface MemberService {
 
     void signUpUser(MemberDTO memberDTO);
 
-    Member loginUser(String id, String password) throws Exception;
-
-    /* 로그아웃 */
-    public boolean logoutUser(HttpServletRequest request, HttpServletResponse response) throws Exception;
-
     /* 비밀번호 변경 */
     public void changeMemberInfo(String name, String email, String phone, String address, String addressDetail, String addressSubDetail, String postCode, Long memberId) throws Exception;
 
