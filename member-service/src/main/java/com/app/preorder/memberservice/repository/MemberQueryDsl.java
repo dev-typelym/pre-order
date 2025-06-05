@@ -5,8 +5,6 @@ import com.app.preorder.memberservice.domain.entity.Member;
 
 public interface MemberQueryDsl {
 
-    // 멤버 아이디로 멤버 찾기
-    public Member findMemberById(Long memberId);
 
     // 개인정보 변경
     public void changeMemberInfo_QueryDSL(String name, String email, String phone, String address, String addressDetail, String addressSubDetail, String postCode, Long memberId);

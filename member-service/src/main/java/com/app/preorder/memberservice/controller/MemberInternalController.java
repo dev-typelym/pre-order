@@ -1,8 +1,10 @@
 package com.app.preorder.memberservice.controller;
 
+import com.app.preorder.common.exception.UserNotFoundException;
 import com.app.preorder.memberservice.dto.MemberResponseDTO;
 import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.repository.MemberRepository;
+import com.app.preorder.memberservice.service.member.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -15,44 +17,32 @@ import org.springframework.web.bind.annotation.*;
 public class MemberInternalController {
 
     private final MemberRepository memberRepository;
+    private final MemberService memberService;
 
-    @GetMapping("/{id}")
-    public ResponseEntity<MemberResponseDTO> getMemberById(@PathVariable("id") Long id) {
-        return memberRepository.findById(id)
-                .map(member -> ResponseEntity.ok(MemberResponseDTO.from(member)))
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/by-username")
-    public ResponseEntity<MemberResponseDTO> getMemberByUsername(@RequestParam("username") String username) {
-        Member member = memberRepository.findByUsername(username);
+    // Feign 내부용: ID 기반 회원 조회
+    @GetMapping("/id/{id}")
+    public MemberResponseDTO getMemberById(@PathVariable("id") Long id) {
+        Member member = memberRepository.findById(id).orElse(null);
         if (member == null) {
-            return ResponseEntity.notFound().build();
+            throw new UserNotFoundException("존재하지 않는 회원입니다.");
         }
-        return ResponseEntity.ok(MemberResponseDTO.from(member));
+        return MemberResponseDTO.from(member);
     }
 
-
-
-    @GetMapping("/{username}")
-    public MemberDTO getMemberByUsername(@PathVariable String username) {
+    // Feign 내부용: username 기반 회원 조회 (ex. 장바구니, 주문)
+    @GetMapping("/username/{username}")
+    public MemberResponseDTO getMemberByUsername(@PathVariable String username) {
         Member member = memberRepository.findByUsername(username);
         if (member == null) {
             throw new UserNotFoundException("존재하지 않는 회원입니다.");
         }
-        return convertToDTO(member);
+        return MemberResponseDTO.from(member);
     }
 
+    // 비밀번호 검증
     @PostMapping("/verify-password")
     public boolean verifyPassword(@RequestParam String username, @RequestParam String password) {
-        Member member = memberRepository.findByUsername(username);
-        if (member == null) {
-            return false;
-        }
-        return member.checkPassword(password);  // 비밀번호 검증 로직
+        return memberService.verifyPassword(username, password);
     }
 
-    private MemberDTO convertToDTO(Member member) {
-        return new MemberDTO(member.getUsername(), member.getEmail());
-    }
 }

@@ -1,5 +1,6 @@
 package com.app.preorder.authservice.controller;
 
+import com.app.preorder.authservice.dto.LoginResponse;
 import com.app.preorder.authservice.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +18,7 @@ public class AuthController {
 
     //  로그인
     @PostMapping("/login")
-    public String login(@RequestParam String username, @RequestParam String password) {
+    public LoginResponse login(@RequestParam String username, @RequestParam String password) {
         return authService.login(username, password);
     }
 

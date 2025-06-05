@@ -7,18 +7,14 @@ import com.app.preorder.common.type.Role;
 import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.domain.entity.Salt;
 import com.app.preorder.memberservice.repository.MemberRepository;
-import com.app.preorder.memberservice.repository.SaltRepository;
 import com.app.preorder.memberservice.service.email.EmailService;
 import com.app.preorder.memberservice.domain.type.MemberStatus;
 import com.app.preorder.memberservice.util.*;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 
-import jakarta.servlet.http.Cookie;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -29,12 +25,6 @@ public class MemberServiceImpl implements MemberService{
 
     @Autowired
     private MemberRepository memberRepository;
-
-    @Autowired
-    private SaltRepository saltRepository;
-
-    @Autowired
-    private SaltUtil saltUtil;
 
     @Autowired
     private EncryptUtil encryptUtil;
@@ -53,6 +43,10 @@ public class MemberServiceImpl implements MemberService{
 
     @Autowired
     private CookieUtil cookieUtil;
+
+    @Autowired
+    private PasswordUtil passwordUtil;
+
 
     @Override
     public Member findByUsername(String username) throws ChangeSetPersister.NotFoundException {
@@ -124,6 +118,14 @@ public class MemberServiceImpl implements MemberService{
     @Override
     public Long overlapByMemberPhone(String memberPhone) {
         return (memberRepository.overlapByMemberPhone_QueryDSL(memberPhone));
+    }
+
+    // 비밀번호 검증
+    @Override
+    public boolean verifyPassword(String username, String password) {
+        Member member = memberRepository.findByUsername(username);
+        if (member == null) return false;
+        return passwordUtil.verifyPassword(password, member.getMemberPassword());
     }
 
     // 이메일 인증
