@@ -30,6 +30,9 @@ public interface MemberService {
     /* 휴대폰 중복 검사 */
     public Long overlapByMemberPhone(String memberPhone);
 
+    /* 비밀번호 검증 */
+    public boolean verifyPassword(String username, String password);
+
     void verifyEmail(String key) throws ChangeSetPersister.NotFoundException;
 
     void sendVerificationMail(Member member) throws ChangeSetPersister.NotFoundException;

@@ -11,12 +11,6 @@ public class MemberQueryDslImpl implements MemberQueryDsl {
 
     private final JPAQueryFactory query;
 
-    // 멤버 아이디로 멤버 찾기
-    @Override
-    public Member findMemberById(Long memberId){
-        return query.select(QMember.member).from(QMember.member).where(QMember.member.id.eq(memberId)).fetchOne();
-    }
-
     // 개인정보 변경
     public void changeMemberInfo_QueryDSL(String name, String email, String phone, String address, String addressDetail, String addressSubDetail, String postCode, Long memberId){
         long updatedRows = query.update(QMember.member)

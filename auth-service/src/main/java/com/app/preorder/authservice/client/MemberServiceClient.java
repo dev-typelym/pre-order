@@ -10,9 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 @FeignClient(name = "member-service", path = "/internal/members")
 public interface MemberServiceClient {
 
-    @GetMapping("/internal/member/{username}")
-    MemberDTO getMemberByUsername(@PathVariable String username);
-
     @PostMapping("/verify-password")
     boolean verifyPassword(@RequestBody VerifyPasswordRequest request);
 }
