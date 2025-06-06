@@ -13,12 +13,7 @@ public class AuthExceptionHandler {
     @ExceptionHandler(InvalidPasswordException.class)
     public ResponseEntity<ApiResponse<Void>> handleInvalidPassword(InvalidPasswordException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.<Void>builder()
-                        .success(false)
-                        .errorCode("INVALID_PASSWORD")
-                        .message(ex.getMessage())
-                        .data(null)
-                        .build());
+                .body(ApiResponse.failure(ex.getMessage(), "INVALID_PASSWORD"));
     }
 
 }

@@ -4,7 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.app.preorder")
 @EnableFeignClients(basePackages = "com.app.preorder.cartservice.client")
 public class CartServiceApplication {
 

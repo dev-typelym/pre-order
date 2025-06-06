@@ -2,12 +2,13 @@ package com.app.preorder.memberservice.repository;
 
 
 import com.app.preorder.memberservice.domain.entity.Member;
+import com.app.preorder.memberservice.dto.UpdateMemberInfo;
 
 public interface MemberQueryDsl {
 
 
     // 개인정보 변경
-    public void changeMemberInfo_QueryDSL(String name, String email, String phone, String address, String addressDetail, String addressSubDetail, String postCode, Long memberId);
+    public void updateMemberById(UpdateMemberInfo updateMemberInfo, Long memberId);
 
     // 비밀번호 변경
     public void changePassword_QueryDSL(String password, Long memberId);

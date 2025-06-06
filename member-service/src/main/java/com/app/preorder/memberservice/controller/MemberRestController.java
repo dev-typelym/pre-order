@@ -2,7 +2,9 @@ package com.app.preorder.memberservice.controller;
 
 
 import com.app.preorder.common.dto.ApiResponse;
-import com.app.preorder.memberservice.dto.ChangeMemberInfoRequest;
+import com.app.preorder.common.dto.TokenPayload;
+import com.app.preorder.memberservice.dto.UpdateMemberInfo;
+import com.app.preorder.memberservice.dto.UpdateMemberRequest;
 import com.app.preorder.memberservice.dto.RequestVerifyEmailDTO;
 import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.repository.MemberRepository;
@@ -53,21 +55,26 @@ public class MemberRestController {
     }
 
 
-    // 개인정보 변경
-    @PostMapping("/change-member-info")
-    public ResponseEntity<ApiResponse<Void>> changeMemberInfo(@RequestBody ChangeMemberInfoRequest request) {
+    // 회원 수정
+    @PatchMapping("/members/me")
+    public ResponseEntity<ApiResponse<Void>> updateMember(@RequestBody UpdateMemberRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = authentication.getName();
+        TokenPayload payload = (TokenPayload) authentication.getPrincipal();
+        Long memberId = payload.getId();
+        
+        UpdateMemberInfo updateMemberInfo = UpdateMemberInfo.builder()
+                .name(request.getName())
+                .email(request.getEmail())
+                .phone(request.getPhone())
+                .address(request.getAddress())
+                .addressDetail(request.getAddressDetail())
+                .addressSubDetail(request.getAddressSubDetail())
+                .postCode(request.getPostCode())
+                .build();
 
-        memberService.changeMemberInfo(request, currentUsername);
+        memberService.updateMember(updateMemberInfo, memberId);
 
-        return ResponseEntity.ok(
-                ApiResponse.<Void>builder()
-                        .success(true)
-                        .message("개인정보를 변경하였습니다.")
-                        .data(null)
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(null, "개인정보를 변경하였습니다."));
     }
 
     // 비밀번호 변경
@@ -87,31 +94,18 @@ public class MemberRestController {
     }
 
     /* 인증 이메일 보내기*/
-    @PostMapping("verify")
-    public Response verify(RequestVerifyEmailDTO verifyEmail, HttpServletRequest req, HttpServletResponse res) {
-        Response response;
-        try {
-            Member member = memberService.findByUsername(encryptUtil.encrypt(verifyEmail.getUsername()));
-            memberService.sendVerificationMail(member);
-            response = new Response("success", "성공적으로 인증메일을 보냈습니다.", null);
-        } catch (Exception exception) {
-            response = new Response("error", "인증메일을 보내는데 문제가 발생했습니다.", exception);
-        }
-        return response;
+    @PostMapping("/verify")
+    public ApiResponse<Void> verify(@RequestBody RequestVerifyEmailDTO verifyEmail) {
+        Member member = memberService.findByUsername(encryptUtil.encrypt(verifyEmail.getUsername()));
+        memberService.sendVerificationMail(member);
+        return ApiResponse.success(null, "성공적으로 인증메일을 보냈습니다.");
     }
 
     /* 이메일 인증 확인*/
     @GetMapping("/verify/{key}")
-    public Response getVerify(@PathVariable String key) {
-        Response response;
-        try {
-            memberService.verifyEmail(key);
-            response = new Response("success", "성공적으로 인증메일을 확인했습니다.", null);
-
-        } catch (Exception e) {
-            response = new Response("error", "인증메일을 확인하는데 실패했습니다.", null);
-        }
-        return response;
+    public ApiResponse<Void> getVerify(@PathVariable String key) {
+        memberService.verifyEmail(key);
+        return ApiResponse.success(null, "성공적으로 인증메일을 확인했습니다.");
     }
 
 }
