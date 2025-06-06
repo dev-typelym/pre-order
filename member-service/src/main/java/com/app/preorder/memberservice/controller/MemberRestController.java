@@ -1,20 +1,16 @@
 package com.app.preorder.memberservice.controller;
 
 
-import com.app.preorder.common.util.Response;
+import com.app.preorder.common.dto.ApiResponse;
+import com.app.preorder.memberservice.dto.ChangeMemberInfoRequest;
 import com.app.preorder.memberservice.dto.RequestVerifyEmailDTO;
 import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.service.member.MemberService;
-import com.app.preorder.memberservice.util.CookieUtil;
 import com.app.preorder.memberservice.util.EncryptUtil;
-import com.app.preorder.memberservice.util.JwtUtil;
-import com.app.preorder.common.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -25,24 +21,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
-@RequestMapping("/members/*")
+@RequestMapping("/api/members")
 @Slf4j
 @RequiredArgsConstructor
 public class MemberRestController {
-    @Autowired
-    private MemberService memberService;
-    @Autowired
-    private JwtUtil jwtUtil;
-    @Autowired
-    private CookieUtil cookieUtil;
-    @Autowired
-    private RedisUtil redisUtil;
-    @Autowired
-    private EncryptUtil encryptUtil;
-    @Autowired
-    AuthenticationManager authenticationManager;
-    @Autowired
-    private MemberRepository memberRepository;
+
+    private final MemberService memberService;
+    private final EncryptUtil encryptUtil;
+    private final MemberRepository memberRepository;
 
 
     //  아이디 중복 체크
@@ -68,19 +54,20 @@ public class MemberRestController {
 
 
     // 개인정보 변경
-    @PostMapping("changMemberInfo")
-    public Response changPassword(String name, String email, String phone, String address, String addressDetail, String addressSubDetail, String postCode) {
+    @PostMapping("/change-member-info")
+    public ResponseEntity<ApiResponse<Void>> changeMemberInfo(@RequestBody ChangeMemberInfoRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();
 
-        Member member = memberRepository.findByUsername(currentUsername);
+        memberService.changeMemberInfo(request, currentUsername);
 
-        try {
-            memberService.changeMemberInfo(name, email, phone, address, addressDetail, addressSubDetail, postCode, member.getId());
-            return new Response("success", "개인정보를 변경하였습니다.", "개인정보 변경 성공");
-        } catch (Exception e) {
-            return new Response("error", "개인정보 변경에 실패했습니다.", e.getMessage());
-        }
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .success(true)
+                        .message("개인정보를 변경하였습니다.")
+                        .data(null)
+                        .build()
+        );
     }
 
     // 비밀번호 변경

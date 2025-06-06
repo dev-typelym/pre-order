@@ -1,7 +1,7 @@
 package com.app.preorder.authservice.config;
 
-import com.app.preorder.authservice.exception.CustomAccessDeniedHandler;
-import com.app.preorder.authservice.exception.CustomAuthenticationEntryPoint;
+import com.app.preorder.authservice.exception.security.CustomAccessDeniedHandler;
+import com.app.preorder.authservice.exception.security.CustomAuthenticationEntryPoint;
 import com.app.preorder.authservice.filter.JwtRequestFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
