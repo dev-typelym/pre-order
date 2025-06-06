@@ -2,6 +2,7 @@ package com.app.preorder.common.exception;
 
 import com.app.preorder.common.dto.ApiResponse;
 import com.app.preorder.common.exception.custom.FeignException;
+import com.app.preorder.common.exception.custom.ForbiddenException;
 import com.app.preorder.common.exception.custom.UserNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -32,6 +33,17 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.<Void>builder()
                         .success(false)
                         .errorCode("USER_NOT_FOUND")
+                        .message(ex.getMessage())
+                        .data(null)
+                        .build());
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiResponse<Void>> handleForbidden(ForbiddenException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.<Void>builder()
+                        .success(false)
+                        .errorCode("FORBIDDEN")
                         .message(ex.getMessage())
                         .data(null)
                         .build());

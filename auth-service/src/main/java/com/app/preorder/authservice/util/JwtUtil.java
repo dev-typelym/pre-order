@@ -16,12 +16,9 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    // Access / Refresh 토큰 유효 시간 (예시값)
-    public static final long TOKEN_VALIDATION_SECOND = 1000L * 10; // 10초
-    public static final long REFRESH_TOKEN_VALIDATION_SECOND = 1000L * 60 * 60 * 24 * 2; // 2일
-
-    public static final String ACCESS_TOKEN_NAME = "accessToken";
-    public static final String REFRESH_TOKEN_NAME = "refreshToken";
+    // Access / Refresh 토큰 유효 시간
+    public static final long ACCESS_TOKEN_EXPIRE_TIME = 1000L * 60 * 15; // 15분
+    public static final long REFRESH_TOKEN_EXPIRE_TIME = 1000L * 60 * 60 * 24 * 7; // 7일
 
     @Value("${spring.jwt.secret}")
     private String SECRET_KEY;
@@ -34,12 +31,12 @@ public class JwtUtil {
 
     // AccessToken 생성
     public String generateToken(Long id, String username) {
-        return doGenerateToken(id, username, TOKEN_VALIDATION_SECOND);
+        return doGenerateToken(id, username, ACCESS_TOKEN_EXPIRE_TIME);
     }
 
     // RefreshToken 생성
     public String generateRefreshToken(Long id, String username) {
-        return doGenerateToken(id, username, REFRESH_TOKEN_VALIDATION_SECOND);
+        return doGenerateToken(id, username, REFRESH_TOKEN_EXPIRE_TIME);
     }
 
     // 토큰 생성 내부 공통 메서드
@@ -56,32 +53,4 @@ public class JwtUtil {
                 .compact();
     }
 
-    // Claims 추출
-    public Claims extractAllClaims(String token) throws ExpiredJwtException {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey(SECRET_KEY))
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-    }
-
-    // id 추출
-    public Long getId(String token) { return extractAllClaims(token).get("id", Long.class); }
-
-    // username 추출
-    public String getUsername(String token) {
-        return extractAllClaims(token).get("username", String.class);
-    }
-
-    // 토큰 만료 여부 확인
-    public boolean isTokenExpired(String token) {
-        final Date expiration = extractAllClaims(token).getExpiration();
-        return expiration.before(new Date());
-    }
-
-    // 단순 토큰 유효성 검증 (UserDetails 의존 제거)
-    public boolean validateToken(String token, String username) {
-        final String extractedUsername = getUsername(token);
-        return (extractedUsername.equals(username) && !isTokenExpired(token));
-    }
 }
