@@ -1,5 +1,6 @@
 package com.app.preorder.memberservice.util;
 
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Component;
 
 @Component

@@ -1,5 +1,7 @@
 package com.app.preorder.memberservice.controller;
 
+import com.app.preorder.common.dto.MemberInternal;
+import com.app.preorder.common.dto.VerifyPasswordRequest;
 import com.app.preorder.common.exception.custom.UserNotFoundException;
 import com.app.preorder.memberservice.dto.MemberResponseDTO;
 import com.app.preorder.memberservice.domain.entity.Member;
@@ -38,10 +40,9 @@ public class MemberInternalController {
         return MemberResponseDTO.from(member);
     }
 
-    // 비밀번호 검증
     @PostMapping("/verify-password")
-    public boolean verifyPassword(@RequestParam String username, @RequestParam String password) {
-        return memberService.verifyPassword(username, password);
+    public MemberInternal verifyPassword(@RequestBody VerifyPasswordRequest request) {
+        return memberService.verifyPasswordAndGetInfo(request.getUsername(), request.getPassword());
     }
 
 }

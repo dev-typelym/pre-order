@@ -33,18 +33,19 @@ public class JwtUtil {
     }
 
     // AccessToken 생성
-    public String generateToken(String username) {
-        return doGenerateToken(username, TOKEN_VALIDATION_SECOND);
+    public String generateToken(Long id, String username) {
+        return doGenerateToken(id, username, TOKEN_VALIDATION_SECOND);
     }
 
     // RefreshToken 생성
-    public String generateRefreshToken(String username) {
-        return doGenerateToken(username, REFRESH_TOKEN_VALIDATION_SECOND);
+    public String generateRefreshToken(Long id, String username) {
+        return doGenerateToken(id, username, REFRESH_TOKEN_VALIDATION_SECOND);
     }
 
     // 토큰 생성 내부 공통 메서드
-    private String doGenerateToken(String username, long expireTime) {
+    private String doGenerateToken(Long id, String username, long expireTime) {
         Claims claims = Jwts.claims();
+        claims.put("id", id);
         claims.put("username", username);
 
         return Jwts.builder()
@@ -63,6 +64,9 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
     }
+
+    // id 추출
+    public Long getId(String token) { return extractAllClaims(token).get("id", Long.class); }
 
     // username 추출
     public String getUsername(String token) {
