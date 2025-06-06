@@ -1,6 +1,7 @@
 package com.app.preorder.memberservice.service.member;
 
 
+import com.app.preorder.common.dto.MemberInternal;
 import com.app.preorder.memberservice.dto.MemberDTO;
 import com.app.preorder.common.type.Role;
 import com.app.preorder.memberservice.domain.entity.Member;
@@ -31,7 +32,7 @@ public interface MemberService {
     public Long overlapByMemberPhone(String memberPhone);
 
     /* 비밀번호 검증 */
-    public boolean verifyPassword(String username, String password);
+    public MemberInternal verifyPasswordAndGetInfo(String username, String password);
 
     void verifyEmail(String key) throws ChangeSetPersister.NotFoundException;
 

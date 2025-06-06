@@ -1,6 +1,7 @@
 package com.app.preorder.memberservice.service.member;
 
 
+import com.app.preorder.common.dto.MemberInternal;
 import com.app.preorder.common.util.RedisUtil;
 import com.app.preorder.memberservice.dto.MemberDTO;
 import com.app.preorder.common.type.Role;
@@ -122,10 +123,14 @@ public class MemberServiceImpl implements MemberService{
 
     // 비밀번호 검증
     @Override
-    public boolean verifyPassword(String username, String password) {
+    public MemberInternal verifyPasswordAndGetInfo(String username, String password) {
         Member member = memberRepository.findByUsername(username);
-        if (member == null) return false;
-        return passwordUtil.verifyPassword(password, member.getMemberPassword());
+        if (member == null) return null;
+
+        boolean isValid = passwordUtil.verifyPassword(password, member.getMemberPassword());
+        if (!isValid) return null;
+
+        return new MemberInternal(member.getId(), member.getUsername());
     }
 
     // 이메일 인증
