@@ -29,18 +29,17 @@ public class AuthServiceImpl implements AuthService {
                 new VerifyPasswordRequest(loginRequest.getUsername(), loginRequest.getPassword())
         );
 
-        //  회원 정보 조회 확인
         if (member == null) {
             throw new InvalidPasswordException("아이디 또는 비밀번호가 일치하지 않습니다.");
         }
 
-        //  이메일 인증 여부 확인
         if (member.getStatus() != MemberStatus.ACTIVE) {
             throw new ForbiddenException("이메일 인증이 필요합니다.");
         }
 
-        String accessToken = jwtUtil.generateToken(member.getId(), member.getUsername());
-        String refreshToken = jwtUtil.generateRefreshToken(member.getId(), member.getUsername());
+        String accessToken = jwtUtil.generateToken(member.getId(), member.getUsername(), member.getRole());
+        String refreshToken = jwtUtil.generateRefreshToken(member.getId(), member.getUsername(), member.getRole());
+
         redisUtil.setDataExpire(refreshToken, member.getUsername(), refreshTokenExpireTimeInSeconds);
 
         return new LoginResponse(accessToken, refreshToken);

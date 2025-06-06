@@ -20,25 +20,13 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody LoginRequest loginRequest) {
         LoginResponse response = authService.login(loginRequest);
-        return ResponseEntity.ok(
-                ApiResponse.<LoginResponse>builder()
-                        .success(true)
-                        .message("로그인 성공")
-                        .data(response)
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(response, "로그인 성공"));
     }
 
     // 사용자 로그아웃 (RefreshToken 폐기)
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(@RequestBody LogoutRequest logoutRequest) {
         authService.logout(logoutRequest);
-        return ResponseEntity.ok(
-                ApiResponse.<Void>builder()
-                        .success(true)
-                        .message("로그아웃 성공")
-                        .data(null)
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(null, "로그아웃 성공"));
     }
 }

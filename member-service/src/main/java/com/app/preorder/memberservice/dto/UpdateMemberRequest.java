@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChangeMemberInfoRequest {
+public class UpdateMemberRequest {
     private String name;
     private String email;
     private String phone;

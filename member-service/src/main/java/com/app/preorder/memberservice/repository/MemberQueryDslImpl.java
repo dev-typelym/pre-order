@@ -2,6 +2,8 @@ package com.app.preorder.memberservice.repository;
 
 
 import com.app.preorder.memberservice.domain.entity.Member;
+import com.app.preorder.memberservice.domain.entity.QMember;
+import com.app.preorder.memberservice.dto.UpdateMemberInfo;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
@@ -12,15 +14,15 @@ public class MemberQueryDslImpl implements MemberQueryDsl {
     private final JPAQueryFactory query;
 
     // 개인정보 변경
-    public void changeMemberInfo_QueryDSL(String name, String email, String phone, String address, String addressDetail, String addressSubDetail, String postCode, Long memberId){
+    public void updateMemberById(UpdateMemberInfo updateMemberInfo, Long memberId){
         long updatedRows = query.update(QMember.member)
-                .set(QMember.member.name, name)
-                .set(QMember.member.memberEmail, email)
-                .set(QMember.member.memberPhone, phone)
-                .set(QMember.member.memberAddress.address, address)
-                .set(QMember.member.memberAddress.addressDetail, addressDetail)
-                .set(QMember.member.memberAddress.addressSubDetail, addressSubDetail)
-                .set(QMember.member.memberAddress.postcode, postCode)
+                .set(QMember.member.name, updateMemberInfo.getName())
+                .set(QMember.member.memberEmail, updateMemberInfo.getEmail())
+                .set(QMember.member.memberPhone, updateMemberInfo.getPhone())
+                .set(QMember.member.memberAddress.address, updateMemberInfo.getAddress())
+                .set(QMember.member.memberAddress.addressDetail, updateMemberInfo.getAddressDetail())
+                .set(QMember.member.memberAddress.addressSubDetail, updateMemberInfo.getAddressSubDetail())
+                .set(QMember.member.memberAddress.postcode, updateMemberInfo.getPostCode())
                 .where(QMember.member.id.eq(memberId))
                 .execute();
 

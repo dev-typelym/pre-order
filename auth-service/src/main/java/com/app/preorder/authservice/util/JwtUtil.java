@@ -1,8 +1,8 @@
 package com.app.preorder.authservice.util;
 
 
+import com.app.preorder.common.type.Role;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -16,34 +16,32 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    // Access / Refresh 토큰 유효 시간
-    public static final long ACCESS_TOKEN_EXPIRE_TIME = 1000L * 60 * 15; // 15분
-    public static final long REFRESH_TOKEN_EXPIRE_TIME = 1000L * 60 * 60 * 24 * 7; // 7일
+    public static final long ACCESS_TOKEN_EXPIRE_TIME = 1000L * 60 * 15;
+    public static final long REFRESH_TOKEN_EXPIRE_TIME = 1000L * 60 * 60 * 24 * 7;
 
     @Value("${spring.jwt.secret}")
     private String SECRET_KEY;
 
-    // 서명 키 생성
     private Key getSigningKey(String secretKey) {
         byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // AccessToken 생성
-    public String generateToken(Long id, String username) {
-        return doGenerateToken(id, username, ACCESS_TOKEN_EXPIRE_TIME);
+    // AccessToken 생성 (role 추가)
+    public String generateToken(Long id, String username, Role role) {
+        return doGenerateToken(id, username, role, ACCESS_TOKEN_EXPIRE_TIME);
     }
 
-    // RefreshToken 생성
-    public String generateRefreshToken(Long id, String username) {
-        return doGenerateToken(id, username, REFRESH_TOKEN_EXPIRE_TIME);
+    // RefreshToken 생성 (role 추가)
+    public String generateRefreshToken(Long id, String username, Role role) {
+        return doGenerateToken(id, username, role, REFRESH_TOKEN_EXPIRE_TIME);
     }
 
-    // 토큰 생성 내부 공통 메서드
-    private String doGenerateToken(Long id, String username, long expireTime) {
+    private String doGenerateToken(Long id, String username, Role role, long expireTime) {
         Claims claims = Jwts.claims();
         claims.put("id", id);
         claims.put("username", username);
+        claims.put("role", role.name());
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -52,5 +50,4 @@ public class JwtUtil {
                 .signWith(getSigningKey(SECRET_KEY), SignatureAlgorithm.HS256)
                 .compact();
     }
-
 }
