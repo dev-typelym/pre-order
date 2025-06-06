@@ -1,13 +1,12 @@
 package com.app.preorder.memberservice.controller;
 
-import com.app.preorder.common.exception.UserNotFoundException;
+import com.app.preorder.common.exception.custom.UserNotFoundException;
 import com.app.preorder.memberservice.dto.MemberResponseDTO;
 import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.service.member.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

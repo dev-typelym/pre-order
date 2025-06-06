@@ -1,4 +1,4 @@
-package com.app.preorder.authservice.dto;
+package com.app.preorder.authservice.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,10 +1,12 @@
 package com.app.preorder.authservice.service;
 
-import com.app.preorder.authservice.dto.LoginResponse;
+import com.app.preorder.authservice.dto.request.LoginRequest;
+import com.app.preorder.authservice.dto.response.LoginResponse;
+import com.app.preorder.authservice.dto.request.LogoutRequest;
 
 public interface AuthService {
     //  로그인
-    LoginResponse login(String username, String password);
+    LoginResponse login(LoginRequest loginRequest);
     //  로그아웃
-    void logout(String refreshToken);
+    void logout(LogoutRequest logoutRequest);
 }

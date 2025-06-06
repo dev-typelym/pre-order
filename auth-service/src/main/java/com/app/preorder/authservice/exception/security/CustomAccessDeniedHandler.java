@@ -1,8 +1,8 @@
-package com.app.preorder.authservice.exception;
+package com.app.preorder.authservice.exception.security;
 
 
+import com.app.preorder.common.dto.ApiResponse;
 import com.app.preorder.common.type.Role;
-import com.app.preorder.common.util.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -42,8 +42,9 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
             }
         }
 
-        Response result = Response.builder()
-                .status("error")
+        ApiResponse<Void> result = ApiResponse.<Void>builder()
+                .success(false)
+                .errorCode("ACCESS_DENIED")
                 .message(message)
                 .data(null)
                 .build();

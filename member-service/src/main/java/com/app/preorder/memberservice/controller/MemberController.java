@@ -2,16 +2,11 @@ package com.app.preorder.memberservice.controller;
 
 
 import com.app.preorder.memberservice.dto.MemberDTO;
-import com.app.preorder.memberservice.domain.RequestLoginUserDTO;
 import com.app.preorder.memberservice.service.member.MemberService;
-import com.app.preorder.memberservice.util.CookieUtil;
 import com.app.preorder.memberservice.util.EncryptUtil;
-import com.app.preorder.memberservice.util.JwtUtil;
-import com.app.preorder.common.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
@@ -23,13 +18,8 @@ import org.springframework.web.servlet.view.RedirectView;
 public class MemberController {
 
     private final MemberService memberService;
-    private final JwtUtil jwtUtil;
-    private final CookieUtil cookieUtil;
-    private final RedisUtil redisUtil;
     private final EncryptUtil encryptUtil;
 
-    @Autowired
-    AuthenticationManager authenticationManager;
 
     /* 회원 가입 페이지 이동*/
     @GetMapping("signup")
