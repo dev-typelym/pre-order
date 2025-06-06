@@ -9,6 +9,8 @@ import com.app.preorder.authservice.util.JwtUtil;
 import com.app.preorder.authservice.util.RedisUtil;
 import com.app.preorder.authservice.exception.custom.InvalidPasswordException;
 import com.app.preorder.common.dto.MemberInternal;
+import com.app.preorder.common.exception.custom.ForbiddenException;
+import com.app.preorder.common.type.MemberStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,8 +29,14 @@ public class AuthServiceImpl implements AuthService {
                 new VerifyPasswordRequest(loginRequest.getUsername(), loginRequest.getPassword())
         );
 
+        //  회원 정보 조회 확인
         if (member == null) {
             throw new InvalidPasswordException("아이디 또는 비밀번호가 일치하지 않습니다.");
+        }
+
+        //  이메일 인증 여부 확인
+        if (member.getStatus() != MemberStatus.ACTIVE) {
+            throw new ForbiddenException("이메일 인증이 필요합니다.");
         }
 
         String accessToken = jwtUtil.generateToken(member.getId(), member.getUsername());
