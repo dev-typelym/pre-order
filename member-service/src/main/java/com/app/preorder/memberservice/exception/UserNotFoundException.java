@@ -1,4 +1,4 @@
-package com.app.preorder.common.exception.custom;
+package com.app.preorder.memberservice.exception;
 
 public class UserNotFoundException extends RuntimeException {
     public UserNotFoundException(String message) { super(message); }

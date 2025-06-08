@@ -19,10 +19,10 @@ public interface MemberService {
     void signUpUser(MemberDTO memberDTO);
 
     /* 개인정보 변경 */
-    public void updateMember(UpdateMemberInfo updateMemberInfo, Long memberId);
+    void updateMember(UpdateMemberInfo updateMemberInfo, Long memberId);
 
     /* 비밀번호 변경 */
-    public void changePassword(String password, Long memberId) throws Exception;
+    void changePassword(Long memberId, String currentPassword, String newPassword);
 
     /* 아이디 중복 검사 */
     public Long overlapByMemberId(String username);
@@ -42,16 +42,15 @@ public interface MemberService {
 
     default Member toMemberEntity(MemberDTO memberDTO) {
         return Member.builder()
-                .username(memberDTO.getUsername())
-                .memberPassword(memberDTO.getMemberPassword())
-                .memberAddress(memberDTO.getMemberAddress())
-                .memberPhone(memberDTO.getMemberPhone())
-                .memberEmail(memberDTO.getMemberEmail())
-                .memberRole(memberDTO.getMemberRole())
-                .memberSleep(memberDTO.getMemberSleep())
-                .salt(memberDTO.getSalt())
+                .loginId(memberDTO.getUsername())
+                .password(memberDTO.getMemberPassword())
+                .address(memberDTO.getMemberAddress())
+                .phone(memberDTO.getMemberPhone())
+                .email(memberDTO.getMemberEmail())
+                .role(memberDTO.getMemberRole())
+                .status(memberDTO.getMemberSleep())
                 .name(memberDTO.getName())
-                .memberRegisterDate(memberDTO.getMemberRegisterDate())
+                .registeredAt(memberDTO.getMemberRegisterDate())
                 .build();
     }
 }

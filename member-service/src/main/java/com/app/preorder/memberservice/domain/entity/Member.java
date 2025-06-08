@@ -4,22 +4,17 @@ package com.app.preorder.memberservice.domain.entity;
 import com.app.preorder.common.type.MemberStatus;
 import com.app.preorder.common.type.Role;
 import com.app.preorder.memberservice.domain.vo.Address;
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import jakarta.validation.constraints.NotBlank;
-
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Getter
-@Setter
-@ToString(exclude = {"randomKeys"})
+@ToString
 @Table(name = "TBL_MEMBER")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @DynamicUpdate
@@ -28,107 +23,65 @@ public class Member {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @EqualsAndHashCode.Include
     private Long id;
 
     @NotBlank
     @Column(unique = true)
-    private String  username;
-
-    @NotBlank @Column(unique = true)
-    private String  memberEmail;
+    private String loginId;  // 기존 username → loginId 로 명확히 변경
 
     @NotBlank
-    private String memberPassword;
+    @Column(unique = true)
+    private String email;
+
+    @NotBlank
+    private String password;
 
     @NotBlank
     private String name;
 
-    @NotBlank @Column(unique = true)
-    private String memberPhone;
+    @NotBlank
+    @Column(unique = true)
+    private String phone;
 
-    @Embedded @NotNull
-    private Address memberAddress;
+    @Embedded
+    @NotNull
+    private Address address;
 
     @NotNull
-    private LocalDateTime memberRegisterDate;
+    private LocalDateTime registeredAt;
 
-    //    로그인 시 멤버 종류 나누기 위한 column
     @NotNull
     @Enumerated(EnumType.STRING)
-    private Role memberRole;
+    private Role role;
 
-    /* 탈퇴(sleep)가 true*/
-    @NotNull @Enumerated(EnumType.STRING)
-    private MemberStatus memberStatus;
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    private MemberStatus status;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "member")
-    // Member의 입장에서, Order은 일대다 관계(연관관계 표시)
-    // Order table의 Member field에 의해 매핑됨(Mapped). 연관관계의 주인은 Member가 아닌 Order
-    private List<Order> orders = new ArrayList<>();
-
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "member", cascade = CascadeType.ALL)
-    private List<RandomKey> randomKeys;
-
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ProductLike> productLikes = new ArrayList<>();
-
-    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private Cart cart;
-
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "salt_id")
-    private Salt salt;
-
-    public void updatePassword(String memberPassword){
-        this.memberPassword = memberPassword;
+    // 비밀번호 변경
+    public void updatePassword(String encodedPassword) {
+        this.password = encodedPassword;
     }
 
-
-    public Member update(String username, String memberPhone, String memberEmail){
-        this.username = username;
-        this.memberPhone = memberPhone;
-        this.memberEmail = memberEmail;
-        this.memberRole = Role.ROLE_USER;
-
-        return this;
+    // 개인정보 변경
+    public void updateProfile(String name, String email, String phone, Address address) {
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+        this.address = address;
     }
-
 
     @Builder
-    public Member(Salt salt, String name, String memberEmail, String username, String memberPassword, String memberPhone, Address memberAddress, Role memberRole, MemberStatus memberSleep, LocalDateTime memberRegisterDate) {
-        this.memberEmail = memberEmail;
-        this.username = username;
+    public Member(String name, String email, String loginId, String password, String phone,
+                  Address address, Role role, MemberStatus status, LocalDateTime registeredAt) {
+        this.email = email;
+        this.loginId = loginId;
         this.name = name;
-        this.memberPassword = memberPassword;
-        this.memberPhone = memberPhone;
-        this.memberAddress = memberAddress;
-        this.salt = salt;
-        this.memberRole = memberRole;
-        this.memberSleep = memberSleep;
-        this.memberRegisterDate = memberRegisterDate;
+        this.password = password;
+        this.phone = phone;
+        this.address = address;
+        this.role = role;
+        this.status = status;
+        this.registeredAt = registeredAt;
     }
-
-
-    public void setMemberEmail(String memberEmail) {
-        this.memberEmail = memberEmail;
-    }
-
-    public void setMemberPassword(String memberPassword) {
-        this.memberPassword = memberPassword;
-    }
-
-    public void setMemberPhone(String memberPhone) {
-        this.memberPhone = memberPhone;
-    }
-
-    public void setMemberAddress(Address memberAddress) {
-        this.memberAddress = memberAddress;
-    }
-
-    public void setMemberSleep(MemberStatus memberSleep) {
-        this.memberSleep = memberSleep;
-    }
-
-
 }

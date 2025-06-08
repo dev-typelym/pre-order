@@ -7,9 +7,9 @@ import com.app.preorder.authservice.dto.request.LogoutRequest;
 import com.app.preorder.common.dto.VerifyPasswordRequest;
 import com.app.preorder.authservice.util.JwtUtil;
 import com.app.preorder.authservice.util.RedisUtil;
-import com.app.preorder.authservice.exception.custom.InvalidPasswordException;
+import com.app.preorder.authservice.exception.custom.InvalidCredentialsException;
 import com.app.preorder.common.dto.MemberInternal;
-import com.app.preorder.common.exception.custom.ForbiddenException;
+import com.app.preorder.authservice.exception.custom.ForbiddenException;
 import com.app.preorder.common.type.MemberStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,7 +30,7 @@ public class AuthServiceImpl implements AuthService {
         );
 
         if (member == null) {
-            throw new InvalidPasswordException("아이디 또는 비밀번호가 일치하지 않습니다.");
+            throw new InvalidCredentialsException("아이디 또는 비밀번호가 일치하지 않습니다.");
         }
 
         if (member.getStatus() != MemberStatus.ACTIVE) {

@@ -6,13 +6,6 @@ import com.app.preorder.memberservice.dto.UpdateMemberInfo;
 
 public interface MemberQueryDsl {
 
-
-    // 개인정보 변경
-    public void updateMemberById(UpdateMemberInfo updateMemberInfo, Long memberId);
-
-    // 비밀번호 변경
-    public void changePassword_QueryDSL(String password, Long memberId);
-
     // 아이디 중복 체크
     public Long overlapByMemberId_QueryDSL(String memberEmail);
 
