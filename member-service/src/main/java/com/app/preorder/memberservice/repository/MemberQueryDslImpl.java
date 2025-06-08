@@ -13,36 +13,7 @@ public class MemberQueryDslImpl implements MemberQueryDsl {
 
     private final JPAQueryFactory query;
 
-    // 개인정보 변경
-    public void updateMemberById(UpdateMemberInfo updateMemberInfo, Long memberId){
-        long updatedRows = query.update(QMember.member)
-                .set(QMember.member.name, updateMemberInfo.getName())
-                .set(QMember.member.memberEmail, updateMemberInfo.getEmail())
-                .set(QMember.member.memberPhone, updateMemberInfo.getPhone())
-                .set(QMember.member.memberAddress.address, updateMemberInfo.getAddress())
-                .set(QMember.member.memberAddress.addressDetail, updateMemberInfo.getAddressDetail())
-                .set(QMember.member.memberAddress.addressSubDetail, updateMemberInfo.getAddressSubDetail())
-                .set(QMember.member.memberAddress.postcode, updateMemberInfo.getPostCode())
-                .where(QMember.member.id.eq(memberId))
-                .execute();
 
-        if (updatedRows != 1) {
-            throw new IllegalStateException("Failed to update password for member ID: " + memberId);
-        }
-    }
-
-    // 회원 비밀번호 변경
-    @Override
-    public void changePassword_QueryDSL(String password, Long memberId){
-        long updatedRows = query.update(QMember.member)
-                .set(QMember.member.memberPassword, password)
-                .where(QMember.member.id.eq(memberId))
-                .execute();
-
-        if (updatedRows != 1) {
-            throw new IllegalStateException("Failed to update password for member ID: " + memberId);
-        }
-    }
 
     // 아이디 중복 체크
     @Override

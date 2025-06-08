@@ -2,18 +2,19 @@ package com.app.preorder.memberservice.service.member;
 
 
 import com.app.preorder.common.dto.MemberInternal;
-import com.app.preorder.common.exception.custom.UserNotFoundException;
 import com.app.preorder.common.type.MemberStatus;
-import com.app.preorder.common.util.RedisUtil;
+import com.app.preorder.memberservice.domain.vo.Address;
 import com.app.preorder.memberservice.dto.MemberDTO;
 import com.app.preorder.common.type.Role;
 import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.domain.entity.Salt;
 import com.app.preorder.memberservice.dto.UpdateMemberInfo;
+import com.app.preorder.memberservice.exception.InvalidPasswordException;
+import com.app.preorder.memberservice.exception.UserNotFoundException;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.service.email.EmailService;
-import com.app.preorder.memberservice.domain.type.MemberStatus;
 import com.app.preorder.memberservice.util.*;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.crossstore.ChangeSetPersister;
@@ -34,19 +35,10 @@ public class MemberServiceImpl implements MemberService{
     private EncryptUtil encryptUtil;
 
     @Autowired
-    private RedisUtil redisUtil;
-
-    @Autowired
     private EmailService emailService;
 
     @Autowired
     private CartRepository cartRepository;
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private CookieUtil cookieUtil;
 
     @Autowired
     private PasswordUtil passwordUtil;
@@ -61,14 +53,39 @@ public class MemberServiceImpl implements MemberService{
 
     // 회원 정보 변경
     @Override
+    @Transactional
     public void updateMember(UpdateMemberInfo updateMemberInfo, Long memberId) {
-        memberRepository.updateMemberById(updateMemberInfo, memberId);
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new UserNotFoundException("회원이 존재하지 않습니다."));
+
+        Address address = new Address(
+                updateMemberInfo.getAddress(),
+                updateMemberInfo.getAddressDetail(),
+                updateMemberInfo.getAddressSubDetail(),
+                updateMemberInfo.getPostCode()
+        );
+
+        member.updateProfile(
+                updateMemberInfo.getName(),
+                updateMemberInfo.getEmail(),
+                updateMemberInfo.getPhone(),
+                address
+        );
     }
 
     // 비밀번호 변경
     @Override
-    public void changePassword(String password, Long memberId) {
-        memberRepository.changePassword_QueryDSL(password, memberId);
+    @Transactional
+    public void changePassword(Long memberId, String currentPassword, String newPassword) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+
+        if (!passwordUtil.verifyPassword(currentPassword, member.getPassword())) {
+            throw new InvalidPasswordException("현재 비밀번호가 일치하지 않습니다.");
+        }
+
+        String encodedNewPassword = passwordUtil.encodePassword(newPassword);
+        member.updatePassword(encodedNewPassword);  // 엔티티 도메인 메서드로 변경
     }
 
     // 회원가입

@@ -3,9 +3,8 @@ package com.app.preorder.memberservice.controller;
 
 import com.app.preorder.common.dto.ApiResponse;
 import com.app.preorder.common.dto.TokenPayload;
-import com.app.preorder.memberservice.dto.UpdateMemberInfo;
-import com.app.preorder.memberservice.dto.UpdateMemberRequest;
-import com.app.preorder.memberservice.dto.RequestVerifyEmailDTO;
+import com.app.preorder.memberservice.client.AuthServiceClient;
+import com.app.preorder.memberservice.dto.*;
 import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.service.member.MemberService;
@@ -16,11 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.HttpStatus;
 
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/api/members")
@@ -28,6 +23,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @RequiredArgsConstructor
 public class MemberRestController {
 
+    private final AuthServiceClient authServiceClient;
     private final MemberService memberService;
     private final EncryptUtil encryptUtil;
     private final MemberRepository memberRepository;
@@ -78,19 +74,19 @@ public class MemberRestController {
     }
 
     // 비밀번호 변경
-    @PostMapping("changePassword")
-    public ResponseEntity<Response> changePassword(@RequestParam String password, HttpServletRequest request, HttpServletResponse response) {
+    @PatchMapping("/members/me/password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(@RequestBody ChangePasswordRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = authentication.getName();
-        Member member = memberRepository.findByUsername(currentUsername);
+        TokenPayload payload = (TokenPayload) authentication.getPrincipal();
+        Long memberId = payload.getId();
 
-        try {
-            memberService.changePassword(password, member.getId());
-            memberService.logoutUser(request, response);
-            return ResponseEntity.ok(new Response("success", "비밀번호 변경하였습니다.", "비밀번호 성공"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response("error", "비밀번호 변경에 실패했습니다.", e.getMessage()));
-        }
+        memberService.changePassword(memberId, request.getCurrentPassword(), request.getNewPassword());
+
+        // 로그아웃 요청 (auth-service 호출)
+        LogoutRequest logoutRequest = new LogoutRequest(request.getRefreshToken());
+        authServiceClient.logout(logoutRequest);
+
+        return ResponseEntity.ok(ApiResponse.success(null, "비밀번호를 변경하였습니다. 다시 로그인 해주세요."));
     }
 
     /* 인증 이메일 보내기*/
