@@ -4,7 +4,7 @@ import com.app.preorder.authservice.client.MemberServiceClient;
 import com.app.preorder.authservice.dto.request.LoginRequest;
 import com.app.preorder.authservice.dto.response.LoginResponse;
 import com.app.preorder.authservice.dto.request.LogoutRequest;
-import com.app.preorder.common.dto.VerifyPasswordRequest;
+import com.app.preorder.common.dto.VerifyPasswordInternal;
 import com.app.preorder.authservice.util.JwtUtil;
 import com.app.preorder.authservice.util.RedisUtil;
 import com.app.preorder.authservice.exception.custom.InvalidCredentialsException;
@@ -26,7 +26,7 @@ public class AuthServiceImpl implements AuthService {
 
     public LoginResponse login(LoginRequest loginRequest) {
         MemberInternal member = memberServiceClient.verifyPassword(
-                new VerifyPasswordRequest(loginRequest.getUsername(), loginRequest.getPassword())
+                new VerifyPasswordInternal(loginRequest.getUsername(), loginRequest.getPassword())
         );
 
         if (member == null) {

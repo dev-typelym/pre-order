@@ -1,7 +1,7 @@
 package com.app.preorder.authservice.client;
 
 import com.app.preorder.common.dto.MemberInternal;
-import com.app.preorder.common.dto.VerifyPasswordRequest;
+import com.app.preorder.common.dto.VerifyPasswordInternal;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,5 +10,5 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface MemberServiceClient {
 
     @PostMapping("/verify-password")
-    MemberInternal verifyPassword(@RequestBody VerifyPasswordRequest request);
+    MemberInternal verifyPassword(@RequestBody VerifyPasswordInternal request);
 }
