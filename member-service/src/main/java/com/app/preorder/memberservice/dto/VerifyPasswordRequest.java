@@ -1,4 +1,4 @@
-package com.app.preorder.common.dto;
+package com.app.preorder.memberservice.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

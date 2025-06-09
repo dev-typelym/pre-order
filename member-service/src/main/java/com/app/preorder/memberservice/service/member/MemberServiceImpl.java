@@ -147,10 +147,10 @@ public class MemberServiceImpl implements MemberService{
         Member member = memberRepository.findByUsername(username);
         if (member == null) return null;
 
-        boolean isValid = passwordUtil.verifyPassword(password, member.getMemberPassword());
+        boolean isValid = passwordUtil.verifyPassword(password, member.getPassword());
         if (!isValid) return null;
 
-        return new MemberInternal(member.getId(), member.getUsername(), member.getMemberStatus());
+        return new MemberInternal(member.getId(), member.getLoginId(), member.getStatus(), member.getRole());
     }
 
     // 이메일 인증

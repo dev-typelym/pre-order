@@ -1,8 +1,7 @@
 package com.app.preorder.memberservice.controller;
 
 import com.app.preorder.common.dto.MemberInternal;
-import com.app.preorder.common.dto.VerifyPasswordRequest;
-import com.app.preorder.memberservice.dto.MemberResponseDTO;
+import com.app.preorder.common.dto.VerifyPasswordInternal;
 import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.exception.UserNotFoundException;
 import com.app.preorder.memberservice.repository.MemberRepository;
@@ -22,26 +21,19 @@ public class MemberInternalController {
 
     // Feign 내부용: ID 기반 회원 조회
     @GetMapping("/id/{id}")
-    public MemberResponseDTO getMemberById(@PathVariable("id") Long id) {
-        Member member = memberRepository.findById(id).orElse(null);
-        if (member == null) {
-            throw new UserNotFoundException("존재하지 않는 회원입니다.");
-        }
-        return MemberResponseDTO.from(member);
-    }
+    public MemberInternal getMemberById(@PathVariable("id") Long id) {
+        Member member = memberRepository.findById(id).orElseThrow(() -> new UserNotFoundException("존재하지 않는 회원입니다."));
 
-    // Feign 내부용: username 기반 회원 조회 (ex. 장바구니, 주문)
-    @GetMapping("/username/{username}")
-    public MemberResponseDTO getMemberByUsername(@PathVariable String username) {
-        Member member = memberRepository.findByUsername(username);
-        if (member == null) {
-            throw new UserNotFoundException("존재하지 않는 회원입니다.");
-        }
-        return MemberResponseDTO.from(member);
+        return new MemberInternal(
+                member.getId(),
+                member.getLoginId(),
+                member.getStatus(),
+                member.getRole()
+        );
     }
 
     @PostMapping("/verify-password")
-    public MemberInternal verifyPassword(@RequestBody VerifyPasswordRequest request) {
+    public MemberInternal verifyPassword(@RequestBody VerifyPasswordInternal request) {
         return memberService.verifyPasswordAndGetInfo(request.getUsername(), request.getPassword());
     }
 

@@ -11,7 +11,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MemberInternal {
     private Long id;
-    private String username;
+    private String loginId;
     private MemberStatus status;
     private Role role;
+
+    public static MemberInternal of(Long id, String loginId, MemberStatus status, Role role) {
+        return new MemberInternal(id, loginId, status, role);
+    }
 }
