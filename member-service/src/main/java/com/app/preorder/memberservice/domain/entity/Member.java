@@ -71,6 +71,11 @@ public class Member {
         this.address = address;
     }
 
+    //
+    public void changeStatus(MemberStatus newStatus) {
+        this.status = newStatus;
+    }
+
     @Builder
     public Member(String name, String email, String loginId, String password, String phone,
                   Address address, Role role, MemberStatus status, LocalDateTime registeredAt) {

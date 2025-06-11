@@ -45,7 +45,7 @@ public class CartItemQueryDslImpl implements CartItemQueryDsl {
         return new PageImpl<>(foundCartItem, pageable, count);
     }
 
-    // 카트아이템 하나 정보 조회
+    // 카트 아이템 상세 조회
     public CartItem findCartItemById_queryDSL(Long cartItemId){
         return query.selectFrom(cartItem)
                 .where(cartItem.id.eq(cartItemId))

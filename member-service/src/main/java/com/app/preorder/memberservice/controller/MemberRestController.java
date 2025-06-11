@@ -3,12 +3,12 @@ package com.app.preorder.memberservice.controller;
 
 import com.app.preorder.common.dto.ApiResponse;
 import com.app.preorder.common.dto.TokenPayload;
+import com.app.preorder.infralib.util.EncryptUtil;
 import com.app.preorder.memberservice.client.AuthServiceClient;
 import com.app.preorder.memberservice.dto.*;
 import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.service.member.MemberService;
-import com.app.preorder.memberservice.util.EncryptUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +26,14 @@ public class MemberRestController {
     private final AuthServiceClient authServiceClient;
     private final MemberService memberService;
     private final EncryptUtil encryptUtil;
-    private final MemberRepository memberRepository;
 
+
+    //  회원가입
+    @PostMapping("/signup")
+    public ResponseEntity<ApiResponse<Void>> signUp(@RequestBody SignupRequest request) {
+        memberService.signUp(request);
+        return ResponseEntity.ok(ApiResponse.success(null, "회원가입이 완료되었습니다."));
+    }
 
     //  아이디 중복 체크
     @PostMapping("checkId")
@@ -56,21 +62,10 @@ public class MemberRestController {
     public ResponseEntity<ApiResponse<Void>> updateMember(@RequestBody UpdateMemberRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         TokenPayload payload = (TokenPayload) authentication.getPrincipal();
-        Long memberId = payload.getId();
-        
-        UpdateMemberInfo updateMemberInfo = UpdateMemberInfo.builder()
-                .name(request.getName())
-                .email(request.getEmail())
-                .phone(request.getPhone())
-                .address(request.getAddress())
-                .addressDetail(request.getAddressDetail())
-                .addressSubDetail(request.getAddressSubDetail())
-                .postCode(request.getPostCode())
-                .build();
 
-        memberService.updateMember(updateMemberInfo, memberId);
+        memberService.updateMember(request, payload.getId());
 
-        return ResponseEntity.ok(ApiResponse.success(null, "개인정보를 변경하였습니다."));
+        return ResponseEntity.ok(ApiResponse.success(null, "회원정보가 성공적으로 수정되었습니다."));
     }
 
     // 비밀번호 변경
@@ -94,14 +89,14 @@ public class MemberRestController {
     public ResponseEntity<ApiResponse<Void>> sendVerificationEmail(@RequestBody VerifyEmailRequest request) {
         String encryptedLoginId  = encryptUtil.encrypt(request.getLoginId());
         Member member = memberService.findByLoginId(encryptedLoginId);
-        memberService.sendVerificationMail(member);
+        memberService.sendSignupVerificationMail(member);
         return ResponseEntity.ok(ApiResponse.success(null, "성공적으로 인증 메일을 보냈습니다."));
     }
 
     // 인증 메일 확인
     @GetMapping("/members/verify/{key}")
     public ResponseEntity<ApiResponse<Void>> verifyEmail(@PathVariable String key) {
-        memberService.verifyEmail(key);
+        memberService.confirmEmailVerification(key);
         return ResponseEntity.ok(ApiResponse.success(null, "성공적으로 이메일 인증을 완료했습니다."));
     }
 

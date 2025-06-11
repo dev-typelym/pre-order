@@ -1,16 +1,13 @@
 package com.app.preorder.memberservice.domain.vo;
 
+import com.app.preorder.infralib.util.EncryptUtil;
 import jakarta.persistence.Embeddable;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.io.Serializable;
 
-@Embeddable
 @Getter
-@Setter
-@ToString
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Address implements Serializable {
 
     private String address;
@@ -18,15 +15,19 @@ public class Address implements Serializable {
     private String addressSubDetail;
     private String postcode;
 
-    // 기본 생성자 생성(Setter를 쓰면 값이 변경 가능해지므로 생성자로 값을 지정)
-    protected Address(){
-
-    } // public보다 protected가 더 안전
-
     public Address(String address, String addressDetail, String addressSubDetail, String postcode) {
         this.address = address;
         this.addressDetail = addressDetail;
         this.addressSubDetail = addressSubDetail;
         this.postcode = postcode;
+    }
+
+    public Address encryptWith(EncryptUtil encryptUtil) {
+        return new Address(
+                encryptUtil.encrypt(this.address),
+                encryptUtil.encrypt(this.addressDetail),
+                encryptUtil.encrypt(this.addressSubDetail),
+                encryptUtil.encrypt(this.postcode)
+        );
     }
 }

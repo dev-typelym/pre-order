@@ -2,8 +2,8 @@ package com.app.preorder.memberservice.controller;
 
 import com.app.preorder.common.dto.MemberInternal;
 import com.app.preorder.common.dto.VerifyPasswordInternal;
+import com.app.preorder.common.exception.custom.UserNotFoundException;
 import com.app.preorder.memberservice.domain.entity.Member;
-import com.app.preorder.memberservice.exception.UserNotFoundException;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.service.member.MemberService;
 import lombok.RequiredArgsConstructor;

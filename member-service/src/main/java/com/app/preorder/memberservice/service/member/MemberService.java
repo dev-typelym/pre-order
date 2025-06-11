@@ -2,25 +2,19 @@ package com.app.preorder.memberservice.service.member;
 
 
 import com.app.preorder.common.dto.MemberInternal;
-import com.app.preorder.common.type.MemberStatus;
-import com.app.preorder.memberservice.dto.MemberDTO;
-import com.app.preorder.common.type.Role;
 import com.app.preorder.memberservice.domain.entity.Member;
-import com.app.preorder.memberservice.dto.MemberResponse;
-import com.app.preorder.memberservice.dto.UpdateMemberInfo;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.data.crossstore.ChangeSetPersister;
+import com.app.preorder.memberservice.dto.SignupRequest;
+import com.app.preorder.memberservice.dto.UpdateMemberRequest;
 
 
 public interface MemberService {
 
     Member findByLoginId(String loginId);
 
-    void signUpUser(MemberDTO memberDTO);
+    void signUp(SignupRequest signupRequest);
 
     /* 개인정보 변경 */
-    void updateMember(UpdateMemberInfo updateMemberInfo, Long memberId);
+    void updateMember(UpdateMemberRequest request, Long memberId);
 
     /* 비밀번호 변경 */
     void changePassword(Long memberId, String currentPassword, String newPassword);
@@ -37,21 +31,8 @@ public interface MemberService {
     /* 비밀번호 검증 */
     public MemberInternal verifyPasswordAndGetInfo(String username, String password);
 
-    void verifyEmail(String key) throws ChangeSetPersister.NotFoundException;
+    void confirmEmailVerification(String key);
 
-    void sendVerificationMail(Member member);
+    void sendSignupVerificationMail(Member member);
 
-    default Member toMemberEntity(MemberDTO memberDTO) {
-        return Member.builder()
-                .loginId(memberDTO.getUsername())
-                .password(memberDTO.getMemberPassword())
-                .address(memberDTO.getMemberAddress())
-                .phone(memberDTO.getMemberPhone())
-                .email(memberDTO.getMemberEmail())
-                .role(memberDTO.getMemberRole())
-                .status(memberDTO.getMemberSleep())
-                .name(memberDTO.getName())
-                .registeredAt(memberDTO.getMemberRegisterDate())
-                .build();
-    }
 }
