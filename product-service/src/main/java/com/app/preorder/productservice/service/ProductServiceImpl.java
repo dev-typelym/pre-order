@@ -1,6 +1,6 @@
 package com.app.preorder.productservice.service;
 
-import com.app.preorder.common.dto.ProductResponse;
+import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.type.CategoryType;
 import com.app.preorder.productservice.dto.productDTO.ProductListDTO;
 import com.app.preorder.productservice.dto.productDTO.ProductListSearch;
@@ -46,7 +46,7 @@ public class ProductServiceImpl implements ProductService {
 
     //  상품 다건 조회
     @Override
-    public List<ProductResponse> getProductsByIds(List<Long> productIds) {
+    public List<ProductInternal> getProductsByIds(List<Long> productIds) {
         List<Product> products = productRepository.findAllById(productIds);
         return products.stream()
                 .map(this::toProductResponse)

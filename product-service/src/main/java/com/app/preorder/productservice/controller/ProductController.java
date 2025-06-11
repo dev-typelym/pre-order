@@ -1,6 +1,6 @@
 package com.app.preorder.productservice.controller;
 
-import com.app.preorder.common.dto.ProductResponse;
+import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.type.CategoryType;
 import com.app.preorder.productservice.dto.productDTO.ProductListDTO;
 import com.app.preorder.productservice.dto.productDTO.ProductListSearch;
@@ -21,7 +21,7 @@ public class ProductController {
     private final ProductService productService;
 
     @PostMapping("/bulk")
-    public List<ProductResponse> getProductsByIds(@RequestBody List<Long> productIds) {
+    public List<ProductInternal> getProductsByIds(@RequestBody List<Long> productIds) {
         return productService.getProductsByIds(productIds);
     }
 

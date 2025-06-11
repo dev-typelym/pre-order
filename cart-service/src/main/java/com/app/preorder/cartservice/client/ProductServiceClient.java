@@ -1,6 +1,6 @@
 package com.app.preorder.cartservice.client;
 
-import com.app.preorder.common.dto.ProductResponse;
+import com.app.preorder.common.dto.ProductInternal;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,9 +13,9 @@ import java.util.List;
 public interface ProductServiceClient {
 
     @GetMapping("/products/{productId}")
-    ProductResponse getProductById(@PathVariable("productId") Long productId);
+    ProductInternal getProductById(@PathVariable("productId") Long productId);
 
     @PostMapping("/products/bulk")
-    List<ProductResponse> getProductsByIds(@RequestBody List<Long> productIds);
+    List<ProductInternal> getProductsByIds(@RequestBody List<Long> productIds);
 }
 

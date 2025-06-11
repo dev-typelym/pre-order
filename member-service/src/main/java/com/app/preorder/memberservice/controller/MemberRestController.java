@@ -89,19 +89,20 @@ public class MemberRestController {
         return ResponseEntity.ok(ApiResponse.success(null, "비밀번호를 변경하였습니다. 다시 로그인 해주세요."));
     }
 
-    /* 인증 이메일 보내기*/
-    @PostMapping("/verify")
-    public ApiResponse<Void> verify(@RequestBody RequestVerifyEmailDTO verifyEmail) {
-        Member member = memberService.findByUsername(encryptUtil.encrypt(verifyEmail.getUsername()));
+    // 인증 메일 전송
+    @PostMapping("/members/email-verification/send")
+    public ResponseEntity<ApiResponse<Void>> sendVerificationEmail(@RequestBody VerifyEmailRequest request) {
+        String encryptedLoginId  = encryptUtil.encrypt(request.getLoginId());
+        Member member = memberService.findByLoginId(encryptedLoginId);
         memberService.sendVerificationMail(member);
-        return ApiResponse.success(null, "성공적으로 인증메일을 보냈습니다.");
+        return ResponseEntity.ok(ApiResponse.success(null, "성공적으로 인증 메일을 보냈습니다."));
     }
 
-    /* 이메일 인증 확인*/
-    @GetMapping("/verify/{key}")
-    public ApiResponse<Void> getVerify(@PathVariable String key) {
+    // 인증 메일 확인
+    @GetMapping("/members/verify/{key}")
+    public ResponseEntity<ApiResponse<Void>> verifyEmail(@PathVariable String key) {
         memberService.verifyEmail(key);
-        return ApiResponse.success(null, "성공적으로 인증메일을 확인했습니다.");
+        return ResponseEntity.ok(ApiResponse.success(null, "성공적으로 이메일 인증을 완료했습니다."));
     }
 
 }

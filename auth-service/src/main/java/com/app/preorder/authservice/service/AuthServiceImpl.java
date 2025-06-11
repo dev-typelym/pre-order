@@ -37,10 +37,10 @@ public class AuthServiceImpl implements AuthService {
             throw new ForbiddenException("이메일 인증이 필요합니다.");
         }
 
-        String accessToken = jwtUtil.generateToken(member.getId(), member.getUsername(), member.getRole());
-        String refreshToken = jwtUtil.generateRefreshToken(member.getId(), member.getUsername(), member.getRole());
+        String accessToken = jwtUtil.generateToken(member.getId(), member.getLoginId(), member.getRole());
+        String refreshToken = jwtUtil.generateRefreshToken(member.getId(), member.getLoginId(), member.getRole());
 
-        redisUtil.setDataExpire(refreshToken, member.getUsername(), refreshTokenExpireTimeInSeconds);
+        redisUtil.setDataExpire(refreshToken, member.getLoginId(), refreshTokenExpireTimeInSeconds);
 
         return new LoginResponse(accessToken, refreshToken);
     }
