@@ -2,46 +2,40 @@ package com.app.preorder.memberservice.service.member;
 
 
 import com.app.preorder.common.dto.MemberInternal;
+import com.app.preorder.common.exception.custom.ForbiddenException;
+import com.app.preorder.common.exception.custom.UserNotFoundException;
 import com.app.preorder.common.type.MemberStatus;
+import com.app.preorder.infralib.util.EncryptUtil;
+import com.app.preorder.infralib.util.PasswordUtil;
+import com.app.preorder.infralib.util.RedisUtil;
+import com.app.preorder.memberservice.client.CartServiceClient;
 import com.app.preorder.memberservice.domain.vo.Address;
-import com.app.preorder.memberservice.dto.MemberDTO;
-import com.app.preorder.common.type.Role;
 import com.app.preorder.memberservice.domain.entity.Member;
-import com.app.preorder.memberservice.domain.entity.Salt;
-import com.app.preorder.memberservice.dto.UpdateMemberInfo;
-import com.app.preorder.memberservice.exception.InvalidPasswordException;
-import com.app.preorder.memberservice.exception.UserNotFoundException;
+import com.app.preorder.memberservice.dto.SignupRequest;
+import com.app.preorder.common.exception.custom.InvalidPasswordException;
+import com.app.preorder.memberservice.dto.UpdateMemberRequest;
+import com.app.preorder.memberservice.factory.MemberFactory;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.service.email.EmailService;
-import com.app.preorder.memberservice.util.*;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class MemberServiceImpl implements MemberService{
 
-    @Autowired
-    private MemberRepository memberRepository;
-
-    @Autowired
-    private EncryptUtil encryptUtil;
-
-    @Autowired
-    private EmailService emailService;
-
-    @Autowired
-    private CartRepository cartRepository;
-
-    @Autowired
-    private PasswordUtil passwordUtil;
+    private final MemberRepository memberRepository;
+    private final CartServiceClient cartServiceClient;
+    private final MemberFactory memberFactory;
+    private final EncryptUtil encryptUtil;
+    private final EmailService emailService;
+    private final PasswordUtil passwordUtil;
+    private final RedisUtil redisUtil;
 
 
     @Override
@@ -56,23 +50,11 @@ public class MemberServiceImpl implements MemberService{
     // 회원 정보 변경
     @Override
     @Transactional
-    public void updateMember(UpdateMemberInfo updateMemberInfo, Long memberId) {
+    public void updateMember(UpdateMemberRequest request, Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new UserNotFoundException("회원이 존재하지 않습니다."));
 
-        Address address = new Address(
-                updateMemberInfo.getAddress(),
-                updateMemberInfo.getAddressDetail(),
-                updateMemberInfo.getAddressSubDetail(),
-                updateMemberInfo.getPostCode()
-        );
-
-        member.updateProfile(
-                updateMemberInfo.getName(),
-                updateMemberInfo.getEmail(),
-                updateMemberInfo.getPhone(),
-                address
-        );
+        memberFactory.updateProfile(member, request);
     }
 
     // 비밀번호 변경
@@ -87,39 +69,16 @@ public class MemberServiceImpl implements MemberService{
         }
 
         String encodedNewPassword = passwordUtil.encodePassword(newPassword);
-        member.updatePassword(encodedNewPassword);  // 엔티티 도메인 메서드로 변경
+        member.updatePassword(encodedNewPassword);
     }
 
-    // 회원가입
+    //  회원가입
     @Override
-    public void signUpUser(MemberDTO memberDTO) {
-        String password = memberDTO.getMemberPassword();
-        String salt = saltUtil.genSalt();
-        memberDTO.setSalt(new Salt(salt));
-        memberDTO.setMemberPassword(saltUtil.encodePassword(salt,password));
-        String encodedEmail = encryptUtil.encrypt(memberDTO.getMemberEmail());
-        String encodedName = encryptUtil.encrypt(memberDTO.getName());
-        String encodedAddressCity = encryptUtil.encrypt(memberDTO.getMemberAddress().getAddress());
-        String encodedAddressDetail = encryptUtil.encrypt(memberDTO.getMemberAddress().getAddressDetail());
-        String encodedAddressSubDetail = encryptUtil.encrypt(memberDTO.getMemberAddress().getAddressSubDetail());
-        String encodedAddressPostCode = encryptUtil.encrypt(memberDTO.getMemberAddress().getPostcode());
-        String encodedPhone = encryptUtil.encrypt(memberDTO.getMemberPhone());
-        String encodedUserName = encryptUtil.encrypt(memberDTO.getUsername());
-        memberDTO.setMemberEmail(encodedEmail);
-        memberDTO.setName(encodedName);
-        memberDTO.getMemberAddress().setAddress(encodedAddressCity);
-        memberDTO.getMemberAddress().setAddressDetail(encodedAddressDetail);
-        memberDTO.getMemberAddress().setAddressSubDetail(encodedAddressSubDetail);
-        memberDTO.getMemberAddress().setPostcode(encodedAddressPostCode);
-        memberDTO.setUsername(encodedUserName);
-        memberDTO.setMemberPhone(encodedPhone);
-        memberDTO.setMemberRole(Role.ROLE_NOT_PERMITTED);
-        memberDTO.setMemberSleep(MemberStatus.ACTIVE);
-        memberDTO.setMemberRegisterDate(LocalDateTime.now());
-        Member member = toMemberEntity(memberDTO);
-        Cart cart = Cart.builder().member(member).build();
+    public void signUp(SignupRequest request) {
+        Member member = memberFactory.createMember(request);
         memberRepository.save(member);
-        cartRepository.save(cart);
+
+        cartServiceClient.createCart(member.getId());
     }
 
 
@@ -157,13 +116,13 @@ public class MemberServiceImpl implements MemberService{
 
     //  인증 메일 전송
     @Override
-    public void sendVerificationMail(Member member) {
+    public void sendSignupVerificationMail(Member member) {
         if (member == null) {
             throw new UserNotFoundException("멤버가 조회되지 않음");
         }
 
         String loginId = encryptUtil.decrypt(member.getLoginId());
-        String email = encryptUtil.decrypt(member.getMemberEmail());
+        String email = encryptUtil.decrypt(member.getEmail());
 
         // 1. 랜덤 토큰 생성
         String token = UUID.randomUUID().toString();
@@ -184,16 +143,21 @@ public class MemberServiceImpl implements MemberService{
 
     //  인증 메일 확인
     @Override
-    public void verifyEmail(String key) {
-        String memberId = redisUtil.getData(key);
-        Member member = memberRepository.findByUsername(memberId);
-        if (member == null) throw new UserNotFoundException("멤버가 조회되지 않음");
-        modifyMemberStatus(member, MemberStatus.ACTIVE);
+    public void confirmEmailVerification(String key) {
+        String loginId = redisUtil.getData(key);
+        if (loginId == null) {
+            throw new ForbiddenException("인증 링크가 만료되었거나 유효하지 않습니다.");
+        }
+
+        Member member = memberRepository.findByLoginId(loginId);
+        if (member == null) {
+            throw new UserNotFoundException("해당 회원을 찾을 수 없습니다.");
+        }
+
+        member.changeStatus(MemberStatus.ACTIVE);
+        memberRepository.save(member);
+
         redisUtil.deleteData(key);
     }
 
-    private void modifyMemberStatus(Member member, MemberStatus memberStatus) {
-        member.setMemberStatus(memberStatus);
-        memberRepository.save(member);
-    }
 }

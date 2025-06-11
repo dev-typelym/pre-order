@@ -1,9 +1,6 @@
 package com.app.preorder.memberservice.repository;
 
 
-import com.app.preorder.memberservice.domain.entity.Member;
-import com.app.preorder.memberservice.dto.UpdateMemberInfo;
-
 public interface MemberQueryDsl {
 
     // 아이디 중복 체크

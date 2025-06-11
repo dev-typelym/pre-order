@@ -1,9 +1,7 @@
 package com.app.preorder.memberservice.repository;
 
 
-import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.domain.entity.QMember;
-import com.app.preorder.memberservice.dto.UpdateMemberInfo;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 

@@ -1,7 +1,7 @@
 package com.app.preorder.cartservice.controller;
 
 import com.app.preorder.cartservice.client.MemberServiceClient;
-import com.app.preorder.cartservice.dto.cart.CartItemListDTO;
+import com.app.preorder.cartservice.dto.cart.CartItemResponse;
 import com.app.preorder.cartservice.dto.member.MemberResponse;
 import com.app.preorder.cartservice.domain.entity.CartItem;
 import com.app.preorder.cartservice.service.cart.CartService;
@@ -51,7 +51,7 @@ public class CartController {
 
     // 카트 목록 페이징 조회
     @GetMapping("/cartItemList/{page}")
-    public Page<CartItemListDTO> getCartItemList(@PathVariable int page) {
+    public Page<CartItemResponse> getCartItemList(@PathVariable int page) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         MemberResponse member = memberFeignClient.getMemberByUsername(username);
         return cartService.getCartItemListWithPaging(page - 1, member.getId());

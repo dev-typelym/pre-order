@@ -2,9 +2,10 @@ package com.app.preorder.cartservice.service.cart;
 
 
 import com.app.preorder.cartservice.client.ProductServiceClient;
-import com.app.preorder.cartservice.dto.cart.CartItemListDTO;
+import com.app.preorder.cartservice.dto.cart.CartItemResponse;
 import com.app.preorder.cartservice.domain.entity.Cart;
 import com.app.preorder.cartservice.domain.entity.CartItem;
+import com.app.preorder.cartservice.factory.CartFactory;
 import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.cartservice.repository.cartItem.CartItemRepository;
 import com.app.preorder.cartservice.repository.cart.CartRepository;
@@ -27,7 +28,18 @@ public class CartServiceImpl implements CartService{
 
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
+    private final CartFactory cartFactory;
     private final ProductServiceClient productServiceClient;
+
+    // 회원가입시 카트 생성
+    @Override
+    public void createCartForMember(Long memberId) {
+        Cart cart = Cart.builder()
+                .memberId(memberId)
+                .build();
+
+        cartRepository.save(cart);
+    }
 
     // 카트 아이템 추가
     @Override
@@ -89,7 +101,7 @@ public class CartServiceImpl implements CartService{
     }
 
     // 카트 목록
-    public Page<CartItemListDTO> getCartItemListWithPaging(int page, Long memberId) {
+    public Page<CartItemResponse> getCartItemListWithPaging(int page, Long memberId) {
         // 1. 장바구니 아이템 조회
         Page<CartItem> cartItems = cartItemRepository.findAllCartItem_queryDSL(PageRequest.of(page, 5), memberId);
 
@@ -105,27 +117,25 @@ public class CartServiceImpl implements CartService{
         // 4. Map으로 변환 (id → ProductResponse)
         Map<Long, ProductInternal> productMap = new HashMap<>();
         for (ProductInternal product : products) {
-            productMap.put(product.getProductId(), product);
+            productMap.put(product.getId(), product);
         }
 
         // 5. CartItem + Product 매핑해서 DTO 생성
-        List<CartItemListDTO> dtoList = new ArrayList<>();
+        List<CartItemResponse> responseList  = new ArrayList<>();
         for (CartItem item : cartItems.getContent()) {
             ProductInternal productResponse = productMap.get(item.getProductId());
-            CartItemListDTO dto = toCartItemListDTO(item, productResponse);
-            dtoList.add(dto);
+            CartItemResponse response  = cartFactory.createCartItemResponse(item, productResponse);
+            responseList.add(response );
         }
 
         // 6. 페이징 결과 반환
-        return new PageImpl<>(dtoList, cartItems.getPageable(), cartItems.getTotalElements());
+        return new PageImpl<>(responseList, cartItems.getPageable(), cartItems.getTotalElements());
     }
 
-    // 카트 하나 전체 정보
+    // 카트 아이템 상세 조회
     @Override
     public CartItem getAllCartItemInfo(Long cartItemId) {
-
-        CartItem cartItem = cartItemRepository.findCartItemById_queryDSL(cartItemId);
-        return cartItem;
+        return cartItemRepository.findCartItemById_queryDSL(cartItemId);
     }
 
 
