@@ -5,7 +5,7 @@ import com.app.preorder.cartservice.client.ProductServiceClient;
 import com.app.preorder.cartservice.dto.cart.CartItemListDTO;
 import com.app.preorder.cartservice.domain.entity.Cart;
 import com.app.preorder.cartservice.domain.entity.CartItem;
-import com.app.preorder.common.dto.ProductResponse;
+import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.cartservice.repository.cartItem.CartItemRepository;
 import com.app.preorder.cartservice.repository.cart.CartRepository;
 import lombok.RequiredArgsConstructor;
@@ -100,18 +100,18 @@ public class CartServiceImpl implements CartService{
         }
 
         // 3. ProductService 호출 (bulk 통신)
-        List<ProductResponse> products = productServiceClient.getProductsByIds(productIds);
+        List<ProductInternal> products = productServiceClient.getProductsByIds(productIds);
 
         // 4. Map으로 변환 (id → ProductResponse)
-        Map<Long, ProductResponse> productMap = new HashMap<>();
-        for (ProductResponse product : products) {
+        Map<Long, ProductInternal> productMap = new HashMap<>();
+        for (ProductInternal product : products) {
             productMap.put(product.getProductId(), product);
         }
 
         // 5. CartItem + Product 매핑해서 DTO 생성
         List<CartItemListDTO> dtoList = new ArrayList<>();
         for (CartItem item : cartItems.getContent()) {
-            ProductResponse productResponse = productMap.get(item.getProductId());
+            ProductInternal productResponse = productMap.get(item.getProductId());
             CartItemListDTO dto = toCartItemListDTO(item, productResponse);
             dtoList.add(dto);
         }

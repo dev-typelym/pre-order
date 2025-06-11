@@ -45,9 +45,11 @@ public class MemberServiceImpl implements MemberService{
 
 
     @Override
-    public Member findByUsername(String username) throws ChangeSetPersister.NotFoundException {
-        Member member = memberRepository.findByUsername(username);
-        if(member == null) throw new ChangeSetPersister.NotFoundException("멤버가 조회되지 않음");
+    public Member findByLoginId(String loginId) {
+        Member member = memberRepository.findByLoginId(loginId);
+        if (member == null) {
+            throw new UserNotFoundException("해당 회원을 찾을 수 없습니다.");
+        }
         return member;
     }
 
@@ -144,7 +146,7 @@ public class MemberServiceImpl implements MemberService{
     // 비밀번호 검증
     @Override
     public MemberInternal verifyPasswordAndGetInfo(String username, String password) {
-        Member member = memberRepository.findByUsername(username);
+        Member member = memberRepository.findByLoginId(username);
         if (member == null) return null;
 
         boolean isValid = passwordUtil.verifyPassword(password, member.getPassword());
@@ -153,20 +155,34 @@ public class MemberServiceImpl implements MemberService{
         return new MemberInternal(member.getId(), member.getLoginId(), member.getStatus(), member.getRole());
     }
 
-    // 이메일 인증
+    //  인증 메일 전송
     @Override
     public void sendVerificationMail(Member member) {
-        String VERIFICATION_LINK = "http://localhost:8081/member/verify/";
-        if (member == null) throw new UserNotFoundException("멤버가 조회되지 않음");
-        UUID uuid = UUID.randomUUID();
-        redisUtil.setDataExpire(uuid.toString(), encryptUtil.decrypt(member.getUsername()), 60 * 30L);
+        if (member == null) {
+            throw new UserNotFoundException("멤버가 조회되지 않음");
+        }
+
+        String loginId = encryptUtil.decrypt(member.getLoginId());
+        String email = encryptUtil.decrypt(member.getMemberEmail());
+
+        // 1. 랜덤 토큰 생성
+        String token = UUID.randomUUID().toString();
+
+        // 2. 인증 링크 생성
+        String verificationLink = "http://localhost:8081/member/verify/" + token;
+
+        // 3. Redis에 토큰 저장 (30분 유효)
+        redisUtil.setDataExpire(token, loginId, 60 * 30L);
+
+        // 4. 이메일 전송
         emailService.sendMail(
-                encryptUtil.decrypt(member.getMemberEmail()),
-                "[pre-order] 회원가입 인증메일입니다.",
-                VERIFICATION_LINK + uuid.toString()
+                email,
+                "[pre-order] 회원가입 인증 메일입니다.",
+                verificationLink
         );
     }
 
+    //  인증 메일 확인
     @Override
     public void verifyEmail(String key) {
         String memberId = redisUtil.getData(key);

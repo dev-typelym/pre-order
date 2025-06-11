@@ -1,7 +1,7 @@
 package com.app.preorder.productservice.service;
 
 
-import com.app.preorder.common.dto.ProductResponse;
+import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.type.CategoryType;
 import com.app.preorder.productservice.dto.productDTO.ProductListDTO;
 import com.app.preorder.productservice.dto.productDTO.ProductListSearch;
@@ -24,7 +24,7 @@ public interface ProductService {
     public List<ProductListDTO> getProductDetail();
 
     //  상품 다건 조회
-    public List<ProductResponse> getProductsByIds(List<Long> productIds);
+    public List<ProductInternal> getProductsByIds(List<Long> productIds);
 
     //  상품 DTO로 바꾸기
     default ProductListDTO toProductListDTO(Product product) {
@@ -50,8 +50,8 @@ public interface ProductService {
     }
 
     // default 변환 메서드 추가
-    default ProductResponse toProductResponse(Product product) {
-        return ProductResponse.builder()
+    default ProductInternal toProductResponse(Product product) {
+        return ProductInternal.builder()
                 .productId(product.getId())
                 .productName(product.getProductName())
                 .productPrice(product.getProductPrice())

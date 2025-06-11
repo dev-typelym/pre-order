@@ -6,6 +6,7 @@ import com.app.preorder.common.type.MemberStatus;
 import com.app.preorder.memberservice.dto.MemberDTO;
 import com.app.preorder.common.type.Role;
 import com.app.preorder.memberservice.domain.entity.Member;
+import com.app.preorder.memberservice.dto.MemberResponse;
 import com.app.preorder.memberservice.dto.UpdateMemberInfo;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,7 +15,7 @@ import org.springframework.data.crossstore.ChangeSetPersister;
 
 public interface MemberService {
 
-    Member findByUsername(String username) throws ChangeSetPersister.NotFoundException;
+    Member findByLoginId(String loginId);
 
     void signUpUser(MemberDTO memberDTO);
 
@@ -38,7 +39,7 @@ public interface MemberService {
 
     void verifyEmail(String key) throws ChangeSetPersister.NotFoundException;
 
-    void sendVerificationMail(Member member) throws ChangeSetPersister.NotFoundException;
+    void sendVerificationMail(Member member);
 
     default Member toMemberEntity(MemberDTO memberDTO) {
         return Member.builder()

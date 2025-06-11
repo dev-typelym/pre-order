@@ -12,10 +12,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductResponse {
-    private Long productId;
-    private String productName;
-    private BigDecimal productPrice;
-    private String description;
-    private CategoryType category;
+public class ProductInternal {
+    private Long id;
+    private String name;
+    private int price;
 }
