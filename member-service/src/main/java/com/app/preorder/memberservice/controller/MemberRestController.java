@@ -7,8 +7,8 @@ import com.app.preorder.infralib.util.EncryptUtil;
 import com.app.preorder.memberservice.client.AuthServiceClient;
 import com.app.preorder.memberservice.dto.*;
 import com.app.preorder.memberservice.domain.entity.Member;
-import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.service.member.MemberService;
+import com.app.preorder.common.type.DuplicateCheckType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -35,25 +35,19 @@ public class MemberRestController {
         return ResponseEntity.ok(ApiResponse.success(null, "회원가입이 완료되었습니다."));
     }
 
-    //  아이디 중복 체크
-    @PostMapping("checkId")
-    public Long checkId(@RequestParam("username") String username){
-        log.info("username: " + username);
-        return memberService.overlapByMemberId(username);
-    }
+    @PostMapping("/check-duplicate")
+    public ApiResponse<Boolean> checkDuplicate(@RequestParam String type, @RequestParam String value) {
+        DuplicateCheckType checkType = DuplicateCheckType.from(type);
+        boolean isDup = memberService.isDuplicate(checkType, value);
 
-    //  이메일 중복 체크
-    @PostMapping("checkEmail")
-    public Long checkEmail(@RequestParam("memberEmail") String memberEmail){
-        log.info("memberEmail: " + memberEmail);
-        return memberService.overlapByMemberEmail(memberEmail);
-    }
+        String fieldName = switch (checkType) {
+            case LOGIN_ID -> "아이디";
+            case EMAIL -> "이메일";
+            case PHONE -> "전화번호";
+        };
 
-    //  휴대폰 중복 체크
-    @PostMapping("checkPhone")
-    public Long checkPhone(@RequestParam("memberPhone") String memberPhone){
-        log.info("memberPhone: " + memberPhone);
-        return memberService.overlapByMemberPhone(memberPhone);
+        String message = isDup ? fieldName + "이(가) 중복됩니다." : "사용 가능한 " + fieldName + "입니다.";
+        return ApiResponse.success(isDup, message);
     }
 
 

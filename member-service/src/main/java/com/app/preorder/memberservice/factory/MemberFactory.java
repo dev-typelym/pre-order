@@ -3,6 +3,7 @@ package com.app.preorder.memberservice.factory;
 import com.app.preorder.common.type.MemberStatus;
 import com.app.preorder.common.type.Role;
 import com.app.preorder.infralib.util.EncryptUtil;
+import com.app.preorder.infralib.util.HmacHashUtil;
 import com.app.preorder.infralib.util.PasswordUtil;
 import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.dto.SignupRequest;
@@ -18,14 +19,18 @@ public class MemberFactory {
 
     private final PasswordUtil passwordUtil;
     private final EncryptUtil encryptUtil;
+    private final HmacHashUtil hmacHashUtil;
 
     public Member createMember(SignupRequest request) {
         return Member.builder()
                 .loginId(encryptUtil.encrypt(request.getLoginId()))
-                .password(passwordUtil.encodePassword(request.getEncodedPassword()))
-                .name(encryptUtil.encrypt(request.getEncryptedName()))
-                .email(encryptUtil.encrypt(request.getEncryptedEmail()))
-                .phone(encryptUtil.encrypt(request.getEncryptedPhone()))
+                .loginIdHash(hmacHashUtil.hmacSha256(request.getLoginId()))
+                .password(passwordUtil.encodePassword(request.getPassword()))
+                .name(encryptUtil.encrypt(request.getName()))
+                .email(encryptUtil.encrypt(request.getEmail()))
+                .emailHash(hmacHashUtil.hmacSha256(request.getEmail()))
+                .phone(encryptUtil.encrypt(request.getPhone()))
+                .phoneHash(hmacHashUtil.hmacSha256(request.getPhone()))
                 .address(request.getAddress().encryptWith(encryptUtil))
                 .role(Role.ROLE_USER)
                 .status(MemberStatus.UNVERIFIED)

@@ -8,9 +8,9 @@ import lombok.Getter;
 @Builder
 public class SignupRequest {
     private String loginId;
-    private String encodedPassword;
-    private String encryptedEmail;
-    private String encryptedName;
-    private String encryptedPhone;
+    private String password;
+    private String email;
+    private String name;
+    private String phone;
     private Address address;
 }
