@@ -6,10 +6,10 @@ import com.app.preorder.common.exception.custom.ForbiddenException;
 import com.app.preorder.common.exception.custom.UserNotFoundException;
 import com.app.preorder.common.type.MemberStatus;
 import com.app.preorder.infralib.util.EncryptUtil;
+import com.app.preorder.infralib.util.HmacHashUtil;
 import com.app.preorder.infralib.util.PasswordUtil;
 import com.app.preorder.infralib.util.RedisUtil;
 import com.app.preorder.memberservice.client.CartServiceClient;
-import com.app.preorder.memberservice.domain.vo.Address;
 import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.dto.SignupRequest;
 import com.app.preorder.common.exception.custom.InvalidPasswordException;
@@ -17,6 +17,7 @@ import com.app.preorder.memberservice.dto.UpdateMemberRequest;
 import com.app.preorder.memberservice.factory.MemberFactory;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.service.email.EmailService;
+import com.app.preorder.common.type.DuplicateCheckType;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,11 +34,12 @@ public class MemberServiceImpl implements MemberService{
     private final CartServiceClient cartServiceClient;
     private final MemberFactory memberFactory;
     private final EncryptUtil encryptUtil;
-    private final EmailService emailService;
     private final PasswordUtil passwordUtil;
+    private final HmacHashUtil hmacHashUtil;
+    private final EmailService emailService;
     private final RedisUtil redisUtil;
 
-
+    // 회원 찾기
     @Override
     public Member findByLoginId(String loginId) {
         Member member = memberRepository.findByLoginId(loginId);
@@ -81,25 +83,15 @@ public class MemberServiceImpl implements MemberService{
         cartServiceClient.createCart(member.getId());
     }
 
-
-
-    // 아이디 중복 체크
+    // 중복 체크
     @Override
-    public Long overlapByMemberId(String username) {
-        return (memberRepository.overlapByMemberId_QueryDSL(username));
-    }
-
-
-    // 이메일 중복 체크
-    @Override
-    public Long overlapByMemberEmail(String memberEmail) {
-        return (memberRepository.overlapByMemberEmail_QueryDSL(memberEmail));
-    }
-
-    // 휴대폰 중복 체크
-    @Override
-    public Long overlapByMemberPhone(String memberPhone) {
-        return (memberRepository.overlapByMemberPhone_QueryDSL(memberPhone));
+    public boolean isDuplicate(DuplicateCheckType type, String value) {
+        String hash = hmacHashUtil.hmacSha256(value);
+        return switch (type) {
+            case LOGIN_ID -> memberRepository.existsByLoginIdHash(hash);
+            case EMAIL -> memberRepository.existsByEmailHash(hash);
+            case PHONE -> memberRepository.existsByPhoneHash(hash);
+        };
     }
 
     // 비밀번호 검증

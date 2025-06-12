@@ -58,6 +58,15 @@ public class Member {
     @Enumerated(EnumType.STRING)
     private MemberStatus status;
 
+    @Column(unique = true)
+    private String loginIdHash;
+
+    @Column(unique = true)
+    private String emailHash;
+
+    @Column(unique = true)
+    private String phoneHash;
+
     // 비밀번호 변경
     public void updatePassword(String encodedPassword) {
         this.password = encodedPassword;
@@ -78,7 +87,8 @@ public class Member {
 
     @Builder
     public Member(String name, String email, String loginId, String password, String phone,
-                  Address address, Role role, MemberStatus status, LocalDateTime registeredAt) {
+                  Address address, Role role, MemberStatus status, LocalDateTime registeredAt,
+                  String loginIdHash, String emailHash, String phoneHash) {
         this.email = email;
         this.loginId = loginId;
         this.name = name;
@@ -88,5 +98,8 @@ public class Member {
         this.role = role;
         this.status = status;
         this.registeredAt = registeredAt;
+        this.loginIdHash = loginIdHash;
+        this.emailHash = emailHash;
+        this.phoneHash = phoneHash;
     }
 }
