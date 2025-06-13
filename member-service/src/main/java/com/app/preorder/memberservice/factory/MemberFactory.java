@@ -23,7 +23,7 @@ public class MemberFactory {
 
     public Member createMember(SignupRequest request) {
         return Member.builder()
-                .loginId(encryptUtil.encrypt(request.getLoginId()))
+                .loginId(request.getLoginId())
                 .loginIdHash(hmacHashUtil.hmacSha256(request.getLoginId()))
                 .password(passwordUtil.encodePassword(request.getPassword()))
                 .name(encryptUtil.encrypt(request.getName()))

@@ -1,10 +1,11 @@
 package com.app.preorder.infralib.util;
 
-import org.springframework.stereotype.Service;
+
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.Duration;
 
-@Service
+
 public class RedisUtil {
 
     private final StringRedisTemplate stringRedisTemplate;

@@ -5,12 +5,12 @@ import com.app.preorder.authservice.dto.request.LoginRequest;
 import com.app.preorder.authservice.dto.response.LoginResponse;
 import com.app.preorder.authservice.dto.request.LogoutRequest;
 import com.app.preorder.common.dto.VerifyPasswordInternal;
-import com.app.preorder.authservice.util.JwtUtil;
-import com.app.preorder.authservice.util.RedisUtil;
 import com.app.preorder.common.exception.custom.InvalidCredentialsException;
 import com.app.preorder.common.dto.MemberInternal;
 import com.app.preorder.common.exception.custom.ForbiddenException;
 import com.app.preorder.common.type.MemberStatus;
+import com.app.preorder.infralib.util.JwtUtil;
+import com.app.preorder.infralib.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -37,8 +37,8 @@ public class AuthServiceImpl implements AuthService {
             throw new ForbiddenException("이메일 인증이 필요합니다.");
         }
 
-        String accessToken = jwtUtil.generateToken(member.getId(), member.getLoginId(), member.getRole());
-        String refreshToken = jwtUtil.generateRefreshToken(member.getId(), member.getLoginId(), member.getRole());
+        String accessToken = jwtUtil.generateToken(member.getId(), member.getLoginId(), member.getRole().name());
+        String refreshToken = jwtUtil.generateRefreshToken(member.getId(), member.getLoginId(), member.getRole().name());
 
         redisUtil.setDataExpire(refreshToken, member.getLoginId(), refreshTokenExpireTimeInSeconds);
 
