@@ -1,18 +1,16 @@
 package com.app.preorder.infralib.util;
 
-import lombok.RequiredArgsConstructor;
-
-
-import org.springframework.stereotype.Service;
-
+import org.springframework.security.crypto.encrypt.AesBytesEncryptor;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-@Service
-@RequiredArgsConstructor
 public class EncryptUtil {
 
     private final AesBytesEncryptor encryptor;
+
+    public EncryptUtil(AesBytesEncryptor encryptor) {
+        this.encryptor = encryptor;
+    }
 
     // 암호화
     public String encrypt(String str) {
