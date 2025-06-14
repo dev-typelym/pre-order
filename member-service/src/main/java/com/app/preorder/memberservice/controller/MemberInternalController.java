@@ -19,10 +19,12 @@ public class MemberInternalController {
     private final MemberRepository memberRepository;
     private final MemberService memberService;
 
-    // Feign 내부용: ID 기반 회원 조회
+    /** [Feign] ID 기반 회원 정보 조회 */
+
     @GetMapping("/id/{id}")
-    public MemberInternal getMemberById(@PathVariable("id") Long id) {
-        Member member = memberRepository.findById(id).orElseThrow(() -> new UserNotFoundException("존재하지 않는 회원입니다."));
+    public MemberInternal getMemberById(@PathVariable Long id) {
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 회원입니다."));
 
         return new MemberInternal(
                 member.getId(),
@@ -32,9 +34,10 @@ public class MemberInternalController {
         );
     }
 
+    /** [Feign] 아이디 + 비밀번호 일치 여부 검증 */
+
     @PostMapping("/verify-password")
     public MemberInternal verifyPassword(@RequestBody VerifyPasswordInternal request) {
         return memberService.verifyPasswordAndGetInfo(request.getUsername(), request.getPassword());
     }
-
 }

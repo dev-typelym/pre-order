@@ -27,7 +27,7 @@ public class Member {
 
     @NotBlank
     @Column(unique = true)
-    private String loginId;  // 기존 username → loginId 로 명확히 변경
+    private String loginId;
 
     @NotBlank
     @Column(unique = true)

@@ -6,8 +6,8 @@ import com.app.preorder.infralib.util.EncryptUtil;
 import com.app.preorder.infralib.util.HmacHashUtil;
 import com.app.preorder.infralib.util.PasswordUtil;
 import com.app.preorder.memberservice.domain.entity.Member;
-import com.app.preorder.memberservice.dto.SignupRequest;
-import com.app.preorder.memberservice.dto.UpdateMemberRequest;
+import com.app.preorder.memberservice.dto.request.SignupRequest;
+import com.app.preorder.memberservice.dto.request.UpdateMemberRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

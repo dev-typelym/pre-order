@@ -1,4 +1,4 @@
-package com.app.preorder.memberservice.dto;
+package com.app.preorder.memberservice.dto.request;
 
 import com.app.preorder.memberservice.domain.vo.Address;
 import lombok.AllArgsConstructor;

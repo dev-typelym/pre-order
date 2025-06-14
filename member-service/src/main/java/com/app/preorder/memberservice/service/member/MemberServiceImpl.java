@@ -2,8 +2,7 @@ package com.app.preorder.memberservice.service.member;
 
 
 import com.app.preorder.common.dto.MemberInternal;
-import com.app.preorder.common.exception.custom.ForbiddenException;
-import com.app.preorder.common.exception.custom.UserNotFoundException;
+import com.app.preorder.common.exception.custom.*;
 import com.app.preorder.common.type.MemberStatus;
 import com.app.preorder.infralib.util.EncryptUtil;
 import com.app.preorder.infralib.util.HmacHashUtil;
@@ -11,9 +10,9 @@ import com.app.preorder.infralib.util.PasswordUtil;
 import com.app.preorder.infralib.util.RedisUtil;
 import com.app.preorder.memberservice.client.CartServiceClient;
 import com.app.preorder.memberservice.domain.entity.Member;
-import com.app.preorder.memberservice.dto.SignupRequest;
-import com.app.preorder.common.exception.custom.InvalidPasswordException;
-import com.app.preorder.memberservice.dto.UpdateMemberRequest;
+import com.app.preorder.memberservice.dto.request.DuplicateCheckRequest;
+import com.app.preorder.memberservice.dto.request.SignupRequest;
+import com.app.preorder.memberservice.dto.request.UpdateMemberRequest;
 import com.app.preorder.memberservice.factory.MemberFactory;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.service.email.EmailService;
@@ -28,7 +27,7 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class MemberServiceImpl implements MemberService{
+public class MemberServiceImpl implements MemberService {
 
     private final MemberRepository memberRepository;
     private final CartServiceClient cartServiceClient;
@@ -39,17 +38,41 @@ public class MemberServiceImpl implements MemberService{
     private final EmailService emailService;
     private final RedisUtil redisUtil;
 
-    // 회원 찾기
+    // 로그인 아이디로 회원 조회
     @Override
     public Member findByLoginId(String loginId) {
-        Member member = memberRepository.findByLoginId(loginId);
-        if (member == null) {
-            throw new UserNotFoundException("해당 회원을 찾을 수 없습니다.");
-        }
-        return member;
+        return memberRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new UserNotFoundException("해당 회원을 찾을 수 없습니다."));
     }
 
-    // 회원 정보 변경
+    // 로그인 아이디와 비밀번호 검증 후 내부 회원 정보 반환
+    @Override
+    public MemberInternal verifyPasswordAndGetInfo(String loginId, String password) {
+        Member member = memberRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new InvalidCredentialsException("아이디 또는 비밀번호가 일치하지 않습니다."));
+
+        if (!passwordUtil.verifyPassword(password, member.getPassword())) {
+            throw new InvalidCredentialsException("아이디 또는 비밀번호가 일치하지 않습니다.");
+        }
+
+        return new MemberInternal(member.getId(), member.getLoginId(), member.getStatus(), member.getRole());
+    }
+
+    // 회원가입 처리 및 카트 생성
+    @Override
+    @Transactional(rollbackOn = Exception.class)
+    public void signUp(SignupRequest request) {
+        Member member = memberFactory.createMember(request);
+        memberRepository.save(member);
+
+        try {
+            cartServiceClient.createCart(member.getId());
+        } catch (Exception e) {
+            throw new FeignException("카트 서비스 호출 실패", e);
+        }
+    }
+
+    // 회원 정보 수정
     @Override
     @Transactional
     public void updateMember(UpdateMemberRequest request, Long memberId) {
@@ -59,7 +82,7 @@ public class MemberServiceImpl implements MemberService{
         memberFactory.updateProfile(member, request);
     }
 
-    // 비밀번호 변경
+    // 회원 비밀번호 변경
     @Override
     @Transactional
     public void changePassword(Long memberId, String currentPassword, String newPassword) {
@@ -74,82 +97,54 @@ public class MemberServiceImpl implements MemberService{
         member.updatePassword(encodedNewPassword);
     }
 
-    //  회원가입
+    // 아이디, 이메일, 전화번호 중복 여부 확인
     @Override
-    public void signUp(SignupRequest request) {
-        Member member = memberFactory.createMember(request);
-        memberRepository.save(member);
+    public String checkDuplicate(DuplicateCheckRequest request) {
+        DuplicateCheckType type = DuplicateCheckType.from(request.getType());
+        String hash = hmacHashUtil.hmacSha256(request.getValue());
 
-        cartServiceClient.createCart(member.getId());
-    }
-
-    // 중복 체크
-    @Override
-    public boolean isDuplicate(DuplicateCheckType type, String value) {
-        String hash = hmacHashUtil.hmacSha256(value);
-        return switch (type) {
+        boolean isDuplicate = switch (type) {
             case LOGIN_ID -> memberRepository.existsByLoginIdHash(hash);
             case EMAIL -> memberRepository.existsByEmailHash(hash);
             case PHONE -> memberRepository.existsByPhoneHash(hash);
         };
-    }
 
-    // 비밀번호 검증
-    @Override
-    public MemberInternal verifyPasswordAndGetInfo(String username, String password) {
-        Member member = memberRepository.findByLoginId(username);
-        if (member == null) return null;
-
-        boolean isValid = passwordUtil.verifyPassword(password, member.getPassword());
-        if (!isValid) return null;
-
-        return new MemberInternal(member.getId(), member.getLoginId(), member.getStatus(), member.getRole());
-    }
-
-    //  인증 메일 전송
-    @Override
-    public void sendSignupVerificationMail(Member member) {
-        if (member == null) {
-            throw new UserNotFoundException("멤버가 조회되지 않음");
+        if (isDuplicate) {
+            throw new DuplicateValueException("이미 사용 중인 " + type.getDisplayName() + "입니다.");
         }
 
-        String loginId = encryptUtil.decrypt(member.getLoginId());
-        String email = encryptUtil.decrypt(member.getEmail());
-
-        // 1. 랜덤 토큰 생성
-        String token = UUID.randomUUID().toString();
-
-        // 2. 인증 링크 생성
-        String verificationLink = "http://localhost:8081/member/verify/" + token;
-
-        // 3. Redis에 토큰 저장 (30분 유효)
-        redisUtil.setDataExpire(token, loginId, 60 * 30L);
-
-        // 4. 이메일 전송
-        emailService.sendMail(
-                email,
-                "[pre-order] 회원가입 인증 메일입니다.",
-                verificationLink
-        );
+        return "사용 가능한 " + type.getDisplayName() + "입니다.";
     }
 
-    //  인증 메일 확인
+    // 이메일 인증 메일 전송
     @Override
+    public void sendSignupVerificationMail(String loginId) {
+        Member member = memberRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 회원입니다."));
+
+        String decryptedEmail = encryptUtil.decrypt(member.getEmail());
+        String token = UUID.randomUUID().toString();
+        String verificationLink = "http://localhost:8081/member/verify/" + token;
+
+        redisUtil.setDataExpire(token, loginId, 60 * 30L);
+        emailService.sendSignupVerificationMail(decryptedEmail, verificationLink);
+    }
+
+    // 이메일 인증 확인 및 상태 변경
+    @Override
+    @Transactional
     public void confirmEmailVerification(String key) {
         String loginId = redisUtil.getData(key);
         if (loginId == null) {
             throw new ForbiddenException("인증 링크가 만료되었거나 유효하지 않습니다.");
         }
 
-        Member member = memberRepository.findByLoginId(loginId);
-        if (member == null) {
-            throw new UserNotFoundException("해당 회원을 찾을 수 없습니다.");
-        }
+        Member member = memberRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new UserNotFoundException("해당 회원을 찾을 수 없습니다."));
 
         member.changeStatus(MemberStatus.ACTIVE);
         memberRepository.save(member);
 
         redisUtil.deleteData(key);
     }
-
 }

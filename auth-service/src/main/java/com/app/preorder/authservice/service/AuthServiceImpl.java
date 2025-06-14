@@ -5,7 +5,7 @@ import com.app.preorder.authservice.dto.request.LoginRequest;
 import com.app.preorder.authservice.dto.response.LoginResponse;
 import com.app.preorder.authservice.dto.request.LogoutRequest;
 import com.app.preorder.common.dto.VerifyPasswordInternal;
-import com.app.preorder.common.exception.custom.InvalidCredentialsException;
+import com.app.preorder.common.exception.custom.FeignException;
 import com.app.preorder.common.dto.MemberInternal;
 import com.app.preorder.common.exception.custom.ForbiddenException;
 import com.app.preorder.common.type.MemberStatus;
@@ -24,13 +24,17 @@ public class AuthServiceImpl implements AuthService {
 
     private final long refreshTokenExpireTimeInSeconds = 60 * 60 * 24 * 7;
 
+    @Override
     public LoginResponse login(LoginRequest loginRequest) {
-        MemberInternal member = memberServiceClient.verifyPassword(
-                new VerifyPasswordInternal(loginRequest.getUsername(), loginRequest.getPassword())
-        );
+        MemberInternal member;
 
-        if (member == null) {
-            throw new InvalidCredentialsException("아이디 또는 비밀번호가 일치하지 않습니다.");
+        try {
+            member = memberServiceClient.verifyPassword(
+                    new VerifyPasswordInternal(loginRequest.getUsername(), loginRequest.getPassword())
+            );
+        } catch (feign.FeignException e) {
+
+            throw new FeignException("회원 서비스 통신 실패", e);
         }
 
         if (member.getStatus() != MemberStatus.ACTIVE) {
