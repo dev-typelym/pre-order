@@ -20,6 +20,11 @@ public class ApiResponse<T> {
         return new ApiResponse<>(true, message, null, data);
     }
 
+    //  메세지 고정인 경우
+    public static <T> ApiResponse<T> success(T data) {
+        return new ApiResponse<>(true, "요청이 성공적으로 처리되었습니다.", null, data);
+    }
+
     //  실패 응답 헬퍼
     public static <T> ApiResponse<T> failure(String message, String errorCode) {
         return new ApiResponse<>(false, message, errorCode, null);

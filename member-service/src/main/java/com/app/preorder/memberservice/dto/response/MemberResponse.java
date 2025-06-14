@@ -1,4 +1,4 @@
-package com.app.preorder.memberservice.dto;
+package com.app.preorder.memberservice.dto.response;
 
 import com.app.preorder.common.type.MemberStatus;
 import com.app.preorder.common.type.Role;
