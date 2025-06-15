@@ -25,7 +25,5 @@ public interface CartService {
     // 카트 목록 조회
     Page<CartItemResponse> getCartItemsWithPaging(int page, Long memberId);
 
-    // 카트 아이템 하나 전체 조회
-    CartItem getAllCartItemInfo(Long cartItemId);
 
 }

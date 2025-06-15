@@ -27,7 +27,7 @@ public class CartItemQueryDslImpl implements CartItemQueryDsl {
 
     // 카트 아이템 목록
     @Override
-    public Page<CartItem> findAllByMemberId(Pageable pageable, Long memberId) {
+    public Page<CartItem> findCartItemsByMemberId(Pageable pageable, Long memberId) {
         QCartItem cartItem = QCartItem.cartItem;
 
         List<CartItem> content = query.selectFrom(cartItem)
@@ -45,10 +45,4 @@ public class CartItemQueryDslImpl implements CartItemQueryDsl {
         return new PageImpl<>(content, pageable, count);
     }
 
-    // 카트 아이템 상세 조회
-    public CartItem findCartItemById_queryDSL(Long cartItemId){
-        return query.selectFrom(cartItem)
-                .where(cartItem.id.eq(cartItemId))
-                .fetchOne();
-    }
 }
