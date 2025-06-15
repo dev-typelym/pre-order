@@ -9,6 +9,11 @@ import com.app.preorder.cartservice.factory.CartFactory;
 import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.cartservice.repository.cartItem.CartItemRepository;
 import com.app.preorder.cartservice.repository.cart.CartRepository;
+import com.app.preorder.common.exception.custom.CartNotFoundException;
+import com.app.preorder.common.exception.custom.FeignException;
+import com.app.preorder.common.exception.custom.InvalidCartOperationException;
+import com.app.preorder.common.exception.custom.ProductNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -16,10 +21,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -43,92 +46,114 @@ public class CartServiceImpl implements CartService{
 
     // 카트 아이템 추가
     @Override
-    public void addItem(Long memberId, Long productId, Long quantity) {
-        Cart cart = cartRepository.findCartByMemberId(memberId);
-
-        CartItem existingCartItem = null;
-        for (CartItem cartItem : cart.getCartItems()) {
-            if (cartItem.getProductId().equals(productId)) {
-                existingCartItem = cartItem;
-                break;
-            }
+    @Transactional
+    public void addCartItem(Long memberId, Long productId, Long quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new InvalidCartOperationException("수량은 1 이상이어야 합니다.");
         }
+
+        Cart cart = cartRepository.findCartByMemberId(memberId);
+        if (cart == null) {
+            throw new CartNotFoundException("회원의 장바구니가 존재하지 않습니다.");
+        }
+
+        CartItem existingCartItem = cart.getCartItems().stream()
+                .filter(item -> item.getProductId().equals(productId))
+                .findFirst()
+                .orElse(null);
 
         if (existingCartItem != null) {
-            // 이미 카트에 해당 제품이 있는 경우 수량을 증가시킴
             existingCartItem.updateCount(existingCartItem.getCount() + quantity);
         } else {
-            CartItem cartItem = CartItem.builder().count(quantity).productId(productId).cart(cart).build();
+            CartItem cartItem = CartItem.builder()
+                    .count(quantity)
+                    .productId(productId)
+                    .cart(cart)
+                    .build();
             cart.getCartItems().add(cartItem);
         }
-        cartRepository.save(cart);
-
     }
 
     // 카트 수량 감소
     @Override
-    public void decreaseItem(Long memberId, Long productId, Long quantity) {
-        Cart cart = cartRepository.findCartByMemberId(memberId);
-
-        // 카트에서 해당 제품을 가진 아이템 찾기
-        CartItem existingCartItem = null;
-        for (CartItem cartItem : cart.getCartItems()) {
-            if (cartItem.getProductId().equals(productId)) {
-                existingCartItem = cartItem;
-                break;
-            }
+    @Transactional
+    public void decreaseCartItem(Long memberId, Long productId, Long quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new InvalidCartOperationException("감소할 수량은 1 이상이어야 합니다.");
         }
 
-        if (existingCartItem != null) {
-            // 현재 수량과 감소할 수량을 비교하여 새로운 수량 설정
-            long newCount = existingCartItem.getCount() - quantity;
-            if (newCount <= 0) {
-                // 새로운 수량이 0 이하이면 해당 아이템을 삭제
-                cart.getCartItems().remove(existingCartItem);
-            } else {
-                // 새로운 수량이 0 초과이면 수량 갱신
-                existingCartItem.updateCount(newCount);
-            }
-            // 카트 저장
-            cartRepository.save(cart);
+        Cart cart = cartRepository.findCartByMemberId(memberId);
+        if (cart == null) {
+            throw new CartNotFoundException("회원의 장바구니가 존재하지 않습니다.");
+        }
+
+        CartItem existingCartItem = cart.getCartItems().stream()
+                .filter(item -> item.getProductId().equals(productId))
+                .findFirst()
+                .orElseThrow(() -> new InvalidCartOperationException("장바구니에 해당 상품이 존재하지 않습니다."));
+
+        long newCount = existingCartItem.getCount() - quantity;
+        if (newCount <= 0) {
+            cart.getCartItems().remove(existingCartItem);
+        } else {
+            existingCartItem.updateCount(newCount);
         }
     }
 
     // 카트 아이템 삭제
     @Override
-    public void deleteItem(List<String> cartItemIds) {
-        cartItemIds.stream().map(cartItemId -> Long.parseLong(cartItemId)).forEach(cartItemRepository::deleteCartItemByIds_queryDSL);
+    @Transactional
+    public void deleteCartItems(Long memberId, List<Long> cartItemIds) {
+        Cart cart = cartRepository.findCartByMemberId(memberId);
+        if (cart == null) {
+            throw new CartNotFoundException("회원의 장바구니가 존재하지 않습니다.");
+        }
+
+        Set<Long> ownedItemIds = cart.getCartItems().stream()
+                .map(CartItem::getId)
+                .collect(Collectors.toSet());
+
+        boolean hasInvalidItem = cartItemIds.stream()
+                .anyMatch(id -> !ownedItemIds.contains(id));
+        if (hasInvalidItem) {
+            throw new InvalidCartOperationException("삭제하려는 상품 중 일부가 장바구니에 존재하지 않습니다.");
+        }
+
+        cartItemRepository.deleteCartItemsByIdsAndMemberId(cartItemIds, memberId);
     }
 
     // 카트 목록
-    public Page<CartItemResponse> getCartItemListWithPaging(int page, Long memberId) {
-        // 1. 장바구니 아이템 조회
-        Page<CartItem> cartItems = cartItemRepository.findAllCartItem_queryDSL(PageRequest.of(page, 5), memberId);
+    @Override
+    public Page<CartItemResponse> getCartItemsWithPaging(int page, Long memberId) {
+        Page<CartItem> cartItems = cartItemRepository.findAllByMemberId(PageRequest.of(page, 5), memberId);
 
-        // 2. productId 추출
-        List<Long> productIds = new ArrayList<>();
-        for (CartItem item : cartItems.getContent()) {
-            productIds.add(item.getProductId());
+        List<Long> productIds = cartItems.getContent().stream()
+                .map(CartItem::getProductId)
+                .toList();
+
+        if (productIds.isEmpty()) {
+            return Page.empty();
         }
 
-        // 3. ProductService 호출 (bulk 통신)
-        List<ProductInternal> products = productServiceClient.getProductsByIds(productIds);
-
-        // 4. Map으로 변환 (id → ProductResponse)
-        Map<Long, ProductInternal> productMap = new HashMap<>();
-        for (ProductInternal product : products) {
-            productMap.put(product.getId(), product);
+        List<ProductInternal> products;
+        try {
+            products = productServiceClient.getProductsByIds(productIds);
+        } catch (feign.FeignException e) {
+            // 명확한 서비스 단위 메시지 추가
+            throw new FeignException("상품 서비스 통신 실패", e);
         }
 
-        // 5. CartItem + Product 매핑해서 DTO 생성
-        List<CartItemResponse> responseList  = new ArrayList<>();
-        for (CartItem item : cartItems.getContent()) {
-            ProductInternal productResponse = productMap.get(item.getProductId());
-            CartItemResponse response  = cartFactory.createCartItemResponse(item, productResponse);
-            responseList.add(response );
+        if (products.size() != productIds.size()) {
+            throw new ProductNotFoundException("장바구니에 존재하지 않는 상품이 포함되어 있습니다.");
         }
 
-        // 6. 페이징 결과 반환
+        Map<Long, ProductInternal> productMap = products.stream()
+                .collect(Collectors.toMap(ProductInternal::getId, p -> p));
+
+        List<CartItemResponse> responseList = cartItems.getContent().stream()
+                .map(item -> cartFactory.createCartItemResponse(item, productMap.get(item.getProductId())))
+                .toList();
+
         return new PageImpl<>(responseList, cartItems.getPageable(), cartItems.getTotalElements());
     }
 

@@ -61,7 +61,7 @@ public class MemberServiceImpl implements MemberService {
     // 회원가입 처리 및 카트 생성
     @Override
     @Transactional(rollbackOn = Exception.class)
-    public void signUp(SignupRequest request) {
+    public void register(SignupRequest request) {
         Member member = memberFactory.createMember(request);
         memberRepository.save(member);
 

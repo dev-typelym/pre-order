@@ -14,7 +14,7 @@ public interface MemberService {
     Member findByLoginId(String loginId);
 
     /** 회원가입 */
-    void signUp(SignupRequest signupRequest);
+    void register(SignupRequest signupRequest);
 
     /** 회원 정보 수정 */
     void updateMember(UpdateMemberRequest request, Long memberId);
