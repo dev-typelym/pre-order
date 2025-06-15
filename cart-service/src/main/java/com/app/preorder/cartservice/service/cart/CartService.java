@@ -14,16 +14,16 @@ public interface CartService {
     void createCartForMember(Long memberId);
 
     // 카트에 아이템 추가
-    void addItem(Long memberId, Long productId, Long quantity);
+    void addCartItem(Long memberId, Long productId, Long quantity);
 
     // 카트 아이템 수량 감소
-    void decreaseItem(Long memberId, Long productId, Long quantity);
+    void decreaseCartItem(Long memberId, Long productId, Long quantity);
 
     // 카트에 아이템 삭제
-    void deleteItem(List<String> cartItemIds);
+    void deleteCartItems(Long memberId, List<Long> cartItemIds);
 
     // 카트 목록 조회
-    Page<CartItemResponse> getCartItemListWithPaging(int page, Long memberId);
+    Page<CartItemResponse> getCartItemsWithPaging(int page, Long memberId);
 
     // 카트 아이템 하나 전체 조회
     CartItem getAllCartItemInfo(Long cartItemId);
