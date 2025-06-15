@@ -13,8 +13,6 @@ public interface CartItemQueryDsl {
     void deleteCartItemsByIdsAndMemberId(List<Long> cartItemIds, Long memberId);
 
     //  상품 목록 조회
-    Page<CartItem> findAllByMemberId(Pageable pageable, Long memberId);
+    Page<CartItem> findCartItemsByMemberId(Pageable pageable, Long memberId);
 
-    // 카트아이템 하나 정보 조회
-    public CartItem findCartItemById_queryDSL(Long cartItemId);
 }

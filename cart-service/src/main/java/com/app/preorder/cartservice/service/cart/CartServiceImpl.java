@@ -125,7 +125,7 @@ public class CartServiceImpl implements CartService{
     // 카트 목록
     @Override
     public Page<CartItemResponse> getCartItemsWithPaging(int page, Long memberId) {
-        Page<CartItem> cartItems = cartItemRepository.findAllByMemberId(PageRequest.of(page, 5), memberId);
+        Page<CartItem> cartItems = cartItemRepository.findCartItemsByMemberId(PageRequest.of(page, 5), memberId);
 
         List<Long> productIds = cartItems.getContent().stream()
                 .map(CartItem::getProductId)
@@ -155,12 +155,6 @@ public class CartServiceImpl implements CartService{
                 .toList();
 
         return new PageImpl<>(responseList, cartItems.getPageable(), cartItems.getTotalElements());
-    }
-
-    // 카트 아이템 상세 조회
-    @Override
-    public CartItem getAllCartItemInfo(Long cartItemId) {
-        return cartItemRepository.findCartItemById_queryDSL(cartItemId);
     }
 
 

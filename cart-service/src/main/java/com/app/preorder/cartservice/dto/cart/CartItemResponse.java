@@ -1,11 +1,14 @@
 package com.app.preorder.cartservice.dto.cart;
 
 import com.app.preorder.common.dto.ProductInternal;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 
-@Data
+@Getter
 @Builder
+@AllArgsConstructor
 public class CartItemResponse {
 
     private Long id;

@@ -55,9 +55,4 @@ public class CartRestController {
         return cartService.getCartItemsWithPaging(page - 1, payload.getId());
     }
 
-    // 카트 아이템 상세보기 (View 렌더링 용)
-    @GetMapping("/me/items/{cartItemId}")
-    public CartItem getCartItemDetail(@PathVariable Long cartItemId) {
-        return cartService.getAllCartItemInfo(cartItemId);
-    }
 }
