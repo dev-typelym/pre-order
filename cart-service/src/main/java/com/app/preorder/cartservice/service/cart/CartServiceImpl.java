@@ -52,26 +52,10 @@ public class CartServiceImpl implements CartService{
             throw new InvalidCartOperationException("수량은 1 이상이어야 합니다.");
         }
 
-        Cart cart = cartRepository.findCartByMemberId(memberId);
-        if (cart == null) {
-            throw new CartNotFoundException("회원의 장바구니가 존재하지 않습니다.");
-        }
+        Cart cart = cartRepository.findCartByMemberId(memberId)
+                .orElseThrow(() -> new CartNotFoundException("회원의 장바구니가 존재하지 않습니다."));
 
-        CartItem existingCartItem = cart.getCartItems().stream()
-                .filter(item -> item.getProductId().equals(productId))
-                .findFirst()
-                .orElse(null);
-
-        if (existingCartItem != null) {
-            existingCartItem.updateCount(existingCartItem.getCount() + quantity);
-        } else {
-            CartItem cartItem = CartItem.builder()
-                    .count(quantity)
-                    .productId(productId)
-                    .cart(cart)
-                    .build();
-            cart.getCartItems().add(cartItem);
-        }
+        cart.addOrUpdateItem(productId, quantity);
     }
 
     // 카트 수량 감소
@@ -82,44 +66,20 @@ public class CartServiceImpl implements CartService{
             throw new InvalidCartOperationException("감소할 수량은 1 이상이어야 합니다.");
         }
 
-        Cart cart = cartRepository.findCartByMemberId(memberId);
-        if (cart == null) {
-            throw new CartNotFoundException("회원의 장바구니가 존재하지 않습니다.");
-        }
+        Cart cart = cartRepository.findCartByMemberId(memberId)
+                .orElseThrow(() -> new CartNotFoundException("회원의 장바구니가 존재하지 않습니다."));
 
-        CartItem existingCartItem = cart.getCartItems().stream()
-                .filter(item -> item.getProductId().equals(productId))
-                .findFirst()
-                .orElseThrow(() -> new InvalidCartOperationException("장바구니에 해당 상품이 존재하지 않습니다."));
-
-        long newCount = existingCartItem.getCount() - quantity;
-        if (newCount <= 0) {
-            cart.getCartItems().remove(existingCartItem);
-        } else {
-            existingCartItem.updateCount(newCount);
-        }
+        cart.decreaseItem(productId, quantity);
     }
 
     // 카트 아이템 삭제
     @Override
     @Transactional
     public void deleteCartItems(Long memberId, List<Long> cartItemIds) {
-        Cart cart = cartRepository.findCartByMemberId(memberId);
-        if (cart == null) {
-            throw new CartNotFoundException("회원의 장바구니가 존재하지 않습니다.");
-        }
+        Cart cart = cartRepository.findCartByMemberId(memberId)
+                .orElseThrow(() -> new CartNotFoundException("회원의 장바구니가 존재하지 않습니다."));
 
-        Set<Long> ownedItemIds = cart.getCartItems().stream()
-                .map(CartItem::getId)
-                .collect(Collectors.toSet());
-
-        boolean hasInvalidItem = cartItemIds.stream()
-                .anyMatch(id -> !ownedItemIds.contains(id));
-        if (hasInvalidItem) {
-            throw new InvalidCartOperationException("삭제하려는 상품 중 일부가 장바구니에 존재하지 않습니다.");
-        }
-
-        cartItemRepository.deleteCartItemsByIdsAndMemberId(cartItemIds, memberId);
+        cart.deleteItemsByIds(cartItemIds);
     }
 
     // 카트 목록
