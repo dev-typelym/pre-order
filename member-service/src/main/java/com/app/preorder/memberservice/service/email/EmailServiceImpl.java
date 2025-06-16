@@ -2,6 +2,7 @@ package com.app.preorder.memberservice.service.email;
 
 import com.app.preorder.common.exception.custom.EmailSendFailedException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmailServiceImpl implements EmailService{
 
     private final JavaMailSender emailSender;
@@ -26,6 +28,7 @@ public class EmailServiceImpl implements EmailService{
             message.setText(body);
             emailSender.send(message);
         } catch (MailException e) {
+            log.error("[EmailService] 이메일 전송 실패 - 대상: {}, 이유: {}", to, e.getMessage());
             throw new EmailSendFailedException("이메일 전송에 실패했습니다.", e);
         }
     }
