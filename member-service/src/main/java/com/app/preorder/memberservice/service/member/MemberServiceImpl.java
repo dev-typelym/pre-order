@@ -68,6 +68,7 @@ public class MemberServiceImpl implements MemberService {
         try {
             cartServiceClient.createCart(member.getId());
         } catch (Exception e) {
+            log.error("[MemberService] 회원가입 후 카트 생성 실패 - memberId: {}, 이유: {}", member.getId(), e.getMessage());
             throw new FeignException("카트 서비스 호출 실패", e);
         }
     }
@@ -136,6 +137,7 @@ public class MemberServiceImpl implements MemberService {
     public void confirmEmailVerification(String key) {
         String loginId = redisUtil.getData(key);
         if (loginId == null) {
+            log.warn("[MemberService] 이메일 인증 실패 - key: {}", key);
             throw new ForbiddenException("인증 링크가 만료되었거나 유효하지 않습니다.");
         }
 

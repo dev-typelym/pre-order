@@ -12,10 +12,12 @@ import com.app.preorder.common.type.MemberStatus;
 import com.app.preorder.infralib.util.JwtUtil;
 import com.app.preorder.infralib.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
     private final MemberServiceClient memberServiceClient;
@@ -33,7 +35,7 @@ public class AuthServiceImpl implements AuthService {
                     new VerifyPasswordInternal(loginRequest.getUsername(), loginRequest.getPassword())
             );
         } catch (feign.FeignException e) {
-
+            log.error("[AuthService] 로그인 중 회원 서비스 통신 실패 - loginId: {}, 사유: {}", loginRequest.getUsername(), e.getMessage());
             throw new FeignException("회원 서비스 통신 실패", e);
         }
 

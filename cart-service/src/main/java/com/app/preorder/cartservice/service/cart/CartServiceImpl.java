@@ -96,7 +96,6 @@ public class CartServiceImpl implements CartService{
     @Override
     @Transactional
     public void deleteCartItems(Long memberId, List<Long> cartItemIds) {
-
         Cart cart = cartRepository.findCartByMemberId(memberId)
                 .orElseThrow(() -> new CartNotFoundException("회원의 장바구니가 존재하지 않습니다."));
 
@@ -130,7 +129,7 @@ public class CartServiceImpl implements CartService{
         try {
             products = productServiceClient.getProductsByIds(productIds);
         } catch (feign.FeignException e) {
-            // 명확한 서비스 단위 메시지 추가
+            log.error("[CartService] 상품 정보 조회 실패 - 요청 productIds: {}, 이유: {}", productIds, e.getMessage());
             throw new FeignException("상품 서비스 통신 실패", e);
         }
 
