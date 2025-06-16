@@ -55,9 +55,7 @@ public class CartServiceImpl implements CartService{
         Cart cart = cartRepository.findCartByMemberId(memberId)
                 .orElseThrow(() -> new CartNotFoundException("회원의 장바구니가 존재하지 않습니다."));
 
-        CartItem existingCartItem = cart.getCartItems().stream()
-                .filter(item -> item.getProductId().equals(productId))
-                .findFirst()
+        CartItem existingCartItem = cartItemRepository.findCartItemByCartIdAndProductId(cart.getId(), productId)
                 .orElse(null);
 
         if (existingCartItem != null) {
@@ -83,9 +81,7 @@ public class CartServiceImpl implements CartService{
         Cart cart = cartRepository.findCartByMemberId(memberId)
                 .orElseThrow(() -> new CartNotFoundException("회원의 장바구니가 존재하지 않습니다."));
 
-        CartItem existingCartItem = cart.getCartItems().stream()
-                .filter(item -> item.getProductId().equals(productId))
-                .findFirst()
+        CartItem existingCartItem = cartItemRepository.findCartItemByCartIdAndProductId(cart.getId(), productId)
                 .orElseThrow(() -> new InvalidCartOperationException("장바구니에 해당 상품이 존재하지 않습니다."));
 
         long newCount = existingCartItem.getCount() - quantity;
