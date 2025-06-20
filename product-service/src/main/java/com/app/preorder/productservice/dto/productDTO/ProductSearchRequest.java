@@ -2,9 +2,10 @@ package com.app.preorder.productservice.dto.productDTO;
 
 import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 
-@Data
 @Getter
-public class ProductListSearch {
-private String productName;
+@Setter
+public class ProductSearchRequest {
+    private String productName;
 }
