@@ -1,9 +1,10 @@
 package com.app.preorder.productservice.service;
 
 import com.app.preorder.common.dto.ProductInternal;
+import com.app.preorder.common.exception.custom.ProductNotFoundException;
 import com.app.preorder.common.type.CategoryType;
-import com.app.preorder.productservice.dto.productDTO.ProductResponse;
-import com.app.preorder.productservice.dto.productDTO.ProductSearchRequest;
+import com.app.preorder.productservice.dto.product.ProductResponse;
+import com.app.preorder.productservice.dto.product.ProductSearchRequest;
 import com.app.preorder.productservice.domain.entity.Product;
 import com.app.preorder.productservice.factory.ProductFactory;
 import com.app.preorder.productservice.repository.ProductRepository;
@@ -42,7 +43,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductResponse getProductDetail(Long productId) {
         Product product = productRepository.findByIdWithStocks(productId)
-                .orElseThrow(() -> new EntityNotFoundException("해당 상품을 찾을 수 없습니다."));
+                .orElseThrow(() -> new ProductNotFoundException("해당 상품을 찾을 수 없습니다."));
         return productFactory.toResponse(product);
     }
 
@@ -50,8 +51,11 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<ProductInternal> getProductsByIds(List<Long> productIds) {
         List<Product> products = productRepository.findAllById(productIds);
+        if (products.size() != productIds.size()) {
+            throw new ProductNotFoundException("일부 상품을 찾을 수 없습니다.");
+        }
         return products.stream()
-                .map(this::toProductResponse)
+                .map(productFactory::toInternal)
                 .collect(Collectors.toList());
     }
 }

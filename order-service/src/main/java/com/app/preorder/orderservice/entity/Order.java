@@ -1,9 +1,8 @@
 package com.app.preorder.orderservice.entity;
 
-
-import com.app.preorder.entity.audit.Period;
-import com.app.preorder.entity.member.Member;
-import com.app.preorder.type.OrderStatus;
+import com.app.preorder.common.type.OrderStatus;
+import com.app.preorder.orderservice.domain.vo.OrderAddress;
+import com.app.preorder.orderservice.entity.audit.Period;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
@@ -22,53 +21,52 @@ import java.util.List;
 @DynamicUpdate
 @DynamicInsert
 public class Order extends Period {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @EqualsAndHashCode.Include
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private BigDecimal orderPrice;
-    private LocalDateTime orderDate;
+
+    // 외부 노출용 주문번호
+    @Column(name = "order_number", unique = true, nullable = false)
+    private String orderNumber;
+
+    @Column(nullable = false)
+    private Long memberId;  // 연관 엔티티 대신 memberId만 저장
+
+    @Embedded
+    private OrderAddress deliveryAddress;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private OrderStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private Member member;
+    @Column(nullable = false)
+    private BigDecimal orderPrice;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval= true)
+    private LocalDateTime orderDate;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    private LocalDateTime regDate;
-    private LocalDateTime updateDate;
-
     // 연관관계 메서드
-    public void setMember(Member member) {
-        this.member = member;
-    }
-
     public void addOrderItem(OrderItem orderItem) {
-        orderItems.add(orderItem);
+        this.orderItems.add(orderItem);
         orderItem.setOrder(this);
     }
 
-    public Order updateOrderPrice(BigDecimal orderPrice){
-        this.orderPrice = orderPrice;
-        return this;
-    }
-
-    public Order updateOrderStatus(OrderStatus status){
+    public Order updateOrderStatus(OrderStatus status) {
         this.status = status;
         return this;
     }
-
 
     @Builder
-    public Order(LocalDateTime orderDate, OrderStatus status, Member member, BigDecimal orderPrice) {
-        this.orderDate = orderDate;
+    public Order(String orderNumber, Long memberId, OrderAddress deliveryAddress, OrderStatus status,
+                 BigDecimal orderPrice, LocalDateTime orderDate) {
+        this.orderNumber = orderNumber;
+        this.memberId = memberId;
+        this.deliveryAddress = deliveryAddress;
         this.status = status;
-        this.member = member;
         this.orderPrice = orderPrice;
+        this.orderDate = orderDate;
     }
-
 }

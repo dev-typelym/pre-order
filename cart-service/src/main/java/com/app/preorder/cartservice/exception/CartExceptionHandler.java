@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 
-@RestControllerAdvice
 @Slf4j
+@RestControllerAdvice(basePackages = "com.app.preorder.cartservice")
 public class CartExceptionHandler {
 
     // 시스템에서 발생한 Feign 오류
