@@ -1,7 +1,6 @@
 package com.app.preorder.orderservice.entity;
 
-import com.app.preorder.entity.audit.Period;
-import com.app.preorder.entity.product.Product;
+import com.app.preorder.orderservice.entity.audit.Period;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
@@ -11,7 +10,6 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Setter
 @ToString
 @Table(name = "tbl_order_item")
 @DynamicUpdate
@@ -24,23 +22,24 @@ public class OrderItem extends Period {
     @EqualsAndHashCode.Include
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
-    private Product product;
+    @Column(name = "product_id", nullable = false)
+    private Long productId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id")
+    @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
+    @Column(nullable = false)
     private Long quantity;
-    private LocalDateTime regDate;
-    private LocalDateTime updateDate;
 
     @Builder
-    public OrderItem(Product product, Long quantity, LocalDateTime regDate) {
-        this.product = product;
+    public OrderItem(Long productId, Long quantity) {
+        this.productId = productId;
         this.quantity = quantity;
-        this.regDate = regDate;
     }
 
+    // 연관관계 설정
+    public void setOrder(Order order) {
+        this.order = order;
+    }
 }

@@ -3,8 +3,8 @@ package com.app.preorder.productservice.service;
 
 import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.type.CategoryType;
-import com.app.preorder.productservice.dto.productDTO.ProductResponse;
-import com.app.preorder.productservice.dto.productDTO.ProductSearchRequest;
+import com.app.preorder.productservice.dto.product.ProductResponse;
+import com.app.preorder.productservice.dto.product.ProductSearchRequest;
 import org.springframework.data.domain.Page;
 import java.util.List;
 
@@ -17,7 +17,7 @@ public interface ProductService {
     ProductResponse getProductDetail(Long productId);
 
     //  상품 다건 조회
-    public List<ProductInternal> getProductsByIds(List<Long> productIds);
+    List<ProductInternal> getProductsByIds(List<Long> productIds);
 
 
 }

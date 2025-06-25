@@ -1,6 +1,6 @@
-package com.app.preorder.productservice.dto.productDTO;
+package com.app.preorder.productservice.dto.product;
 
-import com.app.preorder.productservice.dto.stockDTO.ProductStockResponse;
+import com.app.preorder.productservice.dto.stock.ProductStockResponse;
 import com.app.preorder.common.type.CategoryType;
 import lombok.Builder;
 import lombok.Getter;

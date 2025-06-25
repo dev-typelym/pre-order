@@ -1,15 +1,11 @@
 package com.app.preorder.orderservice.service;
 
-import com.app.preorder.domain.orderDTO.OrderListDTO;
-import com.app.preorder.entity.order.Order;
-import org.springframework.data.domain.Page;
-
 import java.util.List;
 
 public interface OrderService {
 
     // 단건 주문
-    public Long addOrder(Long memberId, Long productId, Long quantity);
+    Long orderSingleItem(Long memberId, Long productId, Long quantity);
 
     // 카트 다건 주문
     public Long addOrderFromCart(Long memberId, List<String> productIds, List<String> quantities);

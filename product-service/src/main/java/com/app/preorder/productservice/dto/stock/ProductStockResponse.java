@@ -1,4 +1,4 @@
-package com.app.preorder.productservice.dto.stockDTO;
+package com.app.preorder.productservice.dto.stock;
 
 import lombok.Builder;
 import lombok.Getter;

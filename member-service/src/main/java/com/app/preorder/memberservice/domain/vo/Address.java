@@ -8,26 +8,24 @@ import java.io.Serializable;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Embeddable
 public class Address implements Serializable {
 
-    private String address;
-    private String addressDetail;
-    private String addressSubDetail;
-    private String postcode;
+    private String roadAddress;
+    private String detailAddress;
+    private String postalCode;
 
-    public Address(String address, String addressDetail, String addressSubDetail, String postcode) {
-        this.address = address;
-        this.addressDetail = addressDetail;
-        this.addressSubDetail = addressSubDetail;
-        this.postcode = postcode;
+    public Address(String roadAddress, String detailAddress, String postalCode) {
+        this.roadAddress = roadAddress;
+        this.detailAddress = detailAddress;
+        this.postalCode = postalCode;
     }
 
     public Address encryptWith(EncryptUtil encryptUtil) {
         return new Address(
-                encryptUtil.encrypt(this.address),
-                encryptUtil.encrypt(this.addressDetail),
-                encryptUtil.encrypt(this.addressSubDetail),
-                encryptUtil.encrypt(this.postcode)
+                encryptUtil.encrypt(this.roadAddress),
+                encryptUtil.encrypt(this.detailAddress),
+                encryptUtil.encrypt(this.postalCode),
         );
     }
 }

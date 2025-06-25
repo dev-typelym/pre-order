@@ -1,24 +1,11 @@
 package com.app.preorder.orderservice.service;
 
-import com.app.preorder.domain.orderDTO.OrderListDTO;
-import com.app.preorder.entity.member.Member;
-import com.app.preorder.entity.order.Order;
-import com.app.preorder.entity.order.OrderItem;
-import com.app.preorder.entity.product.Product;
-import com.app.preorder.entity.product.Stock;
-import com.app.preorder.repository.member.MemberRepository;
-import com.app.preorder.repository.order.OrderRepository;
-import com.app.preorder.repository.product.ProductRepository;
-import com.app.preorder.repository.product.StockRepository;
-import com.app.preorder.type.OrderStatus;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
+import com.app.preorder.orderservice.client.ProductServiceClient;
+import com.app.preorder.orderservice.repository.OrderRepository;
+import com.app.preorder.orderservice.service.scheduler.OrderScheduler;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.quartz.*;
-import org.quartz.impl.StdSchedulerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -30,22 +17,37 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Service
 @Slf4j
+@RequiredArgsConstructor
+@Service
 public class OrderServiceImpl implements OrderService {
 
-    @Autowired
-    private MemberRepository memberRepository;
-    @Autowired
-    private ProductRepository productRepository;
-    @Autowired
-    private OrderRepository orderRepository;
-    @Autowired
-    private StockRepository stockRepository;
-    @Autowired
-    private Scheduler scheduler;
+    private final ProductServiceClient productClient;
+    private final StockServiceClient stockClient;
+    private final OrderRepository orderRepository;
+    private final OrderFactory orderFactory;
+    private final OrderScheduler orderScheduler;
 
     // 단건 주문
+    @Override
+    @Transactional
+    public Long orderSingleItem(Long memberId, Long productId, Long quantity) {
+        ProductInternal product = productClient.getProduct(productId);
+        ProductStockResponse stock = stockClient.getStock(productId);
+
+        if (stock.getStockQuantity() < quantity) {
+            throw new InsufficientStockException(productId);
+        }
+
+        OrderItem item = orderFactory.createOrderItem(product, quantity);
+        Order order = orderFactory.createOrder(memberId, item);
+
+        orderRepository.save(order);
+        orderScheduler.scheduleAll(order.getId());
+
+        return order.getId();
+    }
+
     @Override
     @Transactional
     public Long addOrder(Long memberId, Long productId, Long quantity) {
@@ -168,102 +170,5 @@ public class OrderServiceImpl implements OrderService {
         order.updateOrderStatus(OrderStatus.RETURNING);
     }
 
-    // 스케쥴링 init
-    @PostConstruct
-    public void init() {
-        try {
-            scheduler = StdSchedulerFactory.getDefaultScheduler();
-            scheduler.start();
-        } catch (SchedulerException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @PreDestroy
-    public void shutdown() {
-        try {
-            if (scheduler != null) {
-                scheduler.shutdown();
-            }
-        } catch (SchedulerException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 주문상태 배달중으로 바꾸는 스케쥴링 메소드
-    public void scheduleOrderShipping(Long orderId) {
-        JobDetail jobDetail = JobBuilder.newJob(OrderShippingJob.class)
-                .withIdentity("OrderShippingJob-" + orderId)
-                .usingJobData("orderId", orderId)
-                .build();
-
-        Trigger trigger = TriggerBuilder.newTrigger()
-                .withIdentity("OrderShippingTrigger-" + orderId)
-                .startAt(DateBuilder.futureDate(1, DateBuilder.IntervalUnit.DAY))
-                .build();
-
-        try {
-            scheduler.scheduleJob(jobDetail, trigger);
-        } catch (SchedulerException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 주문상태 배달중에서 배달완료로 바꾸는 스케쥴링 메소드
-    public void scheduleOrderDelivered(Long orderId) {
-        JobDetail jobDetail = JobBuilder.newJob(OrderDeliveredJob.class)
-                .withIdentity("OrderDeliveredJob-" + orderId)
-                .usingJobData("orderId", orderId)
-                .build();
-
-        Trigger trigger = TriggerBuilder.newTrigger()
-                .withIdentity("OrderDeliveredTrigger-" + orderId)
-                .startAt(DateBuilder.futureDate(2, DateBuilder.IntervalUnit.DAY))
-                .build();
-
-        try {
-            scheduler.scheduleJob(jobDetail, trigger);
-        } catch (SchedulerException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 반품 신청후 처리를 스케줄링 하는 메소드
-    public void scheduleReturnProcess(Long orderId) {
-        JobDetail jobDetail = JobBuilder.newJob(ReturnProcessingJob.class)
-                .withIdentity("ReturnProcessingJob-" + orderId)
-                .usingJobData("orderId", orderId)
-                .build();
-
-        Trigger trigger = TriggerBuilder.newTrigger()
-                .withIdentity("ReturnProcessingTrigger-" + orderId)
-                .startAt(DateBuilder.futureDate(1, DateBuilder.IntervalUnit.DAY))
-                .build();
-
-        try {
-            scheduler.scheduleJob(jobDetail, trigger);
-        } catch (SchedulerException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 배송완료후 1일 이후엔 배송상태를 반품 불가로 바꾸는 메소드
-    public void scheduleNonReturnable(Long orderId) {
-        JobDetail jobDetail = JobBuilder.newJob(OrderNonReturnableJob.class)
-                .withIdentity("OrderNonReturnableJob-" + orderId)
-                .usingJobData("orderId", orderId)
-                .build();
-
-        Trigger trigger = TriggerBuilder.newTrigger()
-                .withIdentity("OrderNonReturnableTrigger-" + orderId)
-                .startAt(DateBuilder.futureDate(3, DateBuilder.IntervalUnit.DAY))
-                .build();
-
-        try {
-            scheduler.scheduleJob(jobDetail, trigger);
-        } catch (SchedulerException e) {
-            e.printStackTrace();
-        }
-    }
 
 }

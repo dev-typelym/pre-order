@@ -1,6 +1,5 @@
-package com.app.preorder.productservice.dto.productDTO;
+package com.app.preorder.productservice.dto.product;
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
