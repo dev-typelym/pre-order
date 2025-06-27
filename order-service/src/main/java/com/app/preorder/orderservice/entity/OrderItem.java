@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -25,16 +26,20 @@ public class OrderItem extends Period {
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
-    private Order order;
+    @Column(nullable = false)
+    private BigDecimal price;
 
     @Column(nullable = false)
     private Long quantity;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
+
     @Builder
-    public OrderItem(Long productId, Long quantity) {
+    public OrderItem(Long productId, BigDecimal price, Long quantity) {
         this.productId = productId;
+        this.price = price;
         this.quantity = quantity;
     }
 
