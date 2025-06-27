@@ -2,6 +2,7 @@ package com.app.preorder.productservice.exception;
 
 import com.app.preorder.common.dto.ApiResponse;
 import com.app.preorder.common.exception.custom.ProductNotFoundException;
+import com.app.preorder.common.exception.custom.StockNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,15 @@ public class ProductExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.failure(ex.getMessage(), "PRODUCT_NOT_FOUND"));
+    }
+
+    // 재고를 찾을 수 없음
+    @ExceptionHandler(StockNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleStockNotFound(StockNotFoundException ex) {
+        log.warn("[Product] 재고 없음 예외 발생", ex);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.failure(ex.getMessage(), "PRODUCT_STOCK_NOT_FOUND"));
     }
 
     // 일반 시스템 예외

@@ -1,8 +1,15 @@
 package com.app.preorder.orderservice.service;
 
+import com.app.preorder.common.dto.ProductInternal;
+import com.app.preorder.common.dto.StockInternal;
+import com.app.preorder.common.exception.custom.FeignException;
+import com.app.preorder.common.exception.custom.InsufficientStockException;
 import com.app.preorder.orderservice.client.ProductServiceClient;
+import com.app.preorder.orderservice.entity.Order;
+import com.app.preorder.orderservice.entity.OrderItem;
+import com.app.preorder.orderservice.factory.OrderFactory;
 import com.app.preorder.orderservice.repository.OrderRepository;
-import com.app.preorder.orderservice.service.scheduler.OrderScheduler;
+import com.app.preorder.orderservice.scheduler.OrderScheduler;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +30,6 @@ import java.util.stream.Collectors;
 public class OrderServiceImpl implements OrderService {
 
     private final ProductServiceClient productClient;
-    private final StockServiceClient stockClient;
     private final OrderRepository orderRepository;
     private final OrderFactory orderFactory;
     private final OrderScheduler orderScheduler;
@@ -32,11 +38,20 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Long orderSingleItem(Long memberId, Long productId, Long quantity) {
-        ProductInternal product = productClient.getProduct(productId);
-        ProductStockResponse stock = stockClient.getStock(productId);
+        ProductInternal product;
+        StockInternal stock;
+
+        try {
+            product = productClient.getProductById(productId);
+            stock = productClient.getStockById(productId);
+        } catch (feign.FeignException ex) {
+            throw new FeignException("상품 서비스 통신 오류", ex);
+        }
 
         if (stock.getStockQuantity() < quantity) {
-            throw new InsufficientStockException(productId);
+            throw new InsufficientStockException(
+                    "상품 ID [" + productId + "]의 재고가 부족합니다. 요청 수량: " + quantity + ", 보유 재고: " + stock.getStockQuantity()
+            );
         }
 
         OrderItem item = orderFactory.createOrderItem(product, quantity);
@@ -48,19 +63,6 @@ public class OrderServiceImpl implements OrderService {
         return order.getId();
     }
 
-    @Override
-    @Transactional
-    public Long addOrder(Long memberId, Long productId, Long quantity) {
-        Member member = memberRepository.findMemberById(memberId);
-        Product product = productRepository.findProductByProductId_queryDSL(productId);
-        OrderItem orderItem = OrderItem.builder().quantity(quantity).product(product).regDate(LocalDateTime.now()).build();
-        Order order = Order.builder().orderDate(LocalDateTime.now()).member(member).status(OrderStatus.ORDER_COMPLETE).orderPrice(orderItem.getProduct().getProductPrice()).build();
-        order.addOrderItem(orderItem);
-        Stock stock = stockRepository.findStockByProductId_queryDSL(productId);
-        stock.updateStockQuantity(stock.getStockQuantity() - quantity);
-        orderRepository.save(order);
-        return order.getId();
-    }
 
 
     // 카트 다건 주문

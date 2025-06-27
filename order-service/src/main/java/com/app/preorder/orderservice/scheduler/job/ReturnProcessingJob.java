@@ -1,4 +1,4 @@
-package com.app.preorder.orderservice.service;
+package com.app.preorder.orderservice.scheduler.job;
 
 import com.app.preorder.entity.order.Order;
 import com.app.preorder.entity.order.OrderItem;

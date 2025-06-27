@@ -16,9 +16,11 @@ public interface ProductService {
     //  상품 상세 보기
     ProductResponse getProductDetail(Long productId);
 
-    //  상품 다건 조회
-    List<ProductInternal> getProductsByIds(List<Long> productIds);
+    //  상품 단건 조회(feign)
+    ProductInternal getProductById(Long productId);
 
+    //  상품 다건 조회(feign)
+    List<ProductInternal> getProductsByIds(List<Long> productIds);
 
 }
 

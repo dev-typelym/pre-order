@@ -1,9 +1,9 @@
-package com.app.preorder.orderservice.service.scheduler;
+package com.app.preorder.orderservice.scheduler;
 
-import com.app.preorder.orderservice.service.OrderDeliveredJob;
-import com.app.preorder.orderservice.service.OrderNonReturnableJob;
-import com.app.preorder.orderservice.service.OrderShippingJob;
-import com.app.preorder.orderservice.service.ReturnProcessingJob;
+import com.app.preorder.orderservice.scheduler.job.OrderDeliveredJob;
+import com.app.preorder.orderservice.scheduler.job.OrderNonReturnableJob;
+import com.app.preorder.orderservice.scheduler.job.OrderShippingJob;
+import com.app.preorder.orderservice.scheduler.job.ReturnProcessingJob;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
