@@ -17,18 +17,18 @@ public class ProductInternalController {
     private final ProductService productService;
     private final StockService stockService;
 
-    @PostMapping("/bulk")
+    @PostMapping("/list") // ✅ 상품 다건 조회 (Feign용)
     public List<ProductInternal> getProductsByIds(@RequestBody List<Long> productIds) {
         return productService.getProductsByIds(productIds);
     }
 
-    @GetMapping("/{productId}")
-    public ProductInternal getProductById(@PathVariable Long productId) {
-        return productService.getProductById(productId);
+    @PostMapping("/stocks") // ✅ 재고 다건 조회 (Feign용)
+    public List<StockInternal> getStocksByIds(@RequestBody List<Long> productIds) {
+        return stockService.getStocksByIds(productIds);
     }
 
-    @GetMapping("/{productId}/stock")
-    public StockInternal getStockById(@PathVariable Long productId) {
-        return stockService.getStockById(productId);
+    @PatchMapping("/stocks/deduct") // ✅ 재고 차감 (Feign용)
+    public void deductStocks(@RequestBody List<ProductQuantityDTO> items) {
+        stockService.deductStocks(items);
     }
 }

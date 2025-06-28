@@ -1,17 +1,22 @@
-package com.app.preorder.orderservice.client;
+    package com.app.preorder.orderservice.client;
 
-import com.app.preorder.common.dto.ProductInternal;
-import com.app.preorder.common.dto.StockInternal;
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+    import com.app.preorder.common.dto.ProductInternal;
+    import com.app.preorder.common.dto.StockDeductInternal;
+    import com.app.preorder.common.dto.StockInternal;
+    import org.springframework.cloud.openfeign.FeignClient;
+    import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "product-service", path = "/api/internal/products")
-public interface ProductServiceClient {
+    import java.util.List;
 
-    @GetMapping("/{productId}")
-    ProductInternal getProductById(@PathVariable Long productId);   // ✅ 단건 상품 조회
+    @FeignClient(name = "product-service", path = "/api/internal/products")
+    public interface ProductServiceClient {
 
-    @GetMapping("/{productId}/stock")
-    StockInternal getStockById(@PathVariable Long productId);
-}
+        @PostMapping("/list")
+        List<ProductInternal> getProductsByIds(@RequestBody List<Long> ids); // ✅ 다건 상품
+
+        @PostMapping("/stocks")
+        List<StockInternal> getStocksByIds(@RequestBody List<Long> ids);     // ✅ 다건 재고
+
+        @PatchMapping("/stocks/deduct")
+        void deductStocks(@RequestBody List<StockDeductInternal> items);     // ✅ 재고 차감
+    }

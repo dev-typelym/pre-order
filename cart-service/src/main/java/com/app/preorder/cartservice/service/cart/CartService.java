@@ -2,8 +2,6 @@ package com.app.preorder.cartservice.service.cart;
 
 
 import com.app.preorder.cartservice.dto.cart.CartItemResponse;
-import com.app.preorder.cartservice.domain.entity.CartItem;
-import com.app.preorder.common.dto.ProductInternal;
 import org.springframework.data.domain.Page;
 
 import java.util.List;

@@ -1,10 +1,9 @@
-package com.app.preorder.orderservice.domain.orderDTO;
+package com.app.preorder.orderservice.domain.order;
 
 import com.app.preorder.entity.member.Member;
 import com.app.preorder.entity.order.Order;
 import com.app.preorder.entity.order.OrderItem;
 import com.app.preorder.type.OrderStatus;
-import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
 

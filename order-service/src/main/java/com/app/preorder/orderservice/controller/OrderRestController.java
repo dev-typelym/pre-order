@@ -2,6 +2,7 @@ package com.app.preorder.orderservice.controller;
 
 import com.app.preorder.common.dto.ApiResponse;
 import com.app.preorder.common.dto.TokenPayload;
+import com.app.preorder.orderservice.domain.order.OrderFromCartRequest;
 import com.app.preorder.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +17,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/orders")
-public class OrderController {
+public class OrderRestController {
 
     private final OrderService orderService;
 
@@ -36,25 +37,13 @@ public class OrderController {
 
 
     // 카트에서 주문
-    @PostMapping("cart")
-    @ResponseBody
-    public void orderItemFromCart(@RequestParam("checkedPIds[]") List<String> productIds, @RequestParam("checkedQIds[]") List<String> quantities) {
+    @PostMapping("/cart")
+    public ResponseEntity<ApiResponse<Long>> orderFromCart(@RequestBody OrderFromCartRequest request) {
+        TokenPayload payload = (TokenPayload) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Long memberId = payload.getId();
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = authentication.getName();
-
-        Member member = memberRepository.findByUsername(currentUsername);
-
-        Long sessionId = null;
-
-        if(member != null){
-            sessionId = member.getId();
-        }
-
-        Long orderId = orderService.addOrderFromCart(sessionId, productIds, quantities);
-        orderService.scheduleOrderShipping(orderId);
-        orderService.scheduleOrderDelivered(orderId);
-        orderService.scheduleNonReturnable(orderId);
+        Long orderId = orderService.orderFromCart(memberId, request.getItems());
+        return ResponseEntity.ok(ApiResponse.success(orderId, "장바구니 주문 완료"));
     }
 
     // 주문 목록
