@@ -1,5 +1,8 @@
 package com.app.preorder.orderservice.service;
 
+import com.app.preorder.common.dto.StockDeductInternal;
+import com.app.preorder.orderservice.domain.order.OrderItemRequest;
+
 import java.util.List;
 
 public interface OrderService {
@@ -8,7 +11,7 @@ public interface OrderService {
     Long orderSingleItem(Long memberId, Long productId, Long quantity);
 
     // 카트 다건 주문
-    public Long addOrderFromCart(Long memberId, List<String> productIds, List<String> quantities);
+    Long orderFromCart(Long memberId, List<OrderItemRequest> items);
 
     // 주문 목록 조회
     public Page<OrderListDTO> getOrderListWithPaging(int page, Long memberId);

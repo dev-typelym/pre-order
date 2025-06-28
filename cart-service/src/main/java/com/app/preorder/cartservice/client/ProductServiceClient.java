@@ -9,13 +9,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
-@FeignClient(name = "product-service", url = "${msa.product-service.url}")
+@FeignClient(name = "product-service", path = "/api/internal/products")
 public interface ProductServiceClient {
 
-    @GetMapping("/products/{productId}")
-    ProductInternal getProductById(@PathVariable("productId") Long productId);
-
-    @PostMapping("/products/bulk")
+    @PostMapping("/list")
     List<ProductInternal> getProductsByIds(@RequestBody List<Long> productIds);
 }
 

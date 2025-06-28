@@ -59,6 +59,10 @@ public class Order extends Period {
         return this;
     }
 
+    public void updateOrderPrice(BigDecimal totalPrice) {
+        this.orderPrice = totalPrice;
+    }
+
     @Builder
     public Order(String orderNumber, Long memberId, OrderAddress deliveryAddress, OrderStatus status,
                  BigDecimal orderPrice, LocalDateTime orderDate) {

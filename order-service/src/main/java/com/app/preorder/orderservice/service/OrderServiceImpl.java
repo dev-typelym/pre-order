@@ -1,10 +1,12 @@
 package com.app.preorder.orderservice.service;
 
 import com.app.preorder.common.dto.ProductInternal;
+import com.app.preorder.common.dto.StockDeductInternal;
 import com.app.preorder.common.dto.StockInternal;
 import com.app.preorder.common.exception.custom.FeignException;
 import com.app.preorder.common.exception.custom.InsufficientStockException;
 import com.app.preorder.orderservice.client.ProductServiceClient;
+import com.app.preorder.orderservice.domain.order.OrderItemRequest;
 import com.app.preorder.orderservice.entity.Order;
 import com.app.preorder.orderservice.entity.OrderItem;
 import com.app.preorder.orderservice.factory.OrderFactory;
@@ -16,10 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -42,8 +41,8 @@ public class OrderServiceImpl implements OrderService {
         StockInternal stock;
 
         try {
-            product = productClient.getProductById(productId);
-            stock = productClient.getStockById(productId);
+            product = productClient.getProductsByIds(List.of(productId)).get(0);
+            stock = productClient.getStocksByIds(List.of(productId)).get(0);
         } catch (feign.FeignException ex) {
             throw new FeignException("상품 서비스 통신 오류", ex);
         }
@@ -68,49 +67,57 @@ public class OrderServiceImpl implements OrderService {
     // 카트 다건 주문
     @Override
     @Transactional
-    public Long addOrderFromCart(Long memberId, List<String> productIds, List<String> quantities) {
-        Member member = memberRepository.findMemberById(memberId);
-        LocalDateTime now = LocalDateTime.now();
-        BigDecimal totalPrice = BigDecimal.ZERO;
+    public Long orderFromCart(Long memberId, List<OrderItemRequest> items) {
 
-        Order order = Order.builder()
-                .orderDate(now)
-                .member(member)
-                .status(OrderStatus.ORDER_COMPLETE)
-                .build();
+        //  [1] 주문할 상품 ID와 수량을 Map 형태로 변환
+        Map<Long, Long> quantityMap = items.stream()
+                .collect(Collectors.toMap(OrderItemRequest::getProductId, OrderItemRequest::getQuantity));
 
-        Map<String, Long> productIdToQuantityMap = new HashMap<>();
+        //  [2] 상품 ID 목록 추출
+        List<Long> productIds = new ArrayList<>(quantityMap.keySet());
 
-        // 상품별 수량을 맵에 저장
-        for (int i = 0; i < productIds.size(); i++) {
-            String productId = productIds.get(i);
-            Long quantity = Long.parseLong(quantities.get(i));
-            productIdToQuantityMap.put(productId, productIdToQuantityMap.getOrDefault(productId, 0L) + quantity);
+        List<ProductInternal> products;
+        List<StockInternal> stocks;
+
+        try {
+            //  [3] 상품 정보 조회 (FeignClient - product-service)
+            products = productClient.getProductsByIds(productIds);
+
+            //  [4] 재고 정보 조회 (FeignClient - product-service)
+            stocks = productClient.getStocksByIds(productIds);
+        } catch (FeignException e) {
+            log.error("상품 서비스 조회 실패", e);
+            throw new FeignException("상품 서비스 조회 실패", e);
         }
 
-        for (Map.Entry<String, Long> entry : productIdToQuantityMap.entrySet()) {
-            String productId = entry.getKey();
-            Long productPerQuantity = entry.getValue();
-
-            Product product = productRepository.findProductByProductId_queryDSL(Long.parseLong(productId));
-
-            OrderItem orderItem = OrderItem.builder()
-                    .quantity(productPerQuantity)
-                    .product(product)
-                    .regDate(now)
-                    .build();
-
-            order.addOrderItem(orderItem);
-            totalPrice = totalPrice.add(orderItem.getProduct().getProductPrice().multiply(BigDecimal.valueOf(productPerQuantity)));
-
-            // 재고 업데이트
-            Stock stock = stockRepository.findStockByProductId_queryDSL(Long.parseLong(productId));
-            stock.updateStockQuantity(stock.getStockQuantity() - productPerQuantity);
-
+        //  [5] 재고 검증
+        for (StockInternal stock : stocks) {
+            Long requestedQty = quantityMap.get(stock.getProductId());
+            if (stock.getStockQuantity() < requestedQty) {
+                throw new InsufficientStockException("상품 ID [" + stock.getProductId() + "] 재고 부족. 요청 수량: "
+                        + requestedQty + ", 보유 재고: " + stock.getStockQuantity());
+            }
         }
 
-        order.updateOrderPrice(totalPrice);
+        //  [6] 재고 차감 요청 (FeignClient - product-service)
+        List<StockDeductInternal> deductList = items.stream()
+                .map(i -> new StockDeductInternal(i.getProductId(), i.getQuantity()))
+                .toList();
+
+        try {
+            productClient.deductStocks(deductList);
+        } catch (FeignException e) {
+            log.error("상품 서비스 재고 차감 실패", e);
+            throw new FeignException("상품 서비스 재고 차감 실패", e);
+        }
+
+        //  [7] 주문 엔티티 생성 (Factory 사용)
+        Order order = orderFactory.createOrderFromCart(memberId, products, quantityMap);
+
+        //  [8] 주문 저장
         orderRepository.save(order);
+
+        //  [9] 주문 ID 반환
         return order.getId();
     }
 

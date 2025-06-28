@@ -25,7 +25,7 @@ public class AuthExceptionHandler {
 
     // 커스텀으로 감싼 Feign 오류
     @ExceptionHandler(FeignException.class)
-    public ResponseEntity<ApiResponse<Void>> handleFeignException(FeignException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleFeignCustomException(FeignException ex) {
         log.error("[Auth] Feign 통신 오류 발생", ex);
         return ResponseEntity
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
