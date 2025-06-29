@@ -1,7 +1,7 @@
 package com.app.preorder.orderservice.repository;
 
-import com.app.preorder.entity.order.Order;
-import com.app.preorder.entity.order.QOrder;
+
+import com.app.preorder.orderservice.entity.Order;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,23 +27,22 @@ public class OrderQueryDslImpl implements OrderQueryDsl {
 
     // 주문 목록
     @Override
-    public Page<Order> findAllOrder_queryDSL(Pageable pageable, Long memberId) {
-
-        QOrder order = QOrder.order;
-        List<Order> foundCartItem = query.select(order)
-                .from(order)
-                .where(order.member.id.eq(memberId))
-                .orderBy(order.id.desc())
+    public Page<Order> findOrdersByMemberId(Long memberId, Pageable pageable) {
+        List<Order> orders = queryFactory
+                .selectFrom(order)
+                .where(order.memberId.eq(memberId))
+                .orderBy(order.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        Long count = query.select(order.count())
+        Long total = queryFactory
+                .select(order.count())
                 .from(order)
-                .where(order.member.id.eq(memberId))
+                .where(order.memberId.eq(memberId))
                 .fetchOne();
 
-        return new PageImpl<>(foundCartItem, pageable, count);
+        return new PageImpl<>(orders, pageable, total != null ? total : 0);
     }
 
     @Override

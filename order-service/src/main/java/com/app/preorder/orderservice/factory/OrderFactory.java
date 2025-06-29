@@ -2,6 +2,7 @@ package com.app.preorder.orderservice.factory;
 
 import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.type.OrderStatus;
+import com.app.preorder.orderservice.domain.order.OrderResponse;
 import com.app.preorder.orderservice.entity.Order;
 import com.app.preorder.orderservice.entity.OrderItem;
 
@@ -55,5 +56,14 @@ public class OrderFactory {
 
         order.updateOrderPrice(totalPrice);
         return order;
+    }
+
+    public OrderResponse toOrderListDTO(Order order) {
+        return OrderResponse.builder()
+                .orderId(order.getId())
+                .status(order.getStatus().name())
+                .totalAmount(order.getOrderPrice())
+                .createdAt(order.getRegisterDate())
+                .build();
     }
 }

@@ -7,6 +7,7 @@ import com.app.preorder.common.exception.custom.FeignException;
 import com.app.preorder.common.exception.custom.InsufficientStockException;
 import com.app.preorder.orderservice.client.ProductServiceClient;
 import com.app.preorder.orderservice.domain.order.OrderItemRequest;
+import com.app.preorder.orderservice.domain.order.OrderResponse;
 import com.app.preorder.orderservice.entity.Order;
 import com.app.preorder.orderservice.entity.OrderItem;
 import com.app.preorder.orderservice.factory.OrderFactory;
@@ -15,6 +16,7 @@ import com.app.preorder.orderservice.scheduler.OrderScheduler;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -69,37 +71,24 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public Long orderFromCart(Long memberId, List<OrderItemRequest> items) {
 
-        //  [1] 주문할 상품 ID와 수량을 Map 형태로 변환
+        // [1] 주문할 상품 ID와 수량을 Map 형태로 변환
         Map<Long, Long> quantityMap = items.stream()
                 .collect(Collectors.toMap(OrderItemRequest::getProductId, OrderItemRequest::getQuantity));
 
-        //  [2] 상품 ID 목록 추출
+        // [2] 상품 ID 목록 추출
         List<Long> productIds = new ArrayList<>(quantityMap.keySet());
 
         List<ProductInternal> products;
-        List<StockInternal> stocks;
 
         try {
-            //  [3] 상품 정보 조회 (FeignClient - product-service)
+            // [3] 상품 정보 조회 (FeignClient - product-service)
             products = productClient.getProductsByIds(productIds);
-
-            //  [4] 재고 정보 조회 (FeignClient - product-service)
-            stocks = productClient.getStocksByIds(productIds);
         } catch (FeignException e) {
             log.error("상품 서비스 조회 실패", e);
             throw new FeignException("상품 서비스 조회 실패", e);
         }
 
-        //  [5] 재고 검증
-        for (StockInternal stock : stocks) {
-            Long requestedQty = quantityMap.get(stock.getProductId());
-            if (stock.getStockQuantity() < requestedQty) {
-                throw new InsufficientStockException("상품 ID [" + stock.getProductId() + "] 재고 부족. 요청 수량: "
-                        + requestedQty + ", 보유 재고: " + stock.getStockQuantity());
-            }
-        }
-
-        //  [6] 재고 차감 요청 (FeignClient - product-service)
+        // [4] 재고 차감 요청 (FeignClient - product-service)
         List<StockDeductInternal> deductList = items.stream()
                 .map(i -> new StockDeductInternal(i.getProductId(), i.getQuantity()))
                 .toList();
@@ -111,31 +100,36 @@ public class OrderServiceImpl implements OrderService {
             throw new FeignException("상품 서비스 재고 차감 실패", e);
         }
 
-        //  [7] 주문 엔티티 생성 (Factory 사용)
+        // [5] 주문 엔티티 생성 (Factory 사용)
         Order order = orderFactory.createOrderFromCart(memberId, products, quantityMap);
 
-        //  [8] 주문 저장
+        // [6] 주문 저장
         orderRepository.save(order);
 
-        //  [9] 주문 ID 반환
+        // [7] 주문 ID 반환
         return order.getId();
     }
 
     // 주문 목록
     @Override
-    public Page<OrderListDTO> getOrderListWithPaging(int page, Long memberId) {
-        Page<Order> orders = orderRepository.findAllOrder_queryDSL(PageRequest.of(page, 5), memberId);
-        List<OrderListDTO> orderListDTOS = orders.getContent().stream()
-                .map(this::toOrderListDTO)
-                .collect(Collectors.toList());
-        return new PageImpl<>(orderListDTOS, orders.getPageable(), orders.getTotalElements());
+    public Page<OrderResponse> getOrdersWithPaging(int page, Long memberId) {
+        int pageSize = 10; // 고정값
+        PageRequest pageable = PageRequest.of(page, pageSize);
+
+        Page<Order> orders = orderRepository.findOrdersByMemberId(memberId, pageable);
+
+        List<OrderResponse> responseList = orders.getContent().stream()
+                .map(orderFactory::toOrderListDTO)
+                .toList();
+
+        return new PageImpl<>(responseList, pageable, orders.getTotalElements());
     }
 
     // 주문 상세보기
     @Override
-    public OrderListDTO getOrderItemsInOrder(Long orderId){
+    public OrderResponse getOrderItemsInOrder(Long orderId){
         Order orderItems = orderRepository.findOrderItemsByOrderId_queryDSL(orderId);
-        OrderListDTO orderItemListDTO = toOrderListDTO(orderItems);
+        OrderResponse orderItemListDTO = toOrderListDTO(orderItems);
         return orderItemListDTO;
     }
 

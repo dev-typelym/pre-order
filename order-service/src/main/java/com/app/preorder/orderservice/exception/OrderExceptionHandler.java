@@ -31,29 +31,6 @@ public class OrderExceptionHandler {
                 .body(ApiResponse.failure("서비스 간 통신 오류가 발생했습니다.", "ORDER_FEIGN_COMMUNICATION_ERROR"));
     }
 
-    @ExceptionHandler(InsufficientStockException.class)
-    public ResponseEntity<ApiResponse<Void>> handleStock(InsufficientStockException ex) {
-        log.warn("[Order] 재고 부족 예외 발생", ex);
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.failure(ex.getMessage(), "ORDER_STOCK_INSUFFICIENT"));
-    }
-
-    @ExceptionHandler(OrderNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleNotFound(OrderNotFoundException ex) {
-        log.warn("[Order] 주문 없음 예외 발생", ex);
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.failure(ex.getMessage(), "ORDER_NOT_FOUND"));
-    }
-
-    @ExceptionHandler(InvalidOrderStateException.class)
-    public ResponseEntity<ApiResponse<Void>> handleInvalidState(InvalidOrderStateException ex) {
-        log.warn("[Order] 잘못된 주문 상태", ex);
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(ApiResponse.failure(ex.getMessage(), "ORDER_INVALID_STATE"));
-    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception ex) {

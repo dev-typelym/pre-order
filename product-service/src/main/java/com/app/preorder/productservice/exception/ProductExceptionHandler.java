@@ -1,6 +1,7 @@
 package com.app.preorder.productservice.exception;
 
 import com.app.preorder.common.dto.ApiResponse;
+import com.app.preorder.common.exception.custom.InsufficientStockException;
 import com.app.preorder.common.exception.custom.ProductNotFoundException;
 import com.app.preorder.common.exception.custom.StockNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,14 @@ public class ProductExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.failure(ex.getMessage(), "PRODUCT_NOT_FOUND"));
+    }
+
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ApiResponse<Void>> handleStock(InsufficientStockException ex) {
+        log.warn("[Order] 재고 부족 예외 발생", ex);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.failure(ex.getMessage(), "ORDER_STOCK_INSUFFICIENT"));
     }
 
     // 재고를 찾을 수 없음
