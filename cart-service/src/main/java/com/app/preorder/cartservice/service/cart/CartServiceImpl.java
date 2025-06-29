@@ -115,7 +115,7 @@ public class CartServiceImpl implements CartService{
     // 카트 목록
     @Override
     public Page<CartItemResponse> getCartItemsWithPaging(int page, Long memberId) {
-        Page<CartItem> cartItems = cartItemRepository.findCartItemsByMemberId(PageRequest.of(page, 5), memberId);
+        Page<CartItem> cartItems = cartItemRepository.findCartItemsByMemberId(PageRequest.of(page, 10), memberId);
 
         List<Long> productIds = cartItems.getContent().stream()
                 .map(CartItem::getProductId)

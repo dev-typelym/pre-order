@@ -2,6 +2,8 @@ package com.app.preorder.orderservice.service;
 
 import com.app.preorder.common.dto.StockDeductInternal;
 import com.app.preorder.orderservice.domain.order.OrderItemRequest;
+import com.app.preorder.orderservice.domain.order.OrderResponse;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -14,7 +16,7 @@ public interface OrderService {
     Long orderFromCart(Long memberId, List<OrderItemRequest> items);
 
     // 주문 목록 조회
-    public Page<OrderListDTO> getOrderListWithPaging(int page, Long memberId);
+    Page<OrderResponse> getOrdersWithPaging(int page, Long memberId);
 
     // 주문 상세보기
     public OrderListDTO getOrderItemsInOrder(Long orderId);
@@ -36,16 +38,4 @@ public interface OrderService {
 
     // 배송완료후 1일 이후엔 배송상태를 반품 불가로 바꾸는 메소드
     public void scheduleNonReturnable(Long orderId);
-
-    default OrderListDTO toOrderListDTO(Order order) {
-        return OrderListDTO.builder()
-                .id(order.getId())
-                .orderDate(order.getOrderDate())
-                .orderItems(order.getOrderItems())
-                .orderPrice(order.getOrderPrice())
-                .status(order.getStatus())
-                .member(order.getMember())
-                .updateDate(order.getUpdateDate())
-                .build();
-    }
 }

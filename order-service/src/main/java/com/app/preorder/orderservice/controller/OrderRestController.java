@@ -3,9 +3,11 @@ package com.app.preorder.orderservice.controller;
 import com.app.preorder.common.dto.ApiResponse;
 import com.app.preorder.common.dto.TokenPayload;
 import com.app.preorder.orderservice.domain.order.OrderFromCartRequest;
+import com.app.preorder.orderservice.domain.order.OrderResponse;
 import com.app.preorder.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
@@ -47,24 +49,12 @@ public class OrderRestController {
     }
 
     // 주문 목록
-    @GetMapping("orderList/{page}")
-    @ResponseBody
-    public Page<OrderListDTO> getOrderList(@PathVariable("page") int page){
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = authentication.getName();
-
-        Member member = memberRepository.findByUsername(currentUsername);
-
-        Long sessionId = null;
-
-        if(member != null){
-            sessionId = member.getId();
-        }
-
-        Page<OrderListDTO> orderList = orderService.getOrderListWithPaging(page -1, sessionId);
-        return orderList;
+    @GetMapping("/me/orders")
+    public Page<OrderResponse> getOrders(@RequestParam(defaultValue = "1") int page) {
+        TokenPayload payload = (TokenPayload) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return orderService.getOrdersWithPaging(page - 1, payload.getId());
     }
+
     // 주문 상세보기
     @GetMapping("detail/{orderId}")
     public String goOrderDetail(@PathVariable Long orderId, Model model){

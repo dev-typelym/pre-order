@@ -1,7 +1,7 @@
 package com.app.preorder.orderservice.repository;
 
-import com.app.preorder.entity.order.Order;
-import com.app.preorder.entity.order.OrderItem;
+
+import com.app.preorder.orderservice.entity.Order;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -10,7 +10,7 @@ public interface OrderQueryDsl {
     public Order findOrderByOrderId_queryDSL(Long orderId);
 
     //  상품 목록 조회
-    public Page<Order> findAllOrder_queryDSL(Pageable pageable, Long memberId);
+    Page<Order> findOrdersByMemberId(Long memberId, Pageable pageable);
 
     //  주문 상세보기
     public Order findOrderItemsByOrderId_queryDSL(Long orderId);

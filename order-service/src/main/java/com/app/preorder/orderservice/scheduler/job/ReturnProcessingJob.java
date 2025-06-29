@@ -1,12 +1,6 @@
 package com.app.preorder.orderservice.scheduler.job;
 
-import com.app.preorder.entity.order.Order;
-import com.app.preorder.entity.order.OrderItem;
-import com.app.preorder.entity.product.Product;
-import com.app.preorder.entity.product.Stock;
-import com.app.preorder.repository.order.OrderRepository;
-import com.app.preorder.repository.product.StockRepository;
-import com.app.preorder.type.OrderStatus;
+
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;

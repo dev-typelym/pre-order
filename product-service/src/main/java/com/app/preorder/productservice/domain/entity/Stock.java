@@ -1,6 +1,7 @@
     package com.app.preorder.productservice.domain.entity;
 
 
+    import com.app.preorder.common.exception.custom.InsufficientStockException;
     import jakarta.persistence.*;
     import lombok.*;
 
@@ -25,6 +26,13 @@
         public Stock updateStockQuantity(Long stockQuantity){
             this.stockQuantity = stockQuantity;
             return this;
+        }
+
+        public void decrease(Long quantity) {
+            if (this.stockQuantity < quantity) {
+                throw new InsufficientStockException("재고 부족: 현재 재고 [" + this.stockQuantity + "], 요청 차감 [" + quantity + "]");
+            }
+            this.stockQuantity -= quantity;
         }
 
     }
