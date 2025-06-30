@@ -13,13 +13,13 @@ import com.app.preorder.common.exception.custom.CartNotFoundException;
 import com.app.preorder.common.exception.custom.FeignException;
 import com.app.preorder.common.exception.custom.InvalidCartOperationException;
 import com.app.preorder.common.exception.custom.ProductNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -114,6 +114,7 @@ public class CartServiceImpl implements CartService{
 
     // 카트 목록
     @Override
+    @Transactional(readOnly = true)
     public Page<CartItemResponse> getCartItemsWithPaging(int page, Long memberId) {
         Page<CartItem> cartItems = cartItemRepository.findCartItemsByMemberId(PageRequest.of(page, 10), memberId);
 

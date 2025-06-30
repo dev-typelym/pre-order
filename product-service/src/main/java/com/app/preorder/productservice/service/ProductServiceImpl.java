@@ -29,6 +29,7 @@ public class ProductServiceImpl implements ProductService {
 
     //  상품 목록
     @Override
+    @Transactional(readOnly = true)
     public Page<ProductResponse> getProducts(int page, ProductSearchRequest searchRequest, CategoryType categoryType) {
         Page<Product> products = productRepository.findAllBySearchConditions(PageRequest.of(page, 5), searchRequest, categoryType);
 
@@ -41,6 +42,7 @@ public class ProductServiceImpl implements ProductService {
 
     //  상품 상세
     @Override
+    @Transactional(readOnly = true)
     public ProductResponse getProductDetail(Long productId) {
         Product product = productRepository.findByIdWithStocks(productId)
                 .orElseThrow(() -> new ProductNotFoundException("해당 상품을 찾을 수 없습니다."));
@@ -49,6 +51,7 @@ public class ProductServiceImpl implements ProductService {
 
     //  상품 단건 조회(feign)
     @Override
+    @Transactional(readOnly = true)
     public ProductInternal getProductById(Long productId) {
         Product product = productRepository.findById(productId) // ✅ 명확하고 일관됨
                 .orElseThrow(() -> new ProductNotFoundException("해당 상품을 찾을 수 없습니다."));
@@ -57,6 +60,7 @@ public class ProductServiceImpl implements ProductService {
 
     //  상품 다건 조회(feign)
     @Override
+    @Transactional(readOnly = true)
     public List<ProductInternal> getProductsByIds(List<Long> productIds) {
         List<Product> products = productRepository.findAllById(productIds);
         if (products.size() != productIds.size()) {
