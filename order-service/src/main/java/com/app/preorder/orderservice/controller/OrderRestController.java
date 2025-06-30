@@ -51,9 +51,9 @@ public class OrderRestController {
 
     // 주문 목록
     @GetMapping("/me/orders")
-    public Page<OrderResponse> getOrders(@RequestParam(defaultValue = "1") int page) {
+    public Page<OrderResponse> getOrders( @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
         TokenPayload payload = (TokenPayload) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return orderService.getOrdersWithPaging(page - 1, payload.getId());
+        return orderService.getOrdersWithPaging(page - 1, size, payload.getId());
     }
 
     // 주문 상세보기

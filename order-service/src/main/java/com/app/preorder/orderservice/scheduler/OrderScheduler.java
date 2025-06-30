@@ -45,30 +45,52 @@ public class OrderScheduler {
         scheduleNonReturnable(orderId);
     }
 
-    // 주문상태 배달중으로 바꾸는 스케쥴링 메소드
     public void scheduleOrderShipping(Long orderId) {
         scheduleJob(orderId, OrderShippingJob.class, 1, "OrderShipping");
     }
 
-    // 주문상태 배달중에서 배달완료로 바꾸는 스케쥴링 메소드
     public void scheduleOrderDelivered(Long orderId) {
         scheduleJob(orderId, OrderDeliveredJob.class, 2, "OrderDelivered");
     }
 
-    // 반품 신청후 처리를 스케줄링 하는 메소드
     public void scheduleReturnProcess(Long orderId) {
         scheduleJob(orderId, ReturnProcessingJob.class, 1, "ReturnProcessing");
     }
 
-    // 배송완료후 1일 이후엔 배송상태를 반품 불가로 바꾸는 메소드
     public void scheduleNonReturnable(Long orderId) {
         scheduleJob(orderId, OrderNonReturnableJob.class, 3, "OrderNonReturnable");
     }
 
-    private void scheduleJob(Long orderId, Class<? extends Job> jobClass, int delayInDays, String keyPrefix) {
+    public void cancelReturnProcess(Long orderId) {
         try {
+            JobKey jobKey = new JobKey("ReturnProcessingJob-" + orderId);
+            if (scheduler.checkExists(jobKey)) {
+                scheduler.deleteJob(jobKey);
+                log.info("[Scheduler] ReturnProcessingJob 취소 완료 - orderId: {}", orderId);
+            } else {
+                log.warn("[Scheduler] 취소 시도했으나 Job 존재하지 않음 - orderId: {}", orderId);
+            }
+        } catch (SchedulerException e) {
+            log.error("[Scheduler] ReturnProcessingJob 취소 실패 - orderId: {}", orderId, e);
+            throw new RuntimeException("스케줄 취소 실패", e);
+        }
+    }
+
+    private void scheduleJob(Long orderId, Class<? extends Job> jobClass, int delayInDays, String keyPrefix) {
+        if (orderId == null || orderId <= 0) {
+            log.warn("[Scheduler] 유효하지 않은 orderId: {}", orderId);
+            return;
+        }
+
+        try {
+            JobKey jobKey = new JobKey(keyPrefix + "Job-" + orderId);
+            if (scheduler.checkExists(jobKey)) {
+                log.warn("[Scheduler] {} Job 이미 등록됨 - orderId: {}", keyPrefix, orderId);
+                return;
+            }
+
             JobDetail jobDetail = JobBuilder.newJob(jobClass)
-                    .withIdentity(keyPrefix + "Job-" + orderId)
+                    .withIdentity(jobKey)
                     .usingJobData("orderId", orderId)
                     .build();
 

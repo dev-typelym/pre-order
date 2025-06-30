@@ -16,7 +16,7 @@ public interface OrderService {
     Long orderFromCart(Long memberId, List<OrderItemRequest> items);
 
     // 주문 목록 조회
-    Page<OrderResponse> getOrdersWithPaging(int page, Long memberId);
+    Page<OrderResponse> getOrdersWithPaging(int page, int size, Long memberId);
 
     // 주문 상세보기
     OrderDetailResponse getOrderDetail(Long memberId, Long orderId);
