@@ -31,6 +31,7 @@ public class MemberServiceImpl implements MemberService {
 
     private final MemberRepository memberRepository;
     private final CartServiceClient cartServiceClient;
+    private final MemberTransactionalService memberTransactionalService;
     private final MemberFactory memberFactory;
     private final EncryptUtil encryptUtil;
     private final PasswordUtil passwordUtil;
@@ -60,16 +61,14 @@ public class MemberServiceImpl implements MemberService {
 
     // 회원가입 처리 및 카트 생성
     @Override
-    @Transactional(rollbackOn = Exception.class)
-    public void register(SignupRequest request) {
-        Member member = memberFactory.createMember(request);
-        memberRepository.save(member);
+    public void signup(SignupRequest request) {
+        Long memberId = memberTransactionalService.saveMember(request);
 
         try {
-            cartServiceClient.createCart(member.getId());
-        } catch (Exception e) {
-            log.error("[MemberService] 회원가입 후 카트 생성 실패 - memberId: {}, 이유: {}", member.getId(), e.getMessage());
-            throw new FeignException("카트 서비스 호출 실패", e);
+            cartServiceClient.createCart(memberId);
+        } catch (FeignException e) {
+            memberTransactionalService.deleteMember(memberId);
+            throw new FeignException("카트 생성 실패, 회원 데이터 롤백", e);
         }
     }
 
