@@ -25,9 +25,9 @@ public class MemberRestController {
     private final MemberService memberService;
 
     /** 회원가입 */
-    @PostMapping("/register")
-    public ResponseEntity<ApiResponse<Void>> register(@RequestBody SignupRequest request) {
-        memberService.register(request);
+    @PostMapping("/signup")
+    public ResponseEntity<ApiResponse<Void>> signup(@RequestBody SignupRequest request) {
+        memberService.signup(request);
         return ResponseEntity.ok(ApiResponse.success(null, "회원가입이 완료되었습니다."));
     }
 
