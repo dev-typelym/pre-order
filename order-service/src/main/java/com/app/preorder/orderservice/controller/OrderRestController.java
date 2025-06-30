@@ -2,6 +2,7 @@ package com.app.preorder.orderservice.controller;
 
 import com.app.preorder.common.dto.ApiResponse;
 import com.app.preorder.common.dto.TokenPayload;
+import com.app.preorder.orderservice.domain.order.OrderDetailResponse;
 import com.app.preorder.orderservice.domain.order.OrderFromCartRequest;
 import com.app.preorder.orderservice.domain.order.OrderResponse;
 import com.app.preorder.orderservice.service.OrderService;
@@ -56,27 +57,25 @@ public class OrderRestController {
     }
 
     // 주문 상세보기
-    @GetMapping("detail/{orderId}")
-    public String goOrderDetail(@PathVariable Long orderId, Model model){
-
-       OrderListDTO orderInfo = orderService.getOrderItemsInOrder(orderId);
-       model.addAttribute("orderInfo", orderInfo);
-       return "orderList/detail";
+    @GetMapping("/{orderId}")
+    public ResponseEntity<ApiResponse<OrderDetailResponse>> getOrderDetail(@PathVariable Long orderId) {
+        TokenPayload payload = (TokenPayload) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        OrderDetailResponse response = orderService.getOrderDetail(payload.getId(), orderId);
+        return ResponseEntity.ok(ApiResponse.success(response, "주문 상세 조회 성공"));
     }
 
     // 주문 취소
     @PostMapping("cancel")
-    @ResponseBody
-    public void cancelOrder(@RequestParam Long orderId) {
+    public ResponseEntity<ApiResponse<Void>> cancelOrder(@RequestParam Long orderId) {
         orderService.orderCancel(orderId);
+        return ResponseEntity.ok(ApiResponse.success(null, "주문이 정상적으로 취소되었습니다."));
     }
 
 
     // 반품 신청
     @PostMapping("return")
-    @ResponseBody
-    public void returnOrder(@RequestParam Long orderId) {
+    public ResponseEntity<ApiResponse<Void>> returnOrder(@RequestParam Long orderId) {
         orderService.orderReturn(orderId);
-        orderService.scheduleReturnProcess(orderId);
+        return ResponseEntity.ok(ApiResponse.success(null, "반품 신청이 완료되었습니다."));
     }
 }
