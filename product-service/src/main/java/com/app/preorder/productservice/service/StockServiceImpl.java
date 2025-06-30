@@ -9,6 +9,7 @@ import com.app.preorder.productservice.factory.ProductFactory;
 import com.app.preorder.productservice.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ public class StockServiceImpl implements StockService {
     private final ProductFactory productFactory;
 
     @Override
+    @Transactional(readOnly = true)
     public List<StockInternal> getStocksByIds(List<Long> productIds) {
         List<Stock> stocks = stockRepository.findStocksByIds(productIds);
         return stocks.stream()
@@ -30,6 +32,7 @@ public class StockServiceImpl implements StockService {
     }
 
     @Override
+    @Transactional
     public void deductStocks(List<StockRequestInternal> items) {
         // [1] productIds 추출
         List<Long> productIds = items.stream()
@@ -58,6 +61,8 @@ public class StockServiceImpl implements StockService {
         }
     }
 
+    @Override
+    @Transactional
     public void restoreStocks(List<StockRequestInternal> items) {
         List<Long> productIds = items.stream()
                 .map(StockRequestInternal::getProductId)

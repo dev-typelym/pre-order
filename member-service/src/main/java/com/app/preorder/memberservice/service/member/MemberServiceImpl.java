@@ -17,10 +17,11 @@ import com.app.preorder.memberservice.factory.MemberFactory;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.service.email.EmailService;
 import com.app.preorder.common.type.DuplicateCheckType;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.UUID;
 
 
@@ -41,6 +42,7 @@ public class MemberServiceImpl implements MemberService {
 
     // 로그인 아이디로 회원 조회
     @Override
+    @Transactional(readOnly = true)
     public Member findByLoginId(String loginId) {
         return memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new UserNotFoundException("해당 회원을 찾을 수 없습니다."));
