@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class StockDeductInternal {
+public class StockRequestInternal {
     private Long productId;
     private Long quantity;
 }

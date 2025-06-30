@@ -11,8 +11,9 @@ import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.stereotype.Component;
 
-@Component
 @Slf4j
+@DisallowConcurrentExecution
+@Component
 public class OrderScheduler {
 
     private Scheduler scheduler;

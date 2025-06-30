@@ -27,20 +27,24 @@ public class OrderItem extends Period {
     private Long productId;
 
     @Column(nullable = false)
-    private BigDecimal price;
+    private BigDecimal productPrice;
 
     @Column(nullable = false)
-    private Long quantity;
+    private Long productQuantity;
+
+    @Column(nullable = false)
+    private String productName;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
     @Builder
-    public OrderItem(Long productId, BigDecimal price, Long quantity) {
+    public OrderItem(Long productId, String productName, BigDecimal productPrice, Long productQuantity) {
         this.productId = productId;
-        this.price = price;
-        this.quantity = quantity;
+        this.productName = productName;
+        this.productPrice = productPrice;
+        this.productQuantity = productQuantity;
     }
 
     // 연관관계 설정

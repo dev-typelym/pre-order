@@ -17,14 +17,6 @@ public class OrderQueryDslImpl implements OrderQueryDsl {
 
     private final JPAQueryFactory query;
 
-    // 주문 아이디로 주문 찾기
-    public Order findOrderByOrderId_queryDSL(Long orderId){
-        QOrder order = QOrder.order;
-        return query.selectFrom(order)
-                .where(order.id.eq(orderId))
-                .fetchOne();
-    }
-
     // 주문 목록
     @Override
     public Page<Order> findOrdersByMemberId(Long memberId, Pageable pageable) {
@@ -46,14 +38,15 @@ public class OrderQueryDslImpl implements OrderQueryDsl {
     }
 
     @Override
-    public Order findOrderItemsByOrderId_queryDSL(Long orderId){
+    public Order findOrderItemsById(Long orderId) {
         QOrder order = QOrder.order;
+        QOrderItem orderItem = QOrderItem.orderItem;
 
         return query.select(order)
                 .from(order)
-                .leftJoin(order.orderItems, QOrderItem.orderItem)
-                .fetchJoin()
+                .leftJoin(order.orderItems, orderItem).fetchJoin()
                 .where(order.id.eq(orderId))
                 .fetchOne();
     }
+
 }

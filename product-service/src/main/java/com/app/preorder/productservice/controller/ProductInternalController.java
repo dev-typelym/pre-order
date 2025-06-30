@@ -1,7 +1,7 @@
 package com.app.preorder.productservice.controller;
 
 import com.app.preorder.common.dto.ProductInternal;
-import com.app.preorder.common.dto.StockDeductInternal;
+import com.app.preorder.common.dto.StockRequestInternal;
 import com.app.preorder.common.dto.StockInternal;
 import com.app.preorder.productservice.service.ProductService;
 import com.app.preorder.productservice.service.StockService;
@@ -29,7 +29,13 @@ public class ProductInternalController {
     }
 
     @PatchMapping("/stocks/deduct") // ✅ 재고 차감 (Feign용)
-    public void deductStocks(@RequestBody List<StockDeductInternal> items) {
+    public void deductStocks(@RequestBody List<StockRequestInternal> items) {
         stockService.deductStocks(items);
+    }
+
+
+    @PatchMapping("/stocks/restore") //✅ 재고 복원
+    public void restoreStocks(@RequestBody List<StockRequestInternal> items) {
+        stockService.restoreStocks(items);
     }
 }

@@ -1,6 +1,6 @@
 package com.app.preorder.orderservice.service;
 
-import com.app.preorder.common.dto.StockDeductInternal;
+import com.app.preorder.orderservice.domain.order.OrderDetailResponse;
 import com.app.preorder.orderservice.domain.order.OrderItemRequest;
 import com.app.preorder.orderservice.domain.order.OrderResponse;
 import org.springframework.data.domain.Page;
@@ -19,23 +19,23 @@ public interface OrderService {
     Page<OrderResponse> getOrdersWithPaging(int page, Long memberId);
 
     // 주문 상세보기
-    public OrderListDTO getOrderItemsInOrder(Long orderId);
+    OrderDetailResponse getOrderDetail(Long memberId, Long orderId);
 
     // 주문 취소
-    public void orderCancel(Long orderId);
+    void orderCancel(Long orderId);
 
     // 반품 신청
-    public void orderReturn(Long orderId);
+    void orderReturn(Long orderId);
 
-    // 주문상태 배달중으로 바꾸는 스케쥴링 메소드
-    public void scheduleOrderShipping(Long orderId);
+    // 주문 상태를 "배송 중"으로 업데이트
+    void updateOrderStatusShipping(Long orderId);
 
-    // 주문상태 배달중에서 배달완료로 바꾸는 스케쥴링 메소드
-    public void scheduleOrderDelivered(Long orderId);
+    // 주문 상태를 "배송 완료"로 업데이트
+    void updateOrderStatusDelivered(Long orderId);
 
-    // 반품 신청후 처리를 스케줄링 하는 메소드
-    public void scheduleReturnProcess(Long orderId);
+    // 주문 상태를 "반품 불가"로 업데이트
+    void updateOrderStatusNonReturnable(Long orderId);
 
-    // 배송완료후 1일 이후엔 배송상태를 반품 불가로 바꾸는 메소드
-    public void scheduleNonReturnable(Long orderId);
+    // 반품 처리 (재고 복원 포함)
+    void processReturn(Long orderId);
 }

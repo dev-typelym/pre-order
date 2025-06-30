@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 public class OrderResponse {
-
     private Long orderId;
     private String status;
     private BigDecimal totalAmount;
