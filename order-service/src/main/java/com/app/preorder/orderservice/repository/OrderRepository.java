@@ -10,4 +10,7 @@ public interface OrderRepository extends JpaRepository<Order, Long>, OrderQueryD
 
     //  주문아이디로 주문찾기
     Optional<Order> findOrderById(Long orderId);
+
+    //  주문 상세보기
+    Optional<Order> findOrderItemsById(Long orderId);
 }

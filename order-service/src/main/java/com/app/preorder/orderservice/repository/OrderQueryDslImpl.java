@@ -37,16 +37,5 @@ public class OrderQueryDslImpl implements OrderQueryDsl {
         return new PageImpl<>(orders, pageable, total != null ? total : 0);
     }
 
-    @Override
-    public Order findOrderItemsById(Long orderId) {
-        QOrder order = QOrder.order;
-        QOrderItem orderItem = QOrderItem.orderItem;
-
-        return query.select(order)
-                .from(order)
-                .leftJoin(order.orderItems, orderItem).fetchJoin()
-                .where(order.id.eq(orderId))
-                .fetchOne();
-    }
 
 }

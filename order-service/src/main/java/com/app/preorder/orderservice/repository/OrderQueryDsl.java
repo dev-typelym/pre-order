@@ -10,7 +10,4 @@ public interface OrderQueryDsl {
     //  상품 목록 조회
     Page<Order> findOrdersByMemberId(Long memberId, Pageable pageable);
 
-    //  주문 상세보기
-    Order findOrderItemsById(Long orderId);
-
 }
