@@ -24,4 +24,7 @@ dependencies {
 
     implementation 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // ✅ common-library
+    implementation project(':common-library')
 }

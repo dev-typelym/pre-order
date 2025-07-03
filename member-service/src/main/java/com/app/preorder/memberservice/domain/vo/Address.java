@@ -21,11 +21,4 @@ public class Address implements Serializable {
         this.postalCode = postalCode;
     }
 
-    public Address encryptWith(EncryptUtil encryptUtil) {
-        return new Address(
-                encryptUtil.encrypt(this.roadAddress),
-                encryptUtil.encrypt(this.detailAddress),
-                encryptUtil.encrypt(this.postalCode)
-        );
-    }
 }

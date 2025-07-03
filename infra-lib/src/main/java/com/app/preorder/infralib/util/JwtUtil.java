@@ -1,6 +1,8 @@
 package com.app.preorder.infralib.util;
 
 
+import com.app.preorder.common.dto.TokenPayload;
+import com.app.preorder.common.type.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -28,20 +30,22 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // ✅ 변경된 부분: role을 String으로 받음
-    public String generateToken(Long id, String username, String role) {
+    // ✅ Access Token 생성
+    public String generateAccessToken(Long id, String username, String role) {
         return doGenerateToken(id, username, role, ACCESS_TOKEN_EXPIRE_TIME);
     }
 
+    // ✅ Refresh Token 생성
     public String generateRefreshToken(Long id, String username, String role) {
         return doGenerateToken(id, username, role, REFRESH_TOKEN_EXPIRE_TIME);
     }
 
+    // ✅ 실제 JWT 생성 로직
     private String doGenerateToken(Long id, String username, String role, long expireTime) {
         Claims claims = Jwts.claims();
         claims.put("id", id);
         claims.put("username", username);
-        claims.put("role", role);  // 이미 문자열로 받음
+        claims.put("role", role);  // 문자열로 받음
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -49,5 +53,20 @@ public class JwtUtil {
                 .setExpiration(new Date(System.currentTimeMillis() + expireTime))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    // ✅ Token 파싱 및 검증
+    public TokenPayload parseToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        Long id = Long.valueOf(claims.get("id", String.class));
+        String username = claims.get("username", String.class);
+        Role role = Role.valueOf(claims.get("role", String.class));
+
+        return new TokenPayload(id, username, role);
     }
 }

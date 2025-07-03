@@ -13,6 +13,7 @@ import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.dto.request.DuplicateCheckRequest;
 import com.app.preorder.memberservice.dto.request.SignupRequest;
 import com.app.preorder.memberservice.dto.request.UpdateMemberRequest;
+import com.app.preorder.memberservice.dto.response.MemberDetailResponse;
 import com.app.preorder.memberservice.factory.MemberFactory;
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.service.email.EmailService;
@@ -72,6 +73,14 @@ public class MemberServiceImpl implements MemberService {
             memberTransactionalService.deleteMember(memberId);
             throw new FeignException("카트 생성 실패, 회원 데이터 롤백", e);
         }
+    }
+
+    // 내 정보 조회
+    @Transactional(readOnly = true)
+    public MemberDetailResponse getMyInfo(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 회원입니다."));
+        return MemberDetailResponse.of(member, encryptUtil);
     }
 
     // 회원 정보 수정
@@ -149,5 +158,12 @@ public class MemberServiceImpl implements MemberService {
         memberRepository.save(member);
 
         redisUtil.deleteData(key);
+    }
+
+    //  회원탈퇴
+    public void deleteMember(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 회원입니다."));
+        member.changeStatus(MemberStatus.INACTIVE);
     }
 }

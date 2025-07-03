@@ -6,6 +6,7 @@ import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.dto.request.DuplicateCheckRequest;
 import com.app.preorder.memberservice.dto.request.SignupRequest;
 import com.app.preorder.memberservice.dto.request.UpdateMemberRequest;
+import com.app.preorder.memberservice.dto.response.MemberDetailResponse;
 
 
 public interface MemberService {
@@ -15,6 +16,9 @@ public interface MemberService {
 
     /** 회원가입 */
     void signup(SignupRequest signupRequest);
+
+    /** 내 정보 조회 */
+    MemberDetailResponse getMyInfo(Long memberId);
 
     /** 회원 정보 수정 */
     void updateMember(UpdateMemberRequest request, Long memberId);
@@ -33,4 +37,7 @@ public interface MemberService {
 
     /** 이메일 인증 메일 발송 */
     void sendSignupVerificationMail(String loginId);
+
+    /** 회원 탈퇴 */
+    void deleteMember(Long memberId);
 }
