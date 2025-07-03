@@ -6,6 +6,7 @@ import com.app.preorder.common.dto.TokenPayload;
 import com.app.preorder.infralib.util.EncryptUtil;
 import com.app.preorder.memberservice.client.AuthServiceClient;
 import com.app.preorder.memberservice.dto.request.*;
+import com.app.preorder.memberservice.dto.response.MemberDetailResponse;
 import com.app.preorder.memberservice.service.member.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,14 @@ public class MemberRestController {
     public ResponseEntity<ApiResponse<Void>> checkDuplicate(@RequestBody DuplicateCheckRequest request) {
         String message = memberService.checkDuplicate(request);
         return ResponseEntity.ok(ApiResponse.success(null, message));
+    }
+
+    /** 내 정보 조회 */
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<MemberDetailResponse>> getMyInfo() {
+        TokenPayload payload = (TokenPayload) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        MemberDetailResponse response = memberService.getMyInfo(payload.getId());
+        return ResponseEntity.ok(ApiResponse.success(response, "회원 정보 조회 성공"));
     }
 
     /** 회원 정보 수정 */
@@ -69,5 +78,13 @@ public class MemberRestController {
     public ResponseEntity<ApiResponse<Void>> verifyEmail(@PathVariable String key) {
         memberService.confirmEmailVerification(key);
         return ResponseEntity.ok(ApiResponse.success(null, "성공적으로 이메일 인증을 완료했습니다."));
+    }
+
+    /** 회원 탈퇴 */
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse<Void>> deleteMember() {
+        TokenPayload payload = (TokenPayload) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        memberService.deleteMember(payload.getId());
+        return ResponseEntity.ok(ApiResponse.success(null, "회원 탈퇴가 완료되었습니다."));
     }
 }

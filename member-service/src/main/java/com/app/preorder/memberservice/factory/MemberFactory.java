@@ -6,6 +6,7 @@ import com.app.preorder.infralib.util.EncryptUtil;
 import com.app.preorder.infralib.util.HmacHashUtil;
 import com.app.preorder.infralib.util.PasswordUtil;
 import com.app.preorder.memberservice.domain.entity.Member;
+import com.app.preorder.memberservice.domain.vo.Address;
 import com.app.preorder.memberservice.dto.request.SignupRequest;
 import com.app.preorder.memberservice.dto.request.UpdateMemberRequest;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +32,11 @@ public class MemberFactory {
                 .emailHash(hmacHashUtil.hmacSha256(request.getEmail()))
                 .phone(encryptUtil.encrypt(request.getPhone()))
                 .phoneHash(hmacHashUtil.hmacSha256(request.getPhone()))
-                .address(request.getAddress().encryptWith(encryptUtil))
+                .address(new Address(
+                        encryptUtil.encrypt(request.getAddress().getRoadAddress()),
+                        encryptUtil.encrypt(request.getAddress().getDetailAddress()),
+                        encryptUtil.encrypt(request.getAddress().getPostalCode())
+                ))
                 .role(Role.ROLE_USER)
                 .status(MemberStatus.UNVERIFIED)
                 .registeredAt(LocalDateTime.now())
@@ -43,7 +48,11 @@ public class MemberFactory {
                 encryptUtil.encrypt(request.getName()),
                 encryptUtil.encrypt(request.getEmail()),
                 encryptUtil.encrypt(request.getPhone()),
-                request.getAddress().encryptWith(encryptUtil)
+                new Address(
+                        encryptUtil.encrypt(request.getAddress().getRoadAddress()),
+                        encryptUtil.encrypt(request.getAddress().getDetailAddress()),
+                        encryptUtil.encrypt(request.getAddress().getPostalCode())
+                )
         );
     }
 }

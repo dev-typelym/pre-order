@@ -4,6 +4,8 @@ import com.app.preorder.authservice.client.MemberServiceClient;
 import com.app.preorder.authservice.dto.request.LoginRequest;
 import com.app.preorder.authservice.dto.response.LoginResponse;
 import com.app.preorder.authservice.dto.request.LogoutRequest;
+import com.app.preorder.authservice.dto.response.TokenResponse;
+import com.app.preorder.common.dto.TokenPayload;
 import com.app.preorder.common.dto.VerifyPasswordInternal;
 import com.app.preorder.common.exception.custom.FeignException;
 import com.app.preorder.common.dto.MemberInternal;
@@ -43,7 +45,7 @@ public class AuthServiceImpl implements AuthService {
             throw new ForbiddenException("이메일 인증이 필요합니다.");
         }
 
-        String accessToken = jwtUtil.generateToken(member.getId(), member.getLoginId(), member.getRole().name());
+        String accessToken = jwtUtil.generateAccessToken(member.getId(), member.getLoginId(), member.getRole().name());
         String refreshToken = jwtUtil.generateRefreshToken(member.getId(), member.getLoginId(), member.getRole().name());
 
         redisUtil.setDataExpire(refreshToken, member.getLoginId(), refreshTokenExpireTimeInSeconds);
@@ -55,4 +57,25 @@ public class AuthServiceImpl implements AuthService {
     public void logout(LogoutRequest logoutRequest) {
         redisUtil.deleteData(logoutRequest.getRefreshToken());
     }
+
+    @Override
+    public TokenResponse reissue(String refreshToken) {
+        TokenPayload payload = jwtUtil.parseToken(refreshToken);
+        Long memberId = payload.getId();
+
+        String storedToken = redisUtil.getData("RT:" + memberId);
+        if (storedToken == null || !storedToken.equals(refreshToken)) {
+            throw new ForbiddenException("Refresh Token이 유효하지 않습니다.");
+        }
+
+        String newAccessToken = jwtUtil.generateAccessToken(memberId, payload.getUsername(), payload.getRole().name());
+        return new TokenResponse(newAccessToken, refreshToken);
+    }
+
+    @Override
+    public boolean checkRefreshTokenStatus(Long memberId) {
+        String key = "RT:" + memberId;
+        return redisUtil.getData(key) != null;
+    }
+
 }
