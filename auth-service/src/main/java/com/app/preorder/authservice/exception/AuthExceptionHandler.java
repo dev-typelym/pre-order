@@ -1,6 +1,7 @@
 package com.app.preorder.authservice.exception;
 
 import com.app.preorder.common.exception.custom.ForbiddenException;
+import com.app.preorder.common.exception.custom.RefreshTokenException;
 import com.app.preorder.common.exception.custom.UserNotFoundException;
 import com.app.preorder.common.dto.ApiResponse;
 import com.app.preorder.common.exception.custom.FeignException;
@@ -48,6 +49,15 @@ public class AuthExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.failure(ex.getMessage(), "AUTH_FORBIDDEN"));
+    }
+
+    // 리프레시 토큰 예외 처리
+    @ExceptionHandler(RefreshTokenException.class)
+    public ResponseEntity<ApiResponse<Void>> handleRefreshTokenException(RefreshTokenException ex) {
+        log.error("[Auth] 로그아웃 처리 실패: {}", ex.getMessage(), ex);
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.failure(ex.getMessage(), "AUTH_LOGOUT_ERROR"));
     }
 
     // 알 수 없는 예외

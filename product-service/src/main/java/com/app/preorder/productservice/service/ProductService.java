@@ -3,12 +3,23 @@ package com.app.preorder.productservice.service;
 
 import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.type.CategoryType;
+import com.app.preorder.productservice.dto.product.ProductCreateRequest;
 import com.app.preorder.productservice.dto.product.ProductResponse;
 import com.app.preorder.productservice.dto.product.ProductSearchRequest;
+import com.app.preorder.productservice.dto.product.ProductUpdateRequest;
 import org.springframework.data.domain.Page;
 import java.util.List;
 
 public interface ProductService {
+
+    //  상품 등록
+    Long createProduct(ProductCreateRequest request);
+
+    //  상품 수정
+    void updateProduct(Long productId, ProductUpdateRequest request);
+
+    //  상품 삭제
+    void deleteProduct(Long productId);
 
     //  상품 목록
     Page<ProductResponse> getProducts(int page, ProductSearchRequest searchRequest, CategoryType categoryType);
