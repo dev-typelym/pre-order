@@ -3,9 +3,11 @@ package com.app.preorder.productservice.service;
 import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.exception.custom.ProductNotFoundException;
 import com.app.preorder.common.type.CategoryType;
+import com.app.preorder.productservice.dto.product.ProductCreateRequest;
 import com.app.preorder.productservice.dto.product.ProductResponse;
 import com.app.preorder.productservice.dto.product.ProductSearchRequest;
 import com.app.preorder.productservice.domain.entity.Product;
+import com.app.preorder.productservice.dto.product.ProductUpdateRequest;
 import com.app.preorder.productservice.factory.ProductFactory;
 import com.app.preorder.productservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,30 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final ProductFactory productFactory;
+
+    //  상품 등록
+    @Override
+    public Long createProduct(ProductCreateRequest request) {
+        Product product = productFactory.createFrom(request);
+        productRepository.save(product);
+        return product.getId();
+    }
+
+    //  상품 수정
+    @Override
+    public void updateProduct(Long productId, ProductUpdateRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException("존재하지 않는 상품입니다."));
+        productFactory.updateFrom(request, product);
+    }
+
+    //  상품 삭제
+    @Override
+    public void deleteProduct(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException("존재하지 않는 상품입니다."));
+        productRepository.delete(product);
+    }
 
     //  상품 목록
     @Override

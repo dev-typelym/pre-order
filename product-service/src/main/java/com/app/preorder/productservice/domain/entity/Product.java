@@ -1,6 +1,8 @@
 package com.app.preorder.productservice.domain.entity;
 
 import com.app.preorder.common.type.CategoryType;
+import com.app.preorder.common.type.ProductStatus;
+import com.app.preorder.productservice.domain.vo.Period;
 import jakarta.persistence.*;
 import lombok.*;
 import org.antlr.v4.runtime.misc.NotNull;
@@ -19,23 +21,62 @@ public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @EqualsAndHashCode.Include
     private Long id;
 
-    @NotNull
+    @Column(nullable = false)
     private String productName;
 
-    @NotNull
+    @Column(nullable = false)
     private BigDecimal productPrice;
 
-    @NotNull
+    @Column(nullable = false)
     private String description;
 
-    @NotNull
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private CategoryType category;
+
+    @Enumerated(EnumType.STRING)
+    private ProductStatus status = ProductStatus.ENABLED;
+
+    @Embedded
+    private Period period;
 
     @OneToMany(mappedBy = "product")
     private List<Stock> stocks = new ArrayList<>();
 
+    @Builder
+    public Product(String productName, BigDecimal productPrice, String description, CategoryType category, Period period) {
+        this.productName = productName;
+        this.productPrice = productPrice;
+        this.description = description;
+        this.category = category;
+        this.period = period;
+        this.status = ProductStatus.ENABLED; // 기본값
+    }
+
+    // === 도메인 메서드 ===
+    public void updateProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public void updateProductPrice(BigDecimal productPrice) {
+        this.productPrice = productPrice;
+    }
+
+    public void updateDescription(String description) {
+        this.description = description;
+    }
+
+    public void updateCategory(CategoryType category) {
+        this.category = category;
+    }
+
+    public void updateStatus(ProductStatus status) {
+        this.status = status;
+    }
+
+    public void updatePeriod(Period period) {
+        this.period = period;
+    }
 }

@@ -10,6 +10,7 @@ import com.app.preorder.common.dto.VerifyPasswordInternal;
 import com.app.preorder.common.exception.custom.FeignException;
 import com.app.preorder.common.dto.MemberInternal;
 import com.app.preorder.common.exception.custom.ForbiddenException;
+import com.app.preorder.common.exception.custom.RefreshTokenException;
 import com.app.preorder.common.type.MemberStatus;
 import com.app.preorder.infralib.util.JwtUtil;
 import com.app.preorder.infralib.util.RedisUtil;
@@ -55,7 +56,12 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void logout(LogoutRequest logoutRequest) {
-        redisUtil.deleteData(logoutRequest.getRefreshToken());
+        try {
+            redisUtil.deleteData(logoutRequest.getRefreshToken());
+        } catch (Exception e) {
+            log.error("로그아웃 중 Refresh Token 삭제 실패", e);
+            throw new RefreshTokenException("로그아웃 실패: Refresh Token 삭제 중 오류");
+        }
     }
 
     @Override
