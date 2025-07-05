@@ -51,6 +51,12 @@
                 throw new FeignException("상품 서비스 통신 오류", ex);
             }
 
+            // ✅ 상품 상태 체크
+            if (!product.getStatus().name().equals("ENABLED")) {
+                throw new InvalidProductStatusException("상품이 판매 가능 상태가 아닙니다.");
+            }
+
+            // 기존 재고 체크
             if (stock.getStockQuantity() < quantity) {
                 throw new InsufficientStockException(
                         "상품 ID [" + productId + "]의 재고가 부족합니다. 요청 수량: " + quantity + ", 보유 재고: " + stock.getStockQuantity()
@@ -81,21 +87,27 @@
         @Override
         public Long orderFromCart(Long memberId, List<OrderItemRequest> items) {
 
-            // 상품 수량 map
             Map<Long, Long> quantityMap = items.stream()
                     .collect(Collectors.toMap(OrderItemRequest::getProductId, OrderItemRequest::getQuantity));
 
             List<Long> productIds = new ArrayList<>(quantityMap.keySet());
             List<ProductInternal> products;
 
-            // Step 1: 상품 정보 조회
+            //  상품 정보 조회
             try {
                 products = productClient.getProductsByIds(productIds);
             } catch (FeignException e) {
                 throw new FeignException("상품 서비스 조회 실패", e);
             }
 
-            // Step 2: 재고 차감
+            //  상품 상태 체크
+            for (ProductInternal p : products) {
+                if (!p.getStatus().name().equals("ENABLED")) {
+                    throw new InvalidProductStatusException("상품이 판매 가능 상태가 아닙니다. id: " + p.getId());
+                }
+            }
+
+            //  재고 차감
             List<StockRequestInternal> deductList = items.stream()
                     .map(i -> new StockRequestInternal(i.getProductId(), i.getQuantity()))
                     .toList();
@@ -106,7 +118,7 @@
                 throw new FeignException("상품 재고 차감 실패", e);
             }
 
-            // Step 3: DB 트랜잭션
+            //  DB 트랜잭션
             try {
                 return orderTransactionalService.saveOrderFromCartInTransaction(memberId, products, quantityMap);
             } catch (Exception e) {

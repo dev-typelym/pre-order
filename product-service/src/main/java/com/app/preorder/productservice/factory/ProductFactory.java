@@ -56,6 +56,7 @@ public class ProductFactory {
                 .productPrice(product.getProductPrice())
                 .description(product.getDescription())
                 .category(product.getCategory())
+                .status(product.getStatus())
                 .stocks(product.getStocks().stream()
                         .map(stock -> ProductStockResponse.builder()
                                 .id(stock.getId())
@@ -73,6 +74,7 @@ public class ProductFactory {
                 .price(product.getProductPrice())
                 .description(product.getDescription())
                 .category(product.getCategory())
+                .status(product.getStatus())
                 .build();
     }
 

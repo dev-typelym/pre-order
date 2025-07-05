@@ -1,5 +1,6 @@
 package com.app.preorder.productservice.dto.product;
 
+import com.app.preorder.common.type.ProductStatus;
 import com.app.preorder.productservice.dto.stock.ProductStockResponse;
 import com.app.preorder.common.type.CategoryType;
 import lombok.AllArgsConstructor;
@@ -20,5 +21,6 @@ public class ProductResponse {
     private BigDecimal productPrice;
     private String description;
     private CategoryType category;
+    private ProductStatus status;
     private List<ProductStockResponse> stocks;
 }

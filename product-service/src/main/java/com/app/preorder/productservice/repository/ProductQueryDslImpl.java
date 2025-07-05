@@ -31,8 +31,10 @@ public class ProductQueryDslImpl implements ProductQueryDsl{
                 ? product.category.eq(categoryType)
                 : null;
 
+        BooleanExpression statusCondition = product.status.eq(ProductStatus.ENABLED);
+
         List<Product> content = query.selectFrom(product)
-                .where(nameCondition, categoryCondition)
+                .where(nameCondition, categoryCondition, statusCondition)
                 .orderBy(product.id.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -40,7 +42,7 @@ public class ProductQueryDslImpl implements ProductQueryDsl{
 
         Long count = query.select(product.count())
                 .from(product)
-                .where(nameCondition, categoryCondition)
+                .where(nameCondition, categoryCondition, statusCondition)
                 .fetchOne();
 
         return new PageImpl<>(content, pageable, count != null ? count : 0);

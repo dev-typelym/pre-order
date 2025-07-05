@@ -3,6 +3,7 @@ package com.app.preorder.orderservice.exception;
 import com.app.preorder.common.dto.ApiResponse;
 import com.app.preorder.common.exception.custom.ForbiddenException;
 import com.app.preorder.common.exception.custom.InvalidOrderStatusException;
+import com.app.preorder.common.exception.custom.InvalidProductStatusException;
 import com.app.preorder.common.exception.custom.OrderNotFoundException;
 import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +60,15 @@ public class OrderExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.failure(ex.getMessage(), "ORDER_INVALID_STATUS"));
+    }
+
+    // 상품 상태 예외
+    @ExceptionHandler(InvalidProductStatusException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidProductStatus(InvalidProductStatusException ex) {
+        log.warn("[Order] 상품 상태 예외", ex);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.failure(ex.getMessage(), "ORDER_INVALID_PRODUCT_STATUS"));
     }
 
     // 예상치 못한 모든 예외
