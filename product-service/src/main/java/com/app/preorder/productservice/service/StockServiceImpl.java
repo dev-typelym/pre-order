@@ -4,6 +4,7 @@ import com.app.preorder.common.dto.StockRequestInternal;
 import com.app.preorder.common.dto.StockInternal;
 import com.app.preorder.common.exception.custom.InsufficientStockException;
 import com.app.preorder.common.exception.custom.StockNotFoundException;
+import com.app.preorder.common.type.ProductStatus;
 import com.app.preorder.productservice.domain.entity.Stock;
 import com.app.preorder.productservice.factory.ProductFactory;
 import com.app.preorder.productservice.repository.StockRepository;
@@ -34,30 +35,34 @@ public class StockServiceImpl implements StockService {
     @Override
     @Transactional
     public void deductStocks(List<StockRequestInternal> items) {
-        // [1] productIds 추출
+        // 1. productIds 추출
         List<Long> productIds = items.stream()
                 .map(StockRequestInternal::getProductId)
                 .toList();
 
-        // [2] 다건 조회
+        // 2. 다건 조회
         List<Stock> stocks = stockRepository.findStocksByIds(productIds);
 
-        // [3] Map으로 변환
+        // 3. Map 변환
         Map<Long, Stock> stockMap = stocks.stream()
                 .collect(Collectors.toMap(stock -> stock.getProduct().getId(), stock -> stock));
 
-        // [4] 검증 및 차감
+        // 4. 검증 및 차감
         for (StockRequestInternal item : items) {
             Stock stock = stockMap.get(item.getProductId());
             if (stock == null) {
                 throw new StockNotFoundException("해당 상품의 재고를 찾을 수 없습니다.");
             }
-
             if (stock.getStockQuantity() < item.getQuantity()) {
                 throw new InsufficientStockException("상품 ID [" + item.getProductId() + "]의 재고가 부족합니다.");
             }
 
             stock.decrease(item.getQuantity());
+
+            //  재고가 0이면 상품 상태 SOLD_OUT 처리
+            if (stock.getStockQuantity() == 0) {
+                stock.getProduct().updateStatus(ProductStatus.SOLD_OUT);
+            }
         }
     }
 
@@ -81,6 +86,11 @@ public class StockServiceImpl implements StockService {
             }
 
             stock.updateStockQuantity(stock.getStockQuantity() + item.getQuantity());
+
+            //  재고가 0에서 증가하면 ENABLED로 변경
+            if (stock.getStockQuantity() > 0) {
+                stock.getProduct().updateStatus(ProductStatus.ENABLED);
+            }
         }
     }
 }

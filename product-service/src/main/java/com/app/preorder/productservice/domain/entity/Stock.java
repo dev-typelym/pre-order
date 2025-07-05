@@ -17,6 +17,7 @@
         @EqualsAndHashCode.Include
         private Long id;
 
+        @Column(nullable = false)
         private Long stockQuantity;
 
         @ManyToOne

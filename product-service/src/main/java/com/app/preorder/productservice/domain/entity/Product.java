@@ -36,6 +36,7 @@ public class Product {
     @Column(nullable = false)
     private CategoryType category;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private ProductStatus status = ProductStatus.ENABLED;
 

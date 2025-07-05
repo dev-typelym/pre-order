@@ -1,6 +1,7 @@
 package com.app.preorder.common.dto;
 
 import com.app.preorder.common.type.CategoryType;
+import com.app.preorder.common.type.ProductStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -15,4 +16,5 @@ public class ProductInternal {
     private BigDecimal price;
     private String description;
     private CategoryType category;
+    private ProductStatus status;
 }

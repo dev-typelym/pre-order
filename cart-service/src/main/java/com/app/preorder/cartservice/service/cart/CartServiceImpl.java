@@ -45,11 +45,16 @@ public class CartServiceImpl implements CartService{
     }
 
     // 카트 아이템 추가
-    @Override
     @Transactional
     public void addCartItem(Long memberId, Long productId, Long quantity) {
         if (quantity == null || quantity <= 0) {
             throw new InvalidCartOperationException("수량은 1 이상이어야 합니다.");
+        }
+
+        //  상품 상태 확인
+        ProductInternal product = productServiceClient.getProductsByIds(List.of(productId)).get(0);
+        if (!product.getStatus().name().equals("ENABLED")) {
+            throw new InvalidCartOperationException("상품이 판매 가능 상태가 아닙니다.");
         }
 
         Cart cart = cartRepository.findCartByMemberId(memberId)
