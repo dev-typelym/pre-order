@@ -13,7 +13,6 @@ java {
     }
 }
 
-// ✅ QueryDSL Q파일 디렉토리 등록
 def querydslDir = "$buildDir/generated/querydsl"
 
 sourceSets {
@@ -39,10 +38,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
-    // ✅ common-library
     implementation project(':common-library')
-
-    // ✅ infra-lib
     implementation project(':infra-lib')
 
     implementation "com.querydsl:querydsl-jpa:5.0.0:jakarta"
@@ -60,4 +56,5 @@ tasks.named('test') {
 tasks.named('bootJar') {
     bootJar ->
         bootJar.mainClass.set('com.app.preorder.memberservice.MemberServiceApplication')
+        bootJar.archiveFileName = 'app.jar'
 }
