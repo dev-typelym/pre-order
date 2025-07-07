@@ -51,11 +51,11 @@ public class MemberServiceImpl implements MemberService {
 
     // 로그인 아이디와 비밀번호 검증 후 내부 회원 정보 반환
     @Override
-    public MemberInternal verifyPasswordAndGetInfo(String loginId, String password) {
+    public MemberInternal verifyPasswordAndGetInfo(String loginId, String currentPassword) {
         Member member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new InvalidCredentialsException("아이디 또는 비밀번호가 일치하지 않습니다."));
 
-        if (!passwordUtil.verifyPassword(password, member.getPassword())) {
+        if (!passwordUtil.verifyPassword(currentPassword, member.getPassword())) {
             throw new InvalidCredentialsException("아이디 또는 비밀번호가 일치하지 않습니다.");
         }
 
@@ -161,9 +161,15 @@ public class MemberServiceImpl implements MemberService {
     }
 
     //  회원탈퇴
-    public void deleteMember(Long memberId) {
+    @Transactional
+    public void deleteMember(Long memberId, String currentPassword) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new UserNotFoundException("존재하지 않는 회원입니다."));
+
+        if (!passwordUtil.verifyPassword(currentPassword, member.getPassword())) {
+            throw new InvalidPasswordException("현재 비밀번호가 일치하지 않습니다.");
+        }
+
         member.changeStatus(MemberStatus.INACTIVE);
     }
 }

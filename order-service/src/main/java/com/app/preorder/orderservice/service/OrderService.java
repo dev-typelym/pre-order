@@ -3,6 +3,7 @@ package com.app.preorder.orderservice.service;
 import com.app.preorder.orderservice.domain.order.OrderDetailResponse;
 import com.app.preorder.orderservice.domain.order.OrderItemRequest;
 import com.app.preorder.orderservice.domain.order.OrderResponse;
+import com.app.preorder.orderservice.domain.order.UpdateOrderAddressRequest;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
@@ -20,6 +21,9 @@ public interface OrderService {
 
     // 주문 상세보기
     OrderDetailResponse getOrderDetail(Long memberId, Long orderId);
+
+    // 배송지 수정
+    void updateOrderAddress(Long orderId, UpdateOrderAddressRequest request);
 
     // 주문 취소
     void orderCancel(Long orderId);

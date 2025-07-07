@@ -82,9 +82,9 @@ public class MemberRestController {
 
     /** 회원 탈퇴 */
     @DeleteMapping("/me")
-    public ResponseEntity<ApiResponse<Void>> deleteMember() {
+    public ResponseEntity<ApiResponse<Void>> deleteMember(@RequestBody DeleteMemberRequest request) {
         TokenPayload payload = (TokenPayload) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        memberService.deleteMember(payload.getId());
+        memberService.deleteMember(payload.getId(), request.getCurrentPassword());
         return ResponseEntity.ok(ApiResponse.success(null, "회원 탈퇴가 완료되었습니다."));
     }
 }
