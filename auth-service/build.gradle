@@ -51,5 +51,7 @@ tasks.named('test') {
 }
 
 tasks.named('bootJar') {
-    bootJar -> bootJar.mainClass.set('com.app.preorder.authservice.AuthServiceApplication')
+    bootJar ->
+        bootJar.mainClass.set('com.app.preorder.authservice.AuthServiceApplication')
+        bootJar.archiveFileName = 'app.jar'
 }

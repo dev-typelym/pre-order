@@ -18,12 +18,11 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-quartz'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
-    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
     implementation "com.querydsl:querydsl-jpa:5.0.0:jakarta"
     annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
@@ -36,5 +35,7 @@ tasks.named('test') {
 }
 
 tasks.named('bootJar') {
-    mainClass.set('com.app.preorder.orderservice.OrderServiceApplication') // ✅ 여기에 main 클래스 지정
+    bootJar ->
+        bootJar.mainClass.set('com.app.preorder.orderservice.OrderServiceApplication')
+        bootJar.archiveFileName = 'app.jar'
 }
