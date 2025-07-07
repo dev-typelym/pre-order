@@ -38,7 +38,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
+    // ✅ common-library
     implementation project(':common-library')
+
+    // ✅ infra-library
     implementation project(':infra-lib')
 
     implementation "com.querydsl:querydsl-jpa:5.0.0:jakarta"

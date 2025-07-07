@@ -6,12 +6,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
-@FeignClient(name = "member-service", url = "http://member-service:8082")
+@FeignClient(name = "member-service", path = "/api/internal/members")
 public interface MemberServiceClient {
 
-    @GetMapping("/api/internal/members/{id}")
+    @GetMapping("/{id}")
     MemberResponse getMemberById(@PathVariable("id") Long id);
 
-    @GetMapping("/api/internal/members/by-username")
+    @GetMapping("/by-username")
     MemberResponse getMemberByUsername(@RequestParam("username") String username);
 }

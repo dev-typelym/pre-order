@@ -5,7 +5,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "auth-service", url = "http://auth-service:8080")
+@FeignClient(name = "auth-service", path = "/api/internal/auth")
 public interface AuthServiceClient {
 
     @PostMapping("/logout")
