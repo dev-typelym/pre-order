@@ -2,6 +2,7 @@ package com.app.preorder.cartservice.repository.cartItem;
 
 
 import com.app.preorder.cartservice.domain.entity.CartItem;
+import com.app.preorder.cartservice.domain.entity.QCartItem;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
@@ -10,6 +11,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+
+import static com.app.preorder.cartservice.domain.entity.QCartItem.cartItem;
 
 
 @RequiredArgsConstructor
@@ -21,7 +24,7 @@ public class CartItemQueryDslImpl implements CartItemQueryDsl {
     public void deleteCartItemsByIdsAndMemberId(List<Long> cartItemIds, Long memberId) {
         query.delete(cartItem)
                 .where(cartItem.id.in(cartItemIds)
-                        .and(cartItem.cart.member.id.eq(memberId)))
+                        .and(cartItem.cart.memberId.eq(memberId)))
                 .execute();
     }
 
@@ -31,7 +34,7 @@ public class CartItemQueryDslImpl implements CartItemQueryDsl {
         QCartItem cartItem = QCartItem.cartItem;
 
         List<CartItem> content = query.selectFrom(cartItem)
-                .where(cartItem.cart.member.id.eq(memberId))
+                .where(cartItem.cart.memberId.eq(memberId))
                 .orderBy(cartItem.id.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -39,7 +42,7 @@ public class CartItemQueryDslImpl implements CartItemQueryDsl {
 
         Long count = query.select(cartItem.count())
                 .from(cartItem)
-                .where(cartItem.cart.member.id.eq(memberId))
+                .where(cartItem.cart.memberId.eq(memberId))
                 .fetchOne();
 
         return new PageImpl<>(content, pageable, count);
