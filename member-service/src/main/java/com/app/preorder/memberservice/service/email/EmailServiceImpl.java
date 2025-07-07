@@ -3,7 +3,6 @@ package com.app.preorder.memberservice.service.email;
 import com.app.preorder.common.exception.custom.EmailSendFailedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;

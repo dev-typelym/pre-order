@@ -1,7 +1,6 @@
 package com.app.preorder.infralib.util;
 
 import org.springframework.security.crypto.bcrypt.BCrypt;
-import org.springframework.stereotype.Component;
 
 
 public class PasswordUtil {
