@@ -1,5 +1,6 @@
 package com.app.preorder.authservice.config;
 
+import com.app.preorder.authservice.util.TokenParser;
 import com.app.preorder.infralib.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -14,5 +15,10 @@ public class CryptoConfig {
     @Bean
     public JwtUtil jwtUtil() {
         return new JwtUtil(jwtSecret);
+    }
+
+    @Bean
+    public TokenParser tokenParser() {
+        return new TokenParser(jwtSecret);
     }
 }

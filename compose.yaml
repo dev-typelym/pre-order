@@ -24,6 +24,13 @@ services:
     volumes:
       - redis_data:/data
 
+  discovery-service:
+    build:
+      context: ./discovery-service
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+
   auth-service:
     build:
       context: ./auth-service
@@ -32,6 +39,7 @@ services:
     depends_on:
       - mariadb
       - redis
+      - discovery-service
 
   member-service:
     build:
@@ -42,6 +50,7 @@ services:
       - mariadb
       - redis
       - auth-service
+      - discovery-service
 
   order-service:
     build:
@@ -52,6 +61,7 @@ services:
       - mariadb
       - redis
       - member-service
+      - discovery-service
 
   product-service:
     build:
@@ -61,6 +71,7 @@ services:
     depends_on:
       - mariadb
       - redis
+      - discovery-service
 
   cart-service:
     build:
@@ -71,6 +82,7 @@ services:
       - mariadb
       - redis
       - member-service
+      - discovery-service
 
 volumes:
   redis_data:
