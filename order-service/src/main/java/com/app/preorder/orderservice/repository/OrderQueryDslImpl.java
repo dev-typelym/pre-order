@@ -17,7 +17,9 @@ public class OrderQueryDslImpl implements OrderQueryDsl {
     // 주문 목록
     @Override
     public Page<Order> findOrdersByMemberId(Long memberId, Pageable pageable) {
-        List<Order> orders = queryFactory
+        QOrder order = QOrder.order;
+
+        List<Order> orders = query
                 .selectFrom(order)
                 .where(order.memberId.eq(memberId))
                 .orderBy(order.createdAt.desc())
@@ -25,7 +27,7 @@ public class OrderQueryDslImpl implements OrderQueryDsl {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        Long total = queryFactory
+        Long total = query
                 .select(order.count())
                 .from(order)
                 .where(order.memberId.eq(memberId))
