@@ -1,6 +1,5 @@
 package com.app.preorder.memberservice.domain.vo;
 
-import com.app.preorder.infralib.util.EncryptUtil;
 import jakarta.persistence.Embeddable;
 import lombok.*;
 

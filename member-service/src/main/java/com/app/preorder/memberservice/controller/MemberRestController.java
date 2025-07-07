@@ -3,7 +3,6 @@ package com.app.preorder.memberservice.controller;
 
 import com.app.preorder.common.dto.ApiResponse;
 import com.app.preorder.common.dto.TokenPayload;
-import com.app.preorder.infralib.util.EncryptUtil;
 import com.app.preorder.memberservice.client.AuthServiceClient;
 import com.app.preorder.memberservice.dto.request.*;
 import com.app.preorder.memberservice.dto.response.MemberDetailResponse;
