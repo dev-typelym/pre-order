@@ -24,6 +24,13 @@ allprojects {
     }
 }
 
+bootJar {
+    enabled = false
+}
+jar {
+    enabled = true
+}
+
 subprojects {
     apply plugin: 'java'
     apply plugin: 'org.springframework.boot'
@@ -37,7 +44,7 @@ subprojects {
 
     dependencyManagement {
         imports {
-            mavenBom "org.springframework.boot:spring-boot-dependencies:3.2.5" // ✅ 추가됨
+            mavenBom "org.springframework.boot:spring-boot-dependencies:3.2.5"
             mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
         }
     }
@@ -46,35 +53,4 @@ subprojects {
         useJUnitPlatform()
     }
 
-    bootJar { enabled = false }
-    jar { enabled = true }
-}
-
-// --- 서비스별 의존성 구성 ---
-
-project(':order-service') {
-    dependencies {
-        implementation project(':common-library')
-        implementation project(':member-service')
-        implementation project(':product-service')
-    }
-}
-
-project(':member-service') {
-    dependencies {
-        implementation project(':common-library')
-    }
-}
-
-project(':cart-service') {
-    dependencies {
-        implementation project(':common-library')
-        implementation project(':member-service')
-    }
-}
-
-project(':product-service') {
-    dependencies {
-        implementation project(':common-library')
-    }
 }
