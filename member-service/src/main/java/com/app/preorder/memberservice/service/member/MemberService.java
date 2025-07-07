@@ -30,7 +30,7 @@ public interface MemberService {
     String checkDuplicate(DuplicateCheckRequest request);
 
     /** 비밀번호 검증 및 내부 정보 반환 */
-    MemberInternal verifyPasswordAndGetInfo(String username, String password);
+    MemberInternal verifyPasswordAndGetInfo(String username, String currentPassword);
 
     /** 이메일 인증 확인 */
     void confirmEmailVerification(String key);
@@ -39,5 +39,5 @@ public interface MemberService {
     void sendSignupVerificationMail(String loginId);
 
     /** 회원 탈퇴 */
-    void deleteMember(Long memberId);
+    void deleteMember(Long memberId, String currentPassword);
 }

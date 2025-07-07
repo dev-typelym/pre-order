@@ -5,6 +5,7 @@ import com.app.preorder.common.dto.TokenPayload;
 import com.app.preorder.orderservice.domain.order.OrderDetailResponse;
 import com.app.preorder.orderservice.domain.order.OrderFromCartRequest;
 import com.app.preorder.orderservice.domain.order.OrderResponse;
+import com.app.preorder.orderservice.domain.order.UpdateOrderAddressRequest;
 import com.app.preorder.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +63,16 @@ public class OrderRestController {
         TokenPayload payload = (TokenPayload) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         OrderDetailResponse response = orderService.getOrderDetail(payload.getId(), orderId);
         return ResponseEntity.ok(ApiResponse.success(response, "주문 상세 조회 성공"));
+    }
+
+    //  주문 수정
+    @PatchMapping("/{orderId}/address")
+    public ResponseEntity<ApiResponse<Void>> updateOrderAddress(
+            @PathVariable Long orderId,
+            @RequestBody UpdateOrderAddressRequest request
+    ) {
+        orderService.updateOrderAddress(orderId, request);
+        return ResponseEntity.ok(ApiResponse.success(null, "배송지가 성공적으로 변경되었습니다."));
     }
 
     // 주문 취소

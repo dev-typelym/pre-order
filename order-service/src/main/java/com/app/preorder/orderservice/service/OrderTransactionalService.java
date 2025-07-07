@@ -2,6 +2,8 @@ package com.app.preorder.orderservice.service;
 
 import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.type.OrderStatus;
+import com.app.preorder.orderservice.domain.order.UpdateOrderAddressRequest;
+import com.app.preorder.orderservice.domain.vo.OrderAddress;
 import com.app.preorder.orderservice.entity.Order;
 import com.app.preorder.orderservice.entity.OrderItem;
 import com.app.preorder.orderservice.factory.OrderFactory;
@@ -39,6 +41,17 @@ public class OrderTransactionalService {
         Order order = orderFactory.createOrderFromCart(memberId, products, quantityMap);
         orderRepository.save(order);
         return order.getId();
+    }
+
+    @Transactional
+    public void updateOrderAddressInTransaction(Order order, UpdateOrderAddressRequest request) {
+        OrderAddress newAddress = new OrderAddress(
+                request.getZipCode(),
+                request.getStreetAddress(),
+                request.getDetailAddress()
+        );
+
+        order.updateDeliveryAddress(newAddress);
     }
 
     @Transactional

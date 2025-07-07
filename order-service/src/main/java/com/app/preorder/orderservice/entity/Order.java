@@ -59,6 +59,10 @@ public class Order extends Period {
         return this;
     }
 
+    public void updateDeliveryAddress(OrderAddress newAddress) {
+        this.deliveryAddress = newAddress;
+    }
+
     public void updateOrderPrice(BigDecimal totalPrice) {
         this.orderPrice = totalPrice;
     }

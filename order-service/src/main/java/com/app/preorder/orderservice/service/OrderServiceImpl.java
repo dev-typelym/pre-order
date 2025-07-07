@@ -9,6 +9,7 @@
     import com.app.preorder.orderservice.domain.order.OrderDetailResponse;
     import com.app.preorder.orderservice.domain.order.OrderItemRequest;
     import com.app.preorder.orderservice.domain.order.OrderResponse;
+    import com.app.preorder.orderservice.domain.order.UpdateOrderAddressRequest;
     import com.app.preorder.orderservice.entity.Order;
     import com.app.preorder.orderservice.factory.OrderFactory;
     import com.app.preorder.orderservice.repository.OrderRepository;
@@ -158,6 +159,17 @@
             }
 
             return orderFactory.toOrderDetailResponse(order);
+        }
+
+        @Override
+        public void updateOrderAddress(Long orderId, UpdateOrderAddressRequest request) {
+            Order order = findOrder(orderId);
+
+            if (!OrderStatus.ORDER_COMPLETE.equals(order.getStatus())) {
+                throw new InvalidOrderStatusException("배송지 수정은 주문 완료 상태에서만 가능합니다.");
+            }
+
+            orderTransactionalService.updateOrderAddressInTransaction(order, request);
         }
 
 
