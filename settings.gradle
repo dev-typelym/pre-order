@@ -1,6 +1,7 @@
 rootProject.name = 'pre-order'
 include 'infra-lib'
 include 'common-library'
+include 'discovery-service'
 include 'auth-service'
 include 'member-service'
 include 'order-service'
