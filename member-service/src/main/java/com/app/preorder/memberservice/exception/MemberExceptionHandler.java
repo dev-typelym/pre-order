@@ -57,6 +57,15 @@ public class MemberExceptionHandler {
                 .body(ApiResponse.failure(ex.getMessage(), "MEMBER_DUPLICATE_VALUE"));
     }
 
+    // 이메일 재발송 횟수 초과
+    @ExceptionHandler(EmailResendLimitException.class)
+    public ResponseEntity<ApiResponse<Void>> handleEmailResendLimit(EmailResendLimitException ex) {
+        log.warn("[Member] 이메일 재발송 한도 초과: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.failure(ex.getMessage(), "MEMBER_EMAIL_RESEND_LIMIT_EXCEEDED"));
+    }
+
     // 이메일 전송 실패
     @ExceptionHandler(EmailSendFailedException.class)
     public ResponseEntity<ApiResponse<Void>> handleEmailSendFailed(EmailSendFailedException ex) {
