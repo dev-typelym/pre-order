@@ -12,15 +12,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice(basePackages = "com.app.preorder.memberservice")
 public class MemberExceptionHandler {
 
-    // 시스템에서 발생한 Feign 오류
-    @ExceptionHandler(feign.FeignException.class)
-    public ResponseEntity<ApiResponse<Void>> handleFeignSystemException(feign.FeignException ex) {
-        log.error("[Member] 시스템 Feign 예외 발생", ex);
-        return ResponseEntity
-                .status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(ApiResponse.failure("서비스 간 통신 오류가 발생했습니다.", "MEMBER_FEIGN_SYSTEM_ERROR"));
-    }
-
     // 커스텀으로 감싼 Feign 오류
     @ExceptionHandler(FeignException.class)
     public ResponseEntity<ApiResponse<Void>> handleFeignException(FeignException ex) {

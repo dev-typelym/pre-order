@@ -35,8 +35,8 @@ dependencies {
 
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
 
-    // ✅ common-library
-    implementation project(':common-library')
+    //  common-lib
+    implementation project(':common-lib')
 
     implementation "com.querydsl:querydsl-jpa:5.0.0:jakarta"
     annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"

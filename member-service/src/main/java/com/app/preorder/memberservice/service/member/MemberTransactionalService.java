@@ -16,10 +16,10 @@ public class MemberTransactionalService {
     private final MemberFactory memberFactory;
 
     @Transactional
-    public Long saveMember(SignupRequest request) {
+    public String saveMember(SignupRequest request) {
         Member member = memberFactory.createMember(request);
         memberRepository.save(member);
-        return member.getId();
+        return member.getLoginId();
     }
 
     @Transactional

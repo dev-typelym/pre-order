@@ -39,10 +39,10 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
-    // ✅ common-library
-    implementation project(':common-library')
+    //  common-lib
+    implementation project(':common-lib')
 
-    // ✅ infra-library
+    //  infra-lib
     implementation project(':infra-lib')
 
     implementation "com.querydsl:querydsl-jpa:5.0.0:jakarta"
