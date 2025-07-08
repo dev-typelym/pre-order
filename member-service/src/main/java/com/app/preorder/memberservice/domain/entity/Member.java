@@ -3,6 +3,7 @@ package com.app.preorder.memberservice.domain.entity;
 
 import com.app.preorder.common.type.MemberStatus;
 import com.app.preorder.common.type.Role;
+import com.app.preorder.memberservice.domain.entity.audit.AuditPeriod;
 import com.app.preorder.memberservice.domain.vo.Address;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -10,7 +11,6 @@ import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import jakarta.validation.constraints.NotBlank;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @DynamicUpdate
 @DynamicInsert
-public class Member {
+public class Member extends AuditPeriod {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -46,9 +46,6 @@ public class Member {
     @Embedded
     @NotNull
     private Address address;
-
-    @NotNull
-    private LocalDateTime registeredAt;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -87,7 +84,7 @@ public class Member {
 
     @Builder
     public Member(String name, String email, String loginId, String password, String phone,
-                  Address address, Role role, MemberStatus status, LocalDateTime registeredAt,
+                  Address address, Role role, MemberStatus status,
                   String loginIdHash, String emailHash, String phoneHash) {
         this.email = email;
         this.loginId = loginId;
@@ -97,7 +94,6 @@ public class Member {
         this.address = address;
         this.role = role;
         this.status = status;
-        this.registeredAt = registeredAt;
         this.loginIdHash = loginIdHash;
         this.emailHash = emailHash;
         this.phoneHash = phoneHash;

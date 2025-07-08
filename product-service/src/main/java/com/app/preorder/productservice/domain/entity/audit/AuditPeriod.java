@@ -1,17 +1,19 @@
-package com.app.preorder.orderservice.entity.audit;
+package com.app.preorder.productservice.domain.entity.audit;
 
-
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import java.time.LocalDateTime;
 
 @EntityListeners(AuditingEntityListener.class)
 @MappedSuperclass
 @Getter
-public abstract class Period {
+public abstract class AuditPeriod {
 
     @CreatedDate
     @Column(updatable = false)

@@ -22,8 +22,8 @@ spring:
       mail.smtp.starttls.enable: true
 
 aes:
-  key: U2Yz6Nw8sR2yPv5VtG4bYq9ZtL1xAe7Q
-  salt: a9W3vC1eZ6rM2bT7
+  key: 0123456789abcdef0123456789abcdef
+  salt: abcdefabcdefabcdefabcdefabcdefab
 
 hmac:
   secret-key: Dh8tS$3uLw5ZxP2kQy9VgR7fNj1TbV0a
