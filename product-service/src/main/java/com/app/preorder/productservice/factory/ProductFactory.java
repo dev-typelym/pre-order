@@ -4,7 +4,7 @@ import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.dto.StockInternal;
 import com.app.preorder.productservice.domain.entity.Product;
 import com.app.preorder.productservice.domain.entity.Stock;
-import com.app.preorder.productservice.domain.vo.Period;
+import com.app.preorder.productservice.domain.vo.SalesPeriod;
 import com.app.preorder.productservice.dto.product.ProductCreateRequest;
 import com.app.preorder.productservice.dto.product.ProductResponse;
 import com.app.preorder.productservice.dto.product.ProductUpdateRequest;
@@ -18,7 +18,7 @@ public class ProductFactory {
 
     //  상품 생성
     public Product createFrom(ProductCreateRequest request) {
-        Period period = Period.builder()
+        SalesPeriod salesPeriod = SalesPeriod.builder()
                 .startAt(request.getSaleStartAt())
                 .endAt(request.getSaleEndAt())
                 .build();
@@ -28,7 +28,7 @@ public class ProductFactory {
                 .productPrice(request.getProductPrice())
                 .description(request.getDescription())
                 .category(request.getCategory())
-                .period(period)
+                .period(salesPeriod)
                 .build();
     }
 
@@ -41,11 +41,11 @@ public class ProductFactory {
         if (request.getStatus() != null) product.updateStatus(request.getStatus());
 
         if (request.getSaleStartAt() != null || request.getSaleEndAt() != null) {
-            Period updatedPeriod = Period.builder()
-                    .startAt(request.getSaleStartAt() != null ? request.getSaleStartAt() : product.getPeriod().getStartAt())
-                    .endAt(request.getSaleEndAt() != null ? request.getSaleEndAt() : product.getPeriod().getEndAt())
+            SalesPeriod updatedSalesPeriod = SalesPeriod.builder()
+                    .startAt(request.getSaleStartAt() != null ? request.getSaleStartAt() : product.getSalesPeriod().getStartAt())
+                    .endAt(request.getSaleEndAt() != null ? request.getSaleEndAt() : product.getSalesPeriod().getEndAt())
                     .build();
-            product.updatePeriod(updatedPeriod);
+            product.updatePeriod(updatedSalesPeriod);
         }
     }
 

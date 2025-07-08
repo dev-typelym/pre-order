@@ -2,10 +2,9 @@ package com.app.preorder.productservice.domain.entity;
 
 import com.app.preorder.common.type.CategoryType;
 import com.app.preorder.common.type.ProductStatus;
-import com.app.preorder.productservice.domain.vo.Period;
+import com.app.preorder.productservice.domain.vo.SalesPeriod;
 import jakarta.persistence.*;
 import lombok.*;
-import org.antlr.v4.runtime.misc.NotNull;
 
 
 import java.math.BigDecimal;
@@ -41,18 +40,18 @@ public class Product {
     private ProductStatus status = ProductStatus.ENABLED;
 
     @Embedded
-    private Period period;
+    private SalesPeriod salesPeriod;
 
     @OneToMany(mappedBy = "product")
     private List<Stock> stocks = new ArrayList<>();
 
     @Builder
-    public Product(String productName, BigDecimal productPrice, String description, CategoryType category, Period period) {
+    public Product(String productName, BigDecimal productPrice, String description, CategoryType category, SalesPeriod salesPeriod) {
         this.productName = productName;
         this.productPrice = productPrice;
         this.description = description;
         this.category = category;
-        this.period = period;
+        this.salesPeriod = salesPeriod;
         this.status = ProductStatus.ENABLED; // 기본값
     }
 
@@ -77,7 +76,7 @@ public class Product {
         this.status = status;
     }
 
-    public void updatePeriod(Period period) {
-        this.period = period;
+    public void updatePeriod(SalesPeriod salesPeriod) {
+        this.salesPeriod = salesPeriod;
     }
 }

@@ -39,7 +39,6 @@ public class MemberFactory {
                 ))
                 .role(Role.ROLE_USER)
                 .status(MemberStatus.UNVERIFIED)
-                .registeredAt(LocalDateTime.now())
                 .build();
     }
 

@@ -2,6 +2,7 @@ package com.app.preorder.orderservice.repository;
 
 
 import com.app.preorder.orderservice.entity.Order;
+import com.app.preorder.orderservice.entity.QOrder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,7 +23,7 @@ public class OrderQueryDslImpl implements OrderQueryDsl {
         List<Order> orders = query
                 .selectFrom(order)
                 .where(order.memberId.eq(memberId))
-                .orderBy(order.createdAt.desc())
+                .orderBy(order.orderDate.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();

@@ -2,6 +2,7 @@
 
 
     import com.app.preorder.common.exception.custom.InsufficientStockException;
+    import com.app.preorder.productservice.domain.entity.audit.AuditPeriod;
     import jakarta.persistence.*;
     import lombok.*;
 
@@ -10,7 +11,7 @@
     @ToString
     @Table(name = "tbl_stock")
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    public class Stock {
+    public class Stock extends AuditPeriod {
 
         @Id
         @GeneratedValue(strategy = GenerationType.AUTO)
