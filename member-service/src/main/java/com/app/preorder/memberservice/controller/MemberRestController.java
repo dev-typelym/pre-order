@@ -65,11 +65,11 @@ public class MemberRestController {
         return ResponseEntity.ok(ApiResponse.success(null, "비밀번호를 변경하였습니다. 다시 로그인 해주세요."));
     }
 
-    /** 인증 메일 전송 */
-    @PostMapping("/email/verification/send")
-    public ResponseEntity<ApiResponse<Void>> sendVerificationEmail(@RequestBody VerifyEmailRequest request) {
-        memberService.sendSignupVerificationMail(request.getLoginId());
-        return ResponseEntity.ok(ApiResponse.success(null, "성공적으로 인증 메일을 보냈습니다."));
+    /** 인증 메일 재발송 */
+    @PostMapping("/members/email-verification/resend")
+    public ResponseEntity<ApiResponse<Void>> resendVerificationEmail(@RequestBody VerifyEmailRequest request) {
+        memberService.resendVerificationEmail(request.getLoginId());
+        return ResponseEntity.ok(ApiResponse.success(null, "인증 메일이 재발송되었습니다."));
     }
 
     /** 인증 메일 확인 */

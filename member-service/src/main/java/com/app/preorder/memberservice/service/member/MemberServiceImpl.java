@@ -23,6 +23,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 
@@ -41,7 +45,7 @@ public class MemberServiceImpl implements MemberService {
     private final EmailService emailService;
     private final RedisUtil redisUtil;
 
-    // 로그인 아이디로 회원 조회
+    //  로그인 아이디로 회원 조회
     @Override
     @Transactional(readOnly = true)
     public Member findByLoginId(String loginId) {
@@ -49,7 +53,7 @@ public class MemberServiceImpl implements MemberService {
                 .orElseThrow(() -> new UserNotFoundException("해당 회원을 찾을 수 없습니다."));
     }
 
-    // 로그인 아이디와 비밀번호 검증 후 내부 회원 정보 반환
+    //  로그인 아이디와 비밀번호 검증 후 내부 회원 정보 반환
     @Override
     public MemberInternal verifyPasswordAndGetInfo(String loginId, String currentPassword) {
         Member member = memberRepository.findByLoginId(loginId)
@@ -62,14 +66,37 @@ public class MemberServiceImpl implements MemberService {
         return new MemberInternal(member.getId(), member.getLoginId(), member.getStatus(), member.getRole());
     }
 
-    // 회원가입 처리 및 인증메일 전송
+    //  회원가입 처리 및 인증메일 전송
     public void signup(SignupRequest request) {
         String loginId = memberTransactionalService.saveMember(request);
 
         sendSignupVerificationMail(loginId);
     }
 
-    // 내 정보 조회
+    //  회원가입 처리 및 인증메일 전송
+    public void resendVerificationEmail(String loginId) {
+        // 오늘 날짜 문자열
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String key = "resend_count:" + loginId + ":" + today;
+
+        //  자정까지 남은 초 계산
+        long secondsUntilMidnight = Duration.between(
+                LocalDateTime.now(),
+                LocalDate.now().plusDays(1).atStartOfDay()
+        ).getSeconds();
+
+        //  Redis count 증가 (첫 호출이면 TTL 설정)
+        Long count = redisUtil.incrementCount(key, secondsUntilMidnight);
+
+        if (count > 3) {
+            throw new EmailResendLimitException("오늘은 더 이상 재발송할 수 없습니다.");
+        }
+
+        //  인증 메일 발송
+        sendSignupVerificationMail(loginId);
+    }
+
+    //  내 정보 조회
     @Transactional(readOnly = true)
     public MemberDetailResponse getMyInfo(Long memberId) {
         Member member = memberRepository.findById(memberId)
@@ -77,7 +104,7 @@ public class MemberServiceImpl implements MemberService {
         return MemberDetailResponse.of(member, encryptUtil);
     }
 
-    // 회원 정보 수정
+    //  회원 정보 수정
     @Override
     @Transactional
     public void updateMember(UpdateMemberRequest request, Long memberId) {
@@ -87,7 +114,7 @@ public class MemberServiceImpl implements MemberService {
         memberFactory.updateProfile(member, request);
     }
 
-    // 회원 비밀번호 변경
+    //  회원 비밀번호 변경
     @Override
     @Transactional
     public void changePassword(Long memberId, String currentPassword, String newPassword) {
@@ -102,7 +129,7 @@ public class MemberServiceImpl implements MemberService {
         member.updatePassword(encodedNewPassword);
     }
 
-    // 아이디, 이메일, 전화번호 중복 여부 확인
+    //  아이디, 이메일, 전화번호 중복 여부 확인
     @Override
     public String checkDuplicate(DuplicateCheckRequest request) {
         DuplicateCheckType type = DuplicateCheckType.from(request.getType());
@@ -121,7 +148,7 @@ public class MemberServiceImpl implements MemberService {
         return "사용 가능한 " + type.getDisplayName() + "입니다.";
     }
 
-    // 이메일 인증 메일 전송
+    //  이메일 인증 메일 전송
     @Override
     public void sendSignupVerificationMail(String loginId) {
         Member member = memberRepository.findByLoginId(loginId)
@@ -135,7 +162,7 @@ public class MemberServiceImpl implements MemberService {
         emailService.sendSignupVerificationMail(decryptedEmail, verificationLink);
     }
 
-    // 이메일 인증 확인 및 카트 생성
+    //  이메일 인증 확인 및 카트 생성
     @Override
     @Transactional
     public void confirmEmailVerification(String key) {

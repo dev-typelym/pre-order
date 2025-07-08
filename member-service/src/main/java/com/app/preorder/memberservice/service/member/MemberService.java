@@ -38,6 +38,9 @@ public interface MemberService {
     /** 이메일 인증 메일 발송 */
     void sendSignupVerificationMail(String loginId);
 
+    /** 이메일 재발송 */
+    void resendVerificationEmail(String loginId);
+
     /** 회원 탈퇴 */
     void deleteMember(Long memberId, String currentPassword);
 }
