@@ -28,7 +28,7 @@ public class ProductFactory {
                 .productPrice(request.getProductPrice())
                 .description(request.getDescription())
                 .category(request.getCategory())
-                .period(salesPeriod)
+                .salesPeriod(salesPeriod)
                 .build();
     }
 

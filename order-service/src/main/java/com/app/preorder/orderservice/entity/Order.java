@@ -2,7 +2,7 @@ package com.app.preorder.orderservice.entity;
 
 import com.app.preorder.common.type.OrderStatus;
 import com.app.preorder.orderservice.domain.vo.OrderAddress;
-import com.app.preorder.orderservice.entity.audit.Period;
+import com.app.preorder.orderservice.entity.audit.AuditPeriod;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
@@ -20,7 +20,7 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @DynamicUpdate
 @DynamicInsert
-public class Order extends Period {
+public class Order extends AuditPeriod {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

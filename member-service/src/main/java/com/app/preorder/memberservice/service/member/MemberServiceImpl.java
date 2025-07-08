@@ -62,17 +62,11 @@ public class MemberServiceImpl implements MemberService {
         return new MemberInternal(member.getId(), member.getLoginId(), member.getStatus(), member.getRole());
     }
 
-    // 회원가입 처리 및 카트 생성
-    @Override
+    // 회원가입 처리 및 인증메일 전송
     public void signup(SignupRequest request) {
-        Long memberId = memberTransactionalService.saveMember(request);
+        String loginId = memberTransactionalService.saveMember(request);
 
-        try {
-            cartServiceClient.createCart(memberId);
-        } catch (FeignException e) {
-            memberTransactionalService.deleteMember(memberId);
-            throw new FeignException("카트 생성 실패, 회원 데이터 롤백", e);
-        }
+        sendSignupVerificationMail(loginId);
     }
 
     // 내 정보 조회
@@ -137,25 +131,34 @@ public class MemberServiceImpl implements MemberService {
         String token = UUID.randomUUID().toString();
         String verificationLink = "http://localhost:8081/member/verify/" + token;
 
-        redisUtil.setDataExpire(token, loginId, 60 * 30L);
+        redisUtil.setDataExpire(token, String.valueOf(member.getId()), 60 * 30L);
         emailService.sendSignupVerificationMail(decryptedEmail, verificationLink);
     }
 
-    // 이메일 인증 확인 및 상태 변경
+    // 이메일 인증 확인 및 카트 생성
     @Override
     @Transactional
     public void confirmEmailVerification(String key) {
-        String loginId = redisUtil.getData(key);
-        if (loginId == null) {
+        String memberIdStr = redisUtil.getData(key);
+        if (memberIdStr == null) {
             log.warn("[MemberService] 이메일 인증 실패 - key: {}", key);
             throw new ForbiddenException("인증 링크가 만료되었거나 유효하지 않습니다.");
         }
 
-        Member member = memberRepository.findByLoginId(loginId)
+        Long memberId = Long.parseLong(memberIdStr);
+
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new UserNotFoundException("해당 회원을 찾을 수 없습니다."));
 
         member.changeStatus(MemberStatus.ACTIVE);
         memberRepository.save(member);
+
+        //  인증 완료 후 카트 생성
+        try {
+            cartServiceClient.createCart(memberId);
+        } catch (FeignException e) {
+            log.error("카트 생성 실패 - memberId: {}", memberId, e);
+        }
 
         redisUtil.deleteData(key);
     }

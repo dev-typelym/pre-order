@@ -1,6 +1,8 @@
 package com.app.preorder.productservice.repository;
 
 import com.app.preorder.common.type.CategoryType;
+import com.app.preorder.common.type.ProductStatus;
+import com.app.preorder.productservice.domain.entity.QProduct;
 import com.app.preorder.productservice.dto.product.ProductSearchRequest;
 import com.app.preorder.productservice.domain.entity.Product;
 import com.querydsl.core.types.dsl.BooleanExpression;
