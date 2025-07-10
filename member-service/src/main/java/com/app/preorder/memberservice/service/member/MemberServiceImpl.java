@@ -182,9 +182,10 @@ public class MemberServiceImpl implements MemberService {
 
         //  인증 완료 후 카트 생성
         try {
-            cartServiceClient.createCart(memberId);
+            cartServiceClient.createCart(memberId); // ✅ 외부 요청
         } catch (FeignException e) {
-            log.error("카트 생성 실패 - memberId: {}", memberId, e);
+            log.error("카트 생성 실패", e);
+            redisUtil.addSet("failed_cart_member_ids", memberId.toString());
         }
 
         redisUtil.deleteData(key);

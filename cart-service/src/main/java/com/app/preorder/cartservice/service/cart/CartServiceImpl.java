@@ -44,12 +44,23 @@ public class CartServiceImpl implements CartService{
         cartRepository.save(cart);
     }
 
+    // 카트 존재 보장
+    public void ensureCartExists(Long memberId) {
+        boolean exists = cartRepository.existsByMemberId(memberId);
+        if (!exists) {
+            createCartForMember(memberId);
+        }
+    }
+
     // 카트 아이템 추가
     @Transactional
     public void addCartItem(Long memberId, Long productId, Long quantity) {
         if (quantity == null || quantity <= 0) {
             throw new InvalidCartOperationException("수량은 1 이상이어야 합니다.");
         }
+
+        //  카트 존재 보장 (Lazy Guard)
+        ensureCartExists(memberId);
 
         //  상품 상태 확인
         ProductInternal product = productServiceClient.getProductsByIds(List.of(productId)).get(0);
