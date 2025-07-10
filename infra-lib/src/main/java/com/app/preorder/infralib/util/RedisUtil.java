@@ -4,6 +4,7 @@ package com.app.preorder.infralib.util;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.Duration;
+import java.util.Set;
 
 
 public class RedisUtil {
@@ -36,5 +37,17 @@ public class RedisUtil {
             stringRedisTemplate.expire(key, Duration.ofSeconds(expireSeconds));
         }
         return count;
+    }
+
+    public void addSet(String key, String value) {
+        stringRedisTemplate.opsForSet().add(key, value);
+    }
+
+    public Set<String> getSetMembers(String key) {
+        return stringRedisTemplate.opsForSet().members(key);
+    }
+
+    public void removeSetMember(String key, String value) {
+        stringRedisTemplate.opsForSet().remove(key, value);
     }
 }

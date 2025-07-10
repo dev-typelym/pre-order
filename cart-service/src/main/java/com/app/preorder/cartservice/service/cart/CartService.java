@@ -11,6 +11,9 @@ public interface CartService {
     // 회원가입시 카트 생성
     void createCartForMember(Long memberId);
 
+    // 카트 존재 보장
+    void ensureCartExists(Long memberId);
+
     // 카트에 아이템 추가
     void addCartItem(Long memberId, Long productId, Long quantity);
 
