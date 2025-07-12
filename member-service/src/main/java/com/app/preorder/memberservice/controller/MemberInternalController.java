@@ -21,7 +21,7 @@ public class MemberInternalController {
 
     /** [Feign] ID 기반 회원 정보 조회 */
 
-    @GetMapping("/id/{id}")
+    @GetMapping("/{id}")
     public MemberInternal getMemberById(@PathVariable Long id) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("존재하지 않는 회원입니다."));

@@ -1,4 +1,4 @@
-package com.app.preorder.authservice.config;
+package com.app.preorder.memberservice.config;
 
 import com.app.preorder.infralib.security.CustomAccessDeniedHandler;
 import com.app.preorder.infralib.security.CustomAuthenticationEntryPoint;
@@ -17,7 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-public class SecurityConfig {
+public class MemberSecurityConfig {
 
     private final JwtRequestFilter jwtRequestFilter;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
@@ -31,24 +31,31 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .formLogin(form -> form.disable())  // 폼 로그인 명시적으로 비활성화
-                .httpBasic(httpBasic -> httpBasic.disable()) // httpBasic 명시적으로 비활성화
+                .formLogin(form -> form.disable())
+                .httpBasic(httpBasic -> httpBasic.disable())
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
-                .authorizeHttpRequests(requests -> requests
+                .authorizeHttpRequests(auth -> auth
+                        //  공개 API
                         .requestMatchers(
-                                "/api/auth/login",
-                                "/api/auth/reissue"
+                                "/api/members/signup",
+                                "/api/members/check-duplicate",
+                                "/api/members/email-verification/**"
                         ).permitAll()
+
+                        //  내부 호출 (Feign)
+                        .requestMatchers("/api/internal/members/**").permitAll()
+
+                        //  그 외 모든 요청 인증 필요
                         .anyRequest().authenticated()
                 );
 
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 }

@@ -35,6 +35,9 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
+    //  infra-lib
+    implementation project(':infra-lib')
+
     //  common-lib
     implementation project(':common-lib')
 

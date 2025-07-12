@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/orders")
-public class OrderRestController {
+public class OrderController {
 
     private final OrderService orderService;
 
@@ -73,16 +73,16 @@ public class OrderRestController {
     }
 
     // 주문 취소
-    @PostMapping("cancel")
-    public ResponseEntity<ApiResponse<Void>> cancelOrder(@RequestParam Long orderId) {
+    @PostMapping("/{orderId}/cancel")
+    public ResponseEntity<ApiResponse<Void>> cancelOrder(@PathVariable Long orderId) {
         orderService.orderCancel(orderId);
         return ResponseEntity.ok(ApiResponse.success(null, "주문이 정상적으로 취소되었습니다."));
     }
 
 
     // 반품 신청
-    @PostMapping("return")
-    public ResponseEntity<ApiResponse<Void>> returnOrder(@RequestParam Long orderId) {
+    @PostMapping("/{orderId}/return")
+    public ResponseEntity<ApiResponse<Void>> returnOrder(@PathVariable Long orderId) {
         orderService.orderReturn(orderId);
         return ResponseEntity.ok(ApiResponse.success(null, "반품 신청이 완료되었습니다."));
     }

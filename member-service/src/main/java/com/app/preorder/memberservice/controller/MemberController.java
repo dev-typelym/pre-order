@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/members")
 @Slf4j
 @RequiredArgsConstructor
-public class MemberRestController {
+public class MemberController {
 
     private final AuthServiceClient authServiceClient;
     private final MemberService memberService;
@@ -66,14 +66,14 @@ public class MemberRestController {
     }
 
     /** 인증 메일 재발송 */
-    @PostMapping("/members/email-verification/resend")
+    @PostMapping("/email-verification")
     public ResponseEntity<ApiResponse<Void>> resendVerificationEmail(@RequestBody VerifyEmailRequest request) {
         memberService.resendVerificationEmail(request.getLoginId());
         return ResponseEntity.ok(ApiResponse.success(null, "인증 메일이 재발송되었습니다."));
     }
 
     /** 인증 메일 확인 */
-    @GetMapping("/email/verification/{key}")
+    @GetMapping("/email-verification/{key}")
     public ResponseEntity<ApiResponse<Void>> verifyEmail(@PathVariable String key) {
         memberService.confirmEmailVerification(key);
         return ResponseEntity.ok(ApiResponse.success(null, "성공적으로 이메일 인증을 완료했습니다."));
