@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class AuthRestController {
+public class AuthController {
 
     private final AuthService authService;
 
@@ -44,7 +44,7 @@ public class AuthRestController {
     }
 
     //  Refresh Token을 이용한 Access Token 재발급
-    @PostMapping("/reissue")
+    @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<TokenResponse>> reissue(@RequestBody TokenRequest request) {
         TokenResponse response = authService.reissue(request.getRefreshToken());
         return ResponseEntity.ok(ApiResponse.success(response, "토큰 재발급 성공"));

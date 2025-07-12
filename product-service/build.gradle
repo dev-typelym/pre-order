@@ -35,6 +35,9 @@ dependencies {
 
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
 
+    //  infra-lib
+    implementation project(':infra-lib')
+
     //  common-lib
     implementation project(':common-lib')
 

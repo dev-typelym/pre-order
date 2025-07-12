@@ -19,7 +19,7 @@ import java.util.List;
 @RequestMapping("/api/carts")
 @RequiredArgsConstructor
 @Slf4j
-public class CartRestController {
+public class CartController {
 
     private final CartService cartService;
     private final MemberServiceClient memberFeignClient;
