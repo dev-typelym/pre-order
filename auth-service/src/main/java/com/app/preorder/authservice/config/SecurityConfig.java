@@ -1,8 +1,8 @@
 package com.app.preorder.authservice.config;
 
-import com.app.preorder.authservice.exception.security.CustomAccessDeniedHandler;
-import com.app.preorder.authservice.exception.security.CustomAuthenticationEntryPoint;
-import com.app.preorder.authservice.filter.JwtRequestFilter;
+import com.app.preorder.infralib.security.CustomAccessDeniedHandler;
+import com.app.preorder.infralib.security.CustomAuthenticationEntryPoint;
+import com.app.preorder.infralib.security.JwtRequestFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
@@ -23,14 +23,6 @@ public class SecurityConfig {
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
-//    private static final String ADMIN_PATH = "/admin/**";
-//    private static final String MYPAGE_PATH = "/mypage/**";
-//    private static final String LOGIN_PAGE = "/member/login";
-//    private static final String LOGIN_PROCESS = "/member/loginProcess";
-//    private static final String SIGNUP_PAGE = "/member/signup";
-//    private static final String SIGNUP_PROCESS = "/member/join";
-//    private static final String EMAIL_VERIFY = "/members/verify/**";
-
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return web -> web.ignoring()
@@ -49,7 +41,10 @@ public class SecurityConfig {
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .authorizeHttpRequests(requests -> requests
-                        .requestMatchers("/auth/login", "/auth/refresh").permitAll()
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/api/auth/reissue"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 );
 

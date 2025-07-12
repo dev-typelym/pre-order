@@ -20,6 +20,7 @@ import com.app.preorder.memberservice.service.email.EmailService;
 import com.app.preorder.common.type.DuplicateCheckType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +46,9 @@ public class MemberServiceImpl implements MemberService {
     private final EmailService emailService;
     private final RedisUtil redisUtil;
 
+    @Value("${email.auto-verify:false}")
+    private boolean autoVerify;
+
     //  로그인 아이디로 회원 조회
     @Override
     @Transactional(readOnly = true)
@@ -67,10 +71,25 @@ public class MemberServiceImpl implements MemberService {
     }
 
     //  회원가입 처리 및 인증메일 전송
+    @Transactional
     public void signup(SignupRequest request) {
-        String loginId = memberTransactionalService.saveMember(request);
+        Member member = memberFactory.createMember(request);
 
-        sendSignupVerificationMail(loginId);
+        if (autoVerify) {
+            member.changeStatus(MemberStatus.ACTIVE);
+        }
+        memberRepository.save(member);
+
+        if (autoVerify) {
+            try {
+                cartServiceClient.createCart(member.getId());
+            } catch (FeignException e) {
+                log.error("카트 생성 실패", e);
+                redisUtil.addSet("failed_cart_member_ids", member.getId().toString());
+            }
+        } else {
+            sendSignupVerificationMail(member.getLoginId());
+        }
     }
 
     //  회원가입 처리 및 인증메일 전송
