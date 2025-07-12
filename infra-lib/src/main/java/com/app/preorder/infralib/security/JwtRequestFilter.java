@@ -1,6 +1,5 @@
-package com.app.preorder.authservice.filter;
+package com.app.preorder.infralib.security;
 
-import com.app.preorder.authservice.util.TokenParser;
 import com.app.preorder.common.dto.TokenPayload;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;

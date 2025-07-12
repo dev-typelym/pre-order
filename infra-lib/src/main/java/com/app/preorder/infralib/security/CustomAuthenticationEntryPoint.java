@@ -1,4 +1,4 @@
-package com.app.preorder.authservice.exception.security;
+package com.app.preorder.infralib.security;
 
 import com.app.preorder.common.dto.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;

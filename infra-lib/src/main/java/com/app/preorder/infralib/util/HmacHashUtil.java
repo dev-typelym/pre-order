@@ -1,15 +1,19 @@
 package com.app.preorder.infralib.util;
 
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+@Component
 public class HmacHashUtil {
     private final String secretKey;
 
-    public HmacHashUtil(String secretKey) {
+    public HmacHashUtil(@Value("${hmac.secret-key}") String secretKey) {
         this.secretKey = secretKey;
     }
 
