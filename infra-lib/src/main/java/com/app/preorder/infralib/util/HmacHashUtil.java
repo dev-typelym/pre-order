@@ -2,6 +2,7 @@ package com.app.preorder.infralib.util;
 
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.Mac;
@@ -10,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 @Component
+@ConditionalOnProperty(name = "hmac.secret-key")
 public class HmacHashUtil {
     private final String secretKey;
 

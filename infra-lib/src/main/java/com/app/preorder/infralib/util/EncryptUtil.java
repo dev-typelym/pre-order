@@ -1,6 +1,7 @@
 package com.app.preorder.infralib.util;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.encrypt.AesBytesEncryptor;
 import org.springframework.stereotype.Component;
 
@@ -8,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 @Component
+@ConditionalOnProperty(name = "aes.key")
 public class EncryptUtil {
 
     private final AesBytesEncryptor encryptor;

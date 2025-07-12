@@ -17,6 +17,9 @@ spring:
       ddl-auto: update
     show-sql: true
 
+jwt:
+  secret: Pr5aQ!9zdT7XgW2mXyCb$$Hr4LdS6kJvB
+
 server:
   port: 8083
 

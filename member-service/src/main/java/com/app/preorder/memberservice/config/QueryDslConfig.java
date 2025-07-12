@@ -1,4 +1,4 @@
-package com.app.preorder.cartservice.config;
+package com.app.preorder.memberservice.config;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;

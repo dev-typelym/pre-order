@@ -8,13 +8,12 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class QueryDslConfig {
-    // EntityManager를 빈으로 주입받기 위해 사용하는 어노테이션
-    // @Autowired 안됨.
+
     @PersistenceContext
     private EntityManager entityManager;
 
     @Bean
-    public JPAQueryFactory jpaQueryFactory(){
+    public JPAQueryFactory jpaQueryFactory() {
         return new JPAQueryFactory(entityManager);
     }
 }
