@@ -1,5 +1,6 @@
 package com.app.preorder.memberservice.repository;
 
+
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
