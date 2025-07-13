@@ -96,7 +96,13 @@ public class MemberServiceImpl implements MemberService {
     public void resendVerificationEmail(String loginId) {
         // 오늘 날짜 문자열
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String key = "resend_count:" + loginId + ":" + today;
+
+        // loginId로 Member 조회 후 memberId 사용
+        Member member = memberRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 회원입니다."));
+        Long memberId = member.getId();
+
+        String key = "resend_count:" + memberId + ":" + today;
 
         //  자정까지 남은 초 계산
         long secondsUntilMidnight = Duration.between(

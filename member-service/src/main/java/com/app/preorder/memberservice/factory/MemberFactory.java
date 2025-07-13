@@ -12,7 +12,7 @@ import com.app.preorder.memberservice.dto.request.UpdateMemberRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import static org.apache.commons.lang3.StringUtils.trim;
 
 @Component
 @RequiredArgsConstructor
@@ -24,18 +24,18 @@ public class MemberFactory {
 
     public Member createMember(SignupRequest request) {
         return Member.builder()
-                .loginId(request.getLoginId())
-                .loginIdHash(hmacHashUtil.hmacSha256(request.getLoginId()))
-                .password(passwordUtil.encodePassword(request.getPassword()))
-                .name(encryptUtil.encrypt(request.getName()))
-                .email(encryptUtil.encrypt(request.getEmail()))
-                .emailHash(hmacHashUtil.hmacSha256(request.getEmail()))
-                .phone(encryptUtil.encrypt(request.getPhone()))
-                .phoneHash(hmacHashUtil.hmacSha256(request.getPhone()))
+                .loginId(trim(request.getLoginId()))
+                .loginIdHash(hmacHashUtil.hmacSha256(trim(request.getLoginId())))
+                .password(passwordUtil.encodePassword(trim(request.getPassword())))
+                .name(encryptUtil.encrypt(trim(request.getName())))
+                .email(encryptUtil.encrypt(trim(request.getEmail())))
+                .emailHash(hmacHashUtil.hmacSha256(trim(request.getEmail())))
+                .phone(encryptUtil.encrypt(trim(request.getPhone())))
+                .phoneHash(hmacHashUtil.hmacSha256(trim(request.getPhone())))
                 .address(new Address(
-                        encryptUtil.encrypt(request.getAddress().getRoadAddress()),
-                        encryptUtil.encrypt(request.getAddress().getDetailAddress()),
-                        encryptUtil.encrypt(request.getAddress().getPostalCode())
+                        encryptUtil.encrypt(trim(request.getAddress().getRoadAddress())),
+                        encryptUtil.encrypt(trim(request.getAddress().getDetailAddress())),
+                        encryptUtil.encrypt(trim(request.getAddress().getPostalCode()))
                 ))
                 .role(Role.ROLE_USER)
                 .status(MemberStatus.UNVERIFIED)
@@ -44,14 +44,15 @@ public class MemberFactory {
 
     public void updateProfile(Member member, UpdateMemberRequest request) {
         member.updateProfile(
-                encryptUtil.encrypt(request.getName()),
-                encryptUtil.encrypt(request.getEmail()),
-                encryptUtil.encrypt(request.getPhone()),
+                encryptUtil.encrypt(trim(request.getName())),
+                encryptUtil.encrypt(trim(request.getEmail())),
+                encryptUtil.encrypt(trim(request.getPhone())),
                 new Address(
-                        encryptUtil.encrypt(request.getAddress().getRoadAddress()),
-                        encryptUtil.encrypt(request.getAddress().getDetailAddress()),
-                        encryptUtil.encrypt(request.getAddress().getPostalCode())
+                        encryptUtil.encrypt(trim(request.getAddress().getRoadAddress())),
+                        encryptUtil.encrypt(trim(request.getAddress().getDetailAddress())),
+                        encryptUtil.encrypt(trim(request.getAddress().getPostalCode()))
                 )
         );
     }
+
 }

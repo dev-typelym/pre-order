@@ -64,7 +64,7 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
 
-        Long id = Long.valueOf(claims.get("id", String.class));
+        Long id = Long.valueOf(claims.get("id", Long.class));
         String username = claims.get("username", String.class);
         Role role = Role.valueOf(claims.get("role", String.class));
 
