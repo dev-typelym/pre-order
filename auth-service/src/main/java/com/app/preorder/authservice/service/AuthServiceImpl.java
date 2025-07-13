@@ -56,7 +56,12 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtUtil.generateAccessToken(member.getId(), member.getLoginId(), member.getRole().name());
         String refreshToken = jwtUtil.generateRefreshToken(member.getId(), member.getLoginId(), member.getRole().name());
 
-        redisUtil.setDataExpire("RT:" + member.getId(), refreshToken, refreshTokenExpireTimeInSeconds);
+        try {
+            redisUtil.setDataExpire("RT:" + member.getId(), refreshToken, refreshTokenExpireTimeInSeconds);
+            log.info("✅ Redis 저장 완료: RT:{}", member.getId());
+        } catch (Exception e) {
+            log.error("❌ Redis 저장 실패", e);
+        }
 
         return new LoginResponse(accessToken, refreshToken);
     }
