@@ -1,11 +1,7 @@
 const axios = require('axios');
 
-let accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc1MjQwNTAyOCwiZXhwIjoxNzUyNDA1OTI4fQ.9DYu21j0mcWBNPYYT_HsFDya4IjNO611KDRHQ8XGMIM";
-let refreshToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc1MjQwNTAyOCwiZXhwIjoxNzUzMDA5ODI4fQ.Se1SVZXo8x_STAAckShnU9j6S-M1lJ4S_RCtN2ggNhM";
-
-const api = axios.create({
-    baseURL: 'http://localhost:8082'
-});
+let accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc1MjQzMzY3NiwiZXhwIjoxNzUyNDM0NTc2fQ.L18MfGtNPgIhf6PEyTs9mI0-EPPetlgzX9i3nVqBhHM";
+let refreshToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc1MjQzMzY3NiwiZXhwIjoxNzUzMDM4NDc2fQ.HtpxwvuZlcGoaf7T_W3RyXVGic892Lljr6yz42_2j54";
 
 async function refreshAccessToken() {
     console.log('🔄 Access token 갱신 시도');
@@ -26,17 +22,22 @@ async function createProduct(index) {
     let retries = 3;
     while (retries > 0) {
         try {
-            await api.post('/api/admin/products', {
-                productName: `테스트상품${index}`,
-                productPrice: 10000 + index * 1000,
-                description: `테스트 상품 상세 설명 ${index}`,
-                stockQuantity: 6000,
-                category: 'GENERAL'
-            }, {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
+            await axios.post(
+                '/api/admin/products',
+                {
+                    productName: `테스트상품${index}`,
+                    productPrice: 10000 + index * 1000,
+                    description: `테스트 상품 상세 설명 ${index}`,
+                    stockQuantity: 6000,
+                    category: 'GENERAL'
+                },
+                {
+                    baseURL: 'http://localhost:8085',
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    }
                 }
-            });
+            );
             console.log(`✅ 상품 ${index} 생성 완료`);
             return;
         } catch (error) {
@@ -45,8 +46,13 @@ async function createProduct(index) {
                 await refreshAccessToken();
                 retries -= 1;
                 console.log(`🔁 상품 ${index} 생성 재시도 (남은 횟수: ${retries})`);
+                console.log('💬 재시도 직후 accessToken:', accessToken);
             } else {
                 console.error(`❌ 상품 ${index} 생성 실패:`, error.response?.data || error.message);
+                if (error.response) {
+                    console.error(`🔎 [상태코드]: ${error.response.status}`);
+                    console.error(`🔎 [응답내용]: ${JSON.stringify(error.response.data)}`);
+                }
                 return;
             }
         }
