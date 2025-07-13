@@ -26,6 +26,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.mariadb.jdbc:mariadb-java-client'
 
     // ✅ common-lib
     implementation project(':common-lib')
@@ -55,4 +56,8 @@ tasks.named('bootJar') {
     bootJar ->
         bootJar.mainClass.set('com.app.preorder.authservice.AuthServiceApplication')
         bootJar.archiveFileName = 'app.jar'
+}
+
+tasks.named('jar') {
+    enabled = false
 }

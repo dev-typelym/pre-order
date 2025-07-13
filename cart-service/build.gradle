@@ -47,7 +47,7 @@ dependencies {
 	//	common-lib
 	implementation project(':common-lib')
 
-	runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+	implementation 'org.mariadb.jdbc:mariadb-java-client'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -64,4 +64,8 @@ tasks.named('bootJar') {
 	bootJar ->
 		bootJar.mainClass.set('com.app.preorder.cartservice.CartServiceApplication')
 		bootJar.archiveFileName = 'app.jar'
+}
+
+tasks.named('jar') {
+	enabled = false
 }
