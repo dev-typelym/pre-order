@@ -17,8 +17,8 @@ public abstract class AuditPeriod {
 
     @CreatedDate
     @Column(updatable = false)
-    private LocalDateTime registerDate;
+    private LocalDateTime createdAt;
 
     @LastModifiedDate
-    private LocalDateTime updateDate;
+    private LocalDateTime updatedAt;
 }

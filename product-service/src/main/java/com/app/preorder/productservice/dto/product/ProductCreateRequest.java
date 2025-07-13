@@ -18,6 +18,7 @@ public class ProductCreateRequest {
     private BigDecimal productPrice;
     private String description;
     private CategoryType category;
+    private Long stockQuantity;
     private LocalDateTime saleStartAt;
     private LocalDateTime saleEndAt;
 }

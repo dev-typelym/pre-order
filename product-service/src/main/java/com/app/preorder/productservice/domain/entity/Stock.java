@@ -25,6 +25,12 @@
         @JoinColumn(name = "product_id")
         private Product product;
 
+        @Builder
+        public Stock(Long stockQuantity, Product product) {
+            this.stockQuantity = stockQuantity;
+            this.product = product;
+        }
+
         public Stock updateStockQuantity(Long stockQuantity){
             this.stockQuantity = stockQuantity;
             return this;
