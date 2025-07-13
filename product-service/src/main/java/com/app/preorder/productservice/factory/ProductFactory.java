@@ -10,8 +10,9 @@ import com.app.preorder.productservice.dto.product.ProductResponse;
 import com.app.preorder.productservice.dto.product.ProductUpdateRequest;
 import com.app.preorder.productservice.dto.stock.ProductStockResponse;
 import org.springframework.stereotype.Component;
-
 import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.StringUtils.trim;
 
 @Component
 public class ProductFactory {
@@ -24,9 +25,9 @@ public class ProductFactory {
                 .build();
 
         return Product.builder()
-                .productName(request.getProductName())
+                .productName(trim(request.getProductName()))
                 .productPrice(request.getProductPrice())
-                .description(request.getDescription())
+                .description(trim(request.getDescription()))
                 .category(request.getCategory())
                 .salesPeriod(salesPeriod)
                 .build();
@@ -34,9 +35,9 @@ public class ProductFactory {
 
     //  상품 수정
     public void updateFrom(ProductUpdateRequest request, Product product) {
-        if (request.getProductName() != null) product.updateProductName(request.getProductName());
+        if (request.getProductName() != null) product.updateProductName(trim(request.getProductName()));
         if (request.getProductPrice() != null) product.updateProductPrice(request.getProductPrice());
-        if (request.getDescription() != null) product.updateDescription(request.getDescription());
+        if (request.getDescription() != null) product.updateDescription(trim(request.getDescription()));
         if (request.getCategory() != null) product.updateCategory(request.getCategory());
         if (request.getStatus() != null) product.updateStatus(request.getStatus());
 
@@ -85,4 +86,5 @@ public class ProductFactory {
                 .stockQuantity(stock.getStockQuantity())
                 .build();
     }
+
 }
