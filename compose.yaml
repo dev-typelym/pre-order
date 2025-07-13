@@ -11,6 +11,7 @@ services:
       MYSQL_DATABASE: preorder
       MYSQL_USER: taek
       MYSQL_PASSWORD: 1234
+      TZ: Asia/Seoul
     volumes:
       - ./mariadb/data:/var/lib/mysql
       - ./mariadb/config:/etc/mysql/conf.d
@@ -21,6 +22,8 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
+    environment:
+      - TZ=Asia/Seoul
     volumes:
       - redis_data:/data
 
@@ -30,6 +33,8 @@ services:
     container_name: discovery-service
     ports:
       - "8761:8761"
+    environment:
+      - TZ=Asia/Seoul
 
   auth-service:
     build:
@@ -47,6 +52,7 @@ services:
       - HMAC_SECRET_KEY=${HMAC_SECRET_KEY}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - TZ=Asia/Seoul
     depends_on:
       - mariadb
       - redis
@@ -62,10 +68,12 @@ services:
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
+      - JWT_SECRET=${JWT_SECRET}
       - AES_KEY=${AES_KEY}
       - AES_SALT=${AES_SALT}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - TZ=Asia/Seoul
     depends_on:
       - mariadb
       - redis
@@ -82,6 +90,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
+      - JWT_SECRET=${JWT_SECRET}
+      - TZ=Asia/Seoul
     depends_on:
       - mariadb
       - redis
@@ -98,6 +108,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
+      - JWT_SECRET=${JWT_SECRET}
+      - TZ=Asia/Seoul
     depends_on:
       - mariadb
       - redis
@@ -113,6 +125,9 @@ services:
       - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_HOST=${REDIS_HOST}
+      - TZ=Asia/Seoul
     depends_on:
       - mariadb
       - redis

@@ -24,13 +24,24 @@ public class ProductFactory {
                 .endAt(request.getSaleEndAt())
                 .build();
 
-        return Product.builder()
+        Product product = Product.builder()
                 .productName(trim(request.getProductName()))
                 .productPrice(request.getProductPrice())
                 .description(trim(request.getDescription()))
                 .category(request.getCategory())
                 .salesPeriod(salesPeriod)
                 .build();
+
+        //  재고 생성
+        Stock stock = Stock.builder()
+                .stockQuantity(request.getStockQuantity() != null ? request.getStockQuantity() : 0L)
+                .product(product)
+                .build();
+
+        //  Product에 Stock 등록
+        product.getStocks().add(stock);
+
+        return product;
     }
 
     //  상품 수정

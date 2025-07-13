@@ -2,6 +2,7 @@ package com.app.preorder.productservice.domain.entity;
 
 import com.app.preorder.common.type.CategoryType;
 import com.app.preorder.common.type.ProductStatus;
+import com.app.preorder.productservice.domain.entity.audit.AuditPeriod;
 import com.app.preorder.productservice.domain.vo.SalesPeriod;
 import jakarta.persistence.*;
 import lombok.*;
@@ -16,7 +17,7 @@ import java.util.List;
 @ToString
 @Table(name = "tbl_product")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Product {
+public class Product extends AuditPeriod {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -42,7 +43,7 @@ public class Product {
     @Embedded
     private SalesPeriod salesPeriod;
 
-    @OneToMany(mappedBy = "product")
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Stock> stocks = new ArrayList<>();
 
     @Builder

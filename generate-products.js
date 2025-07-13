@@ -1,7 +1,7 @@
 const axios = require('axios');
 
-let accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc1MjQzMzY3NiwiZXhwIjoxNzUyNDM0NTc2fQ.L18MfGtNPgIhf6PEyTs9mI0-EPPetlgzX9i3nVqBhHM";
-let refreshToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc1MjQzMzY3NiwiZXhwIjoxNzUzMDM4NDc2fQ.HtpxwvuZlcGoaf7T_W3RyXVGic892Lljr6yz42_2j54";
+let accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc1MjQzOTA3MSwiZXhwIjoxNzUyNDM5OTcxfQ.w1c3lqxtCA6LZkocQBvc4vA1TvUGBB_zM0mtBmVjiAI";
+let refreshToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc1MjQzOTA3MSwiZXhwIjoxNzUzMDQzODcxfQ.NwmqLJDyPc60N62HawFAep_UF9pk5_-eyDqPaA_V_TQ";
 
 async function refreshAccessToken() {
     console.log('🔄 Access token 갱신 시도');
@@ -29,7 +29,7 @@ async function createProduct(index) {
                     productPrice: 10000 + index * 1000,
                     description: `테스트 상품 상세 설명 ${index}`,
                     stockQuantity: 6000,
-                    category: 'GENERAL'
+                    category: 'FOOD'
                 },
                 {
                     baseURL: 'http://localhost:8085',
