@@ -11,10 +11,16 @@ import java.util.List;
 public interface OrderService {
 
     // 단건 주문
-    Long orderSingleItem(Long memberId, Long productId, Long quantity);
+    Long prepareSingleOrder(Long memberId, Long productId, Long quantity);
 
     // 카트 다건 주문
-    Long orderFromCart(Long memberId, List<OrderItemRequest> items);
+    Long prepareCartOrder(Long memberId, List<OrderItemRequest> items);
+
+    //
+    void attemptPayment(Long orderId, Long memberId);
+
+    //
+    void completePayment(Long orderId, Long memberId);
 
     // 주문 목록 조회
     Page<OrderResponse> getOrdersWithPaging(int page, int size, Long memberId);

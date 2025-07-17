@@ -1,10 +1,7 @@
 package com.app.preorder.orderservice.exception;
 
 import com.app.preorder.common.dto.ApiResponse;
-import com.app.preorder.common.exception.custom.ForbiddenException;
-import com.app.preorder.common.exception.custom.InvalidOrderStatusException;
-import com.app.preorder.common.exception.custom.InvalidProductStatusException;
-import com.app.preorder.common.exception.custom.OrderNotFoundException;
+import com.app.preorder.common.exception.custom.*;
 import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -60,6 +57,14 @@ public class OrderExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.failure(ex.getMessage(), "ORDER_INVALID_PRODUCT_STATUS"));
+    }
+
+    @ExceptionHandler(OrderScheduleFailedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOrderScheduleFailed(OrderScheduleFailedException ex) {
+        log.error("[Order] 주문 스케줄 등록 실패", ex);
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.failure("주문 처리 중 스케줄 등록에 실패했습니다.", "ORDER_SCHEDULE_FAILED"));
     }
 
     // 예상치 못한 모든 예외

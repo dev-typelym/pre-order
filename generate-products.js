@@ -22,6 +22,10 @@ async function createProduct(index) {
     let retries = 3;
     while (retries > 0) {
         try {
+            const now = new Date();
+            const startAt = now.toISOString();
+            const endAt = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString(); // 10일 뒤
+
             await axios.post(
                 '/api/admin/products',
                 {
@@ -29,7 +33,9 @@ async function createProduct(index) {
                     productPrice: 10000 + index * 1000,
                     description: `테스트 상품 상세 설명 ${index}`,
                     stockQuantity: 6000,
-                    category: 'FOOD'
+                    category: 'FOOD',
+                    saleStartAt: startAt,
+                    saleEndAt: endAt
                 },
                 {
                     baseURL: 'http://localhost:8085',

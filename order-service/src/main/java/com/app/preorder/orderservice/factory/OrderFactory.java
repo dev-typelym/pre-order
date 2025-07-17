@@ -26,11 +26,13 @@ public class OrderFactory {
                 .build();
     }
 
-    public Order createOrder(Long memberId, OrderItem item) {
+    public Order createOrder(Long memberId, ProductInternal product, Long quantity) {
+        OrderItem item = createOrderItem(product, quantity);
+
         Order order = Order.builder()
                 .memberId(memberId)
                 .orderDate(LocalDateTime.now())
-                .status(OrderStatus.ORDER_COMPLETE)
+                .status(OrderStatus.PAYMENT_PREPARING)
                 .orderPrice(item.getProductPrice())
                 .build();
         order.addOrderItem(item);
@@ -41,7 +43,7 @@ public class OrderFactory {
         Order order = Order.builder()
                 .memberId(memberId)
                 .orderDate(LocalDateTime.now())
-                .status(OrderStatus.ORDER_COMPLETE)
+                .status(OrderStatus.PAYMENT_PREPARING)
                 .build();
 
         BigDecimal totalPrice = BigDecimal.ZERO;
@@ -49,14 +51,9 @@ public class OrderFactory {
         for (ProductInternal product : products) {
             Long quantity = quantityMap.get(product.getId());
 
-            OrderItem item = OrderItem.builder()
-                    .productId(product.getId())
-                    .productName(product.getName())
-                    .productPrice(product.getPrice())
-                    .productQuantity(quantity)
-                    .build();
-
+            OrderItem item = createOrderItem(product, quantity);
             order.addOrderItem(item);
+
             totalPrice = totalPrice.add(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
         }
 

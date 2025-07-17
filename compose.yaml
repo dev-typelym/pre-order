@@ -73,6 +73,8 @@ services:
       - AES_SALT=${AES_SALT}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - EMAIL_AUTO_VERIFY=${EMAIL_AUTO_VERIFY}
+      - HIKARI_MAX_POOL_SIZE=${HIKARI_MAX_POOL_SIZE}
       - TZ=Asia/Seoul
     depends_on:
       - mariadb
