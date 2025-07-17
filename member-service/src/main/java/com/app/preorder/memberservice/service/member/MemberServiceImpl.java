@@ -38,7 +38,6 @@ public class MemberServiceImpl implements MemberService {
 
     private final MemberRepository memberRepository;
     private final CartServiceClient cartServiceClient;
-    private final MemberTransactionalService memberTransactionalService;
     private final MemberFactory memberFactory;
     private final EncryptUtil encryptUtil;
     private final PasswordUtil passwordUtil;
@@ -74,6 +73,16 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public void signup(SignupRequest request) {
         Member member = memberFactory.createMember(request);
+
+        if (memberRepository.existsByLoginIdHash(hmacHashUtil.hmacSha256(member.getLoginId()))) {
+            throw new DuplicateValueException("이미 사용 중인 로그인 ID입니다.");
+        }
+        if (memberRepository.existsByEmailHash(hmacHashUtil.hmacSha256(member.getEmail()))) {
+            throw new DuplicateValueException("이미 사용 중인 이메일입니다.");
+        }
+        if (memberRepository.existsByPhoneHash(hmacHashUtil.hmacSha256(member.getPhone()))) {
+            throw new DuplicateValueException("이미 사용 중인 전화번호입니다.");
+        }
 
         if (autoVerify) {
             member.changeStatus(MemberStatus.ACTIVE);

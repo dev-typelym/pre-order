@@ -36,12 +36,11 @@
         private final OrderRepository orderRepository;
         private final OrderFactory orderFactory;
         private final OrderScheduler orderScheduler;
-        private final ProductServiceClient productServiceClient;
         private final OrderTransactionalService orderTransactionalService; // ✅ 추가
 
         // 단건 주문
         @Override
-        public Long orderSingleItem(Long memberId, Long productId, Long quantity) {
+        public Long prepareSingleOrder(Long memberId, Long productId, Long quantity) {
             ProductInternal product;
             StockInternal stock;
 
@@ -52,7 +51,7 @@
                 throw new FeignException("상품 서비스 통신 오류", ex);
             }
 
-            // ✅ 상품 상태 체크
+            //  상품 상태 체크
             if (!product.getStatus().name().equals("ENABLED")) {
                 throw new InvalidProductStatusException("상품이 판매 가능 상태가 아닙니다.");
             }
@@ -64,39 +63,24 @@
                 );
             }
 
-            try {
-                List<StockRequestInternal> stockList = List.of(new StockRequestInternal(productId, quantity));
-                productServiceClient.deductStocks(stockList);
-            } catch (feign.FeignException ex) {
-                throw new FeignException("상품 재고 차감 실패", ex);
-            }
-
-            try {
-                return orderTransactionalService.saveOrderInTransaction(memberId, product, quantity);
-            } catch (Exception e) {
-                try {
-                    List<StockRequestInternal> stockList = List.of(new StockRequestInternal(productId, quantity));
-                    productServiceClient.restoreStocks(stockList);
-                } catch (feign.FeignException restoreEx) {
-                    log.error("보상 트랜잭션(재고 복원) 실패 - productId: {}, quantity: {}", productId, quantity, restoreEx);
-                }
-                throw e;
-            }
+            return orderTransactionalService.saveOrderInTransaction(memberId, product, quantity);
         }
 
         // 카트 다건 주문
         @Override
-        public Long orderFromCart(Long memberId, List<OrderItemRequest> items) {
+        public Long prepareCartOrder(Long memberId, List<OrderItemRequest> items) {
 
             Map<Long, Long> quantityMap = items.stream()
                     .collect(Collectors.toMap(OrderItemRequest::getProductId, OrderItemRequest::getQuantity));
-
             List<Long> productIds = new ArrayList<>(quantityMap.keySet());
+
             List<ProductInternal> products;
+            List<StockInternal> stocks;
 
             //  상품 정보 조회
             try {
                 products = productClient.getProductsByIds(productIds);
+                stocks = productClient.getStocksByIds(productIds);
             } catch (FeignException e) {
                 throw new FeignException("상품 서비스 조회 실패", e);
             }
@@ -108,30 +92,70 @@
                 }
             }
 
-            //  재고 차감
-            List<StockRequestInternal> deductList = items.stream()
-                    .map(i -> new StockRequestInternal(i.getProductId(), i.getQuantity()))
+            for (StockInternal stock : stocks) {
+                Long requestQty = quantityMap.get(stock.getProductId());
+                if (stock.getStockQuantity() < requestQty) {
+                    throw new InsufficientStockException("상품 ID [" + stock.getProductId() + "]의 재고가 부족합니다.");
+                }
+            }
+
+            return orderTransactionalService.saveOrderFromCartInTransaction(memberId, products, quantityMap);
+        }
+
+
+        @Override
+        public void attemptPayment(Long orderId, Long memberId) {
+            Order order = findOrder(orderId);
+
+            if (!order.getMemberId().equals(memberId)) {
+                throw new ForbiddenException("본인 주문만 결제 시도 가능합니다.");
+            }
+
+            if (!OrderStatus.PAYMENT_PREPARING.equals(order.getStatus())) {
+                throw new InvalidOrderStatusException("결제 시도를 할 수 없는 상태입니다.");
+            }
+
+            // PG 결제 시뮬 로직 or 실제 결제 요청
+        }
+
+        @Override
+        public void completePayment(Long orderId, Long memberId) {
+            Order order = findOrder(orderId);
+
+            if (!order.getMemberId().equals(memberId)) {
+                throw new ForbiddenException("본인 주문만 결제 완료 가능합니다.");
+            }
+
+            if (!OrderStatus.PAYMENT_PREPARING.equals(order.getStatus())) {
+                throw new InvalidOrderStatusException("결제를 완료할 수 없는 상태입니다.");
+            }
+
+            List<StockRequestInternal> deductList = order.getOrderItems().stream()
+                    .map(i -> new StockRequestInternal(i.getProductId(), i.getProductQuantity()))
                     .toList();
 
+            // Step 1: 외부 처리 먼저
             try {
                 productClient.deductStocks(deductList);
             } catch (FeignException e) {
-                throw new FeignException("상품 재고 차감 실패", e);
+                log.warn("[OrderService] 재고 차감 요청 실패 - orderId: {}, reason: {}", order.getId(), e.getMessage(), e);
+                throw e;
             }
 
-            //  DB 트랜잭션
+            // Step 2: 트랜잭션 처리
             try {
-                return orderTransactionalService.saveOrderFromCartInTransaction(memberId, products, quantityMap);
+                orderTransactionalService.completeOrder(order);
             } catch (Exception e) {
-                // Step 4: 보상 트랜잭션 (재고 복원)
+                // Step 3: 보상 트랜잭션
                 try {
                     productClient.restoreStocks(deductList);
                 } catch (FeignException restoreEx) {
-                    log.error("보상 트랜잭션(재고 복원) 실패 - productIds: {}", productIds, restoreEx);
+                    log.error("[OrderService] 보상 트랜잭션 실패 - 재고 복원 실패 - orderId: {}, reason: {}", orderId, restoreEx.getMessage(), restoreEx);
                 }
                 throw e;
             }
         }
+
 
         // 주문 목록
         @Override

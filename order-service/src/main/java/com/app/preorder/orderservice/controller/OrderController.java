@@ -32,7 +32,7 @@ public class OrderController {
                 .getAuthentication().getPrincipal();
         Long memberId = payload.getId();
 
-        Long orderId = orderService.orderSingleItem(memberId, productId, count);
+        Long orderId = orderService.prepareSingleOrder(memberId, productId, count);
         return ResponseEntity.ok(ApiResponse.success(orderId, "주문이 완료되었습니다."));
     }
 
@@ -43,15 +43,35 @@ public class OrderController {
         TokenPayload payload = (TokenPayload) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Long memberId = payload.getId();
 
-        Long orderId = orderService.orderFromCart(memberId, request.getItems());
+        Long orderId = orderService.prepareCartOrder(memberId, request.getItems());
         return ResponseEntity.ok(ApiResponse.success(orderId, "장바구니 주문 완료"));
+    }
+
+    // 결제 시도
+    @PostMapping("/{orderId}/attempt")
+    public ResponseEntity<ApiResponse<Void>> attemptPayment(@PathVariable Long orderId) {
+        TokenPayload payload = (TokenPayload) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        orderService.attemptPayment(orderId, payload.getId());
+        return ResponseEntity.ok(ApiResponse.success(null, "결제 시도가 완료되었습니다."));
+    }
+
+    // 결제 완료
+    @PostMapping("/{orderId}/complete")
+    public ResponseEntity<ApiResponse<Void>> completePayment(@PathVariable Long orderId) {
+        TokenPayload payload = (TokenPayload) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        orderService.completePayment(orderId, payload.getId());
+        return ResponseEntity.ok(ApiResponse.success(null, "결제가 완료되었습니다."));
     }
 
     // 주문 목록
     @GetMapping("/me/orders")
-    public Page<OrderResponse> getOrders( @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<ApiResponse<Page<OrderResponse>>> getOrders(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
         TokenPayload payload = (TokenPayload) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return orderService.getOrdersWithPaging(page - 1, size, payload.getId());
+        Page<OrderResponse> result = orderService.getOrdersWithPaging(page - 1, size, payload.getId());
+        return ResponseEntity.ok(ApiResponse.success(result, "주문 목록 조회 성공"));
     }
 
     // 주문 상세보기
