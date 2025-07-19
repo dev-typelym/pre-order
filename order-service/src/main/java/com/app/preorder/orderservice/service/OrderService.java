@@ -1,5 +1,6 @@
 package com.app.preorder.orderservice.service;
 
+import com.app.preorder.common.dto.PendingQuantityInternal;
 import com.app.preorder.orderservice.domain.order.OrderDetailResponse;
 import com.app.preorder.orderservice.domain.order.OrderItemRequest;
 import com.app.preorder.orderservice.domain.order.OrderResponse;
@@ -9,6 +10,8 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 public interface OrderService {
+
+    List<PendingQuantityInternal> getPendingQuantities(List<Long> productIds);
 
     // 단건 주문
     Long prepareSingleOrder(Long memberId, Long productId, Long quantity);

@@ -61,7 +61,7 @@ public class ProductFactory {
         }
     }
 
-    public ProductResponse toResponse(Product product) {
+    public ProductResponse toResponse(Product product, long availableQuantity){
         return ProductResponse.builder()
                 .id(product.getId())
                 .productName(product.getProductName())
@@ -69,12 +69,7 @@ public class ProductFactory {
                 .description(product.getDescription())
                 .category(product.getCategory())
                 .status(product.getStatus())
-                .stocks(product.getStocks().stream()
-                        .map(stock -> ProductStockResponse.builder()
-                                .id(stock.getId())
-                                .stockQuantity(stock.getStockQuantity())
-                                .build())
-                        .collect(Collectors.toList()))
+                .availableQuantity(availableQuantity)
                 .build();
     }
 
