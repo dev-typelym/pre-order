@@ -25,10 +25,10 @@ public class ProductExceptionHandler {
 
     @ExceptionHandler(InsufficientStockException.class)
     public ResponseEntity<ApiResponse<Void>> handleStock(InsufficientStockException ex) {
-        log.warn("[Order] 재고 부족 예외 발생", ex);
+        log.warn("[Product] 재고 부족 예외 발생", ex);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.failure(ex.getMessage(), "ORDER_STOCK_INSUFFICIENT"));
+                .body(ApiResponse.failure(ex.getMessage(), "PRODUCT_STOCK_INSUFFICIENT"));
     }
 
     // 재고를 찾을 수 없음

@@ -1,8 +1,10 @@
 package com.app.preorder.productservice.service;
 
+import com.app.preorder.common.dto.PendingQuantityInternal;
 import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.exception.custom.ProductNotFoundException;
 import com.app.preorder.common.type.CategoryType;
+import com.app.preorder.productservice.client.OrderServiceClient;
 import com.app.preorder.productservice.dto.product.ProductCreateRequest;
 import com.app.preorder.productservice.dto.product.ProductResponse;
 import com.app.preorder.productservice.dto.product.ProductSearchRequest;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -28,6 +31,7 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final ProductFactory productFactory;
+    private final OrderServiceClient orderClient;
 
     //  상품 등록
     @Override
@@ -58,9 +62,19 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public Page<ProductResponse> getProducts(int page, ProductSearchRequest searchRequest, CategoryType categoryType) {
         Page<Product> products = productRepository.findAllBySearchConditions(PageRequest.of(page, 5), searchRequest, categoryType);
+        List<Product> content = products.getContent();
+        List<Long> productIds = content.stream().map(Product::getId).toList();
 
-        List<ProductResponse> responses = products.getContent().stream()
-                .map(productFactory::toResponse)
+        //  pending 수량 조회 후 Map으로 변환
+        Map<Long, Long> pendingMap = orderClient.getPendingQuantities(productIds).stream()
+                .collect(Collectors.toMap(PendingQuantityInternal::getProductId, PendingQuantityInternal::getQuantity));
+
+        List<ProductResponse> responses = content.stream()
+                .map(product -> {
+                    long stock = product.getStocks().get(0).getStockQuantity(); // 단일 stock 가정
+                    long pending = pendingMap.getOrDefault(product.getId(), 0L);
+                    return productFactory.toResponse(product, stock - pending);
+                })
                 .collect(Collectors.toList());
 
         return new PageImpl<>(responses, products.getPageable(), products.getTotalElements());
@@ -72,7 +86,15 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse getProductDetail(Long productId) {
         Product product = productRepository.findByIdWithStocks(productId)
                 .orElseThrow(() -> new ProductNotFoundException("해당 상품을 찾을 수 없습니다."));
-        return productFactory.toResponse(product);
+
+        long stock = product.getStocks().get(0).getStockQuantity();
+        long pending = orderClient.getPendingQuantities(List.of(productId)).stream()
+                .filter(p -> p.getProductId().equals(productId))
+                .findFirst()
+                .map(PendingQuantityInternal::getQuantity)
+                .orElse(0L);
+
+        return productFactory.toResponse(product, stock - pending);
     }
 
     //  상품 단건 조회(feign)

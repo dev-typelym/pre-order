@@ -1,8 +1,12 @@
 package com.app.preorder.orderservice.repository;
 
 
+import com.app.preorder.common.dto.PendingQuantityInternal;
+import com.app.preorder.common.type.OrderStatus;
 import com.app.preorder.orderservice.entity.Order;
 import com.app.preorder.orderservice.entity.QOrder;
+import com.app.preorder.orderservice.entity.QOrderItem;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -37,5 +41,22 @@ public class OrderQueryDslImpl implements OrderQueryDsl {
         return new PageImpl<>(orders, pageable, total != null ? total : 0);
     }
 
+    @Override
+    public List<PendingQuantityInternal> getPendingQuantities(List<Long> productIds) {
+        QOrderItem orderItem = QOrderItem.orderItem;
+        QOrder order = QOrder.order;
+
+        return query.select(Projections.constructor(PendingQuantityInternal.class,
+                        orderItem.productId,
+                        orderItem.productQuantity.sum()))
+                .from(orderItem)
+                .join(orderItem.order, order)
+                .where(
+                        order.status.eq(OrderStatus.PAYMENT_PREPARING),
+                        orderItem.productId.in(productIds)
+                )
+                .groupBy(orderItem.productId)
+                .fetch();
+    }
 
 }

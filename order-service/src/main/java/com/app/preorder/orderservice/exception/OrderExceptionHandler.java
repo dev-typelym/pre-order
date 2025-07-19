@@ -59,6 +59,14 @@ public class OrderExceptionHandler {
                 .body(ApiResponse.failure(ex.getMessage(), "ORDER_INVALID_PRODUCT_STATUS"));
     }
 
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ApiResponse<Void>> handleStock(InsufficientStockException ex) {
+        log.warn("[Order] 재고 부족 예외 발생", ex);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.failure(ex.getMessage(), "ORDER_STOCK_INSUFFICIENT"));
+    }
+
     @ExceptionHandler(OrderScheduleFailedException.class)
     public ResponseEntity<ApiResponse<Void>> handleOrderScheduleFailed(OrderScheduleFailedException ex) {
         log.error("[Order] 주문 스케줄 등록 실패", ex);

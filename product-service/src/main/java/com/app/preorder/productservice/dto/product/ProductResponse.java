@@ -22,5 +22,5 @@ public class ProductResponse {
     private String description;
     private CategoryType category;
     private ProductStatus status;
-    private List<ProductStockResponse> stocks;
+    private Long availableQuantity;
 }

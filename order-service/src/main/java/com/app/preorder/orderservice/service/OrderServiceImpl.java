@@ -1,5 +1,6 @@
     package com.app.preorder.orderservice.service;
 
+    import com.app.preorder.common.dto.PendingQuantityInternal;
     import com.app.preorder.common.dto.ProductInternal;
     import com.app.preorder.common.dto.StockRequestInternal;
     import com.app.preorder.common.dto.StockInternal;
@@ -38,6 +39,11 @@
         private final OrderScheduler orderScheduler;
         private final OrderTransactionalService orderTransactionalService; // ✅ 추가
 
+        @Override
+        public List<PendingQuantityInternal> getPendingQuantities(List<Long> productIds) {
+            return orderRepository.getPendingQuantities(productIds);
+        }
+
         // 단건 주문
         @Override
         public Long prepareSingleOrder(Long memberId, Long productId, Long quantity) {
@@ -47,19 +53,27 @@
             try {
                 product = productClient.getProductsByIds(List.of(productId)).get(0);
                 stock = productClient.getStocksByIds(List.of(productId)).get(0);
-            } catch (feign.FeignException ex) {
+            } catch (FeignException ex) {
                 throw new FeignException("상품 서비스 통신 오류", ex);
             }
 
-            //  상품 상태 체크
+            // 상품 상태 체크
             if (!product.getStatus().name().equals("ENABLED")) {
                 throw new InvalidProductStatusException("상품이 판매 가능 상태가 아닙니다.");
             }
 
-            // 기존 재고 체크
-            if (stock.getStockQuantity() < quantity) {
+            // ✅ pending 수량 다건 조회 → 단일 productId에 대한 값 추출
+            long pending = getPendingQuantities(List.of(productId)).stream()
+                    .filter(p -> p.getProductId().equals(productId))
+                    .findFirst()
+                    .map(PendingQuantityInternal::getQuantity)
+                    .orElse(0L);
+
+            long availableStock = stock.getStockQuantity() - pending;
+
+            if (availableStock < quantity) {
                 throw new InsufficientStockException(
-                        "상품 ID [" + productId + "]의 재고가 부족합니다. 요청 수량: " + quantity + ", 보유 재고: " + stock.getStockQuantity()
+                        "상품 ID [" + productId + "]의 재고가 부족합니다. 요청 수량: " + quantity + ", 사용 가능 재고: " + availableStock
                 );
             }
 
@@ -77,25 +91,34 @@
             List<ProductInternal> products;
             List<StockInternal> stocks;
 
-            //  상품 정보 조회
             try {
                 products = productClient.getProductsByIds(productIds);
                 stocks = productClient.getStocksByIds(productIds);
             } catch (FeignException e) {
+                log.warn("[OrderService] 상품 서비스 조회 실패 - productIds: {}, reason: {}", productIds, e.getMessage(), e);
                 throw new FeignException("상품 서비스 조회 실패", e);
             }
 
-            //  상품 상태 체크
             for (ProductInternal p : products) {
                 if (!p.getStatus().name().equals("ENABLED")) {
                     throw new InvalidProductStatusException("상품이 판매 가능 상태가 아닙니다. id: " + p.getId());
                 }
             }
 
+            //  pending 수량 조회 → Map 변환
+            Map<Long, Long> pendingMap = getPendingQuantities(productIds).stream()
+                    .collect(Collectors.toMap(PendingQuantityInternal::getProductId, PendingQuantityInternal::getQuantity));
+
             for (StockInternal stock : stocks) {
-                Long requestQty = quantityMap.get(stock.getProductId());
-                if (stock.getStockQuantity() < requestQty) {
-                    throw new InsufficientStockException("상품 ID [" + stock.getProductId() + "]의 재고가 부족합니다.");
+                long productId = stock.getProductId();
+                long requested = quantityMap.getOrDefault(productId, 0L);
+                long pending = pendingMap.getOrDefault(productId, 0L);
+                long available = stock.getStockQuantity() - pending;
+
+                if (available < requested) {
+                    throw new InsufficientStockException(
+                            "상품 ID [" + productId + "]의 재고가 부족합니다. 요청 수량: " + requested + ", 사용 가능 재고: " + available
+                    );
                 }
             }
 

@@ -1,10 +1,12 @@
 package com.app.preorder.productservice.service;
 
+import com.app.preorder.common.dto.PendingQuantityInternal;
 import com.app.preorder.common.dto.StockRequestInternal;
 import com.app.preorder.common.dto.StockInternal;
 import com.app.preorder.common.exception.custom.InsufficientStockException;
 import com.app.preorder.common.exception.custom.StockNotFoundException;
 import com.app.preorder.common.type.ProductStatus;
+import com.app.preorder.productservice.client.OrderServiceClient;
 import com.app.preorder.productservice.domain.entity.Stock;
 import com.app.preorder.productservice.factory.ProductFactory;
 import com.app.preorder.productservice.repository.StockRepository;
@@ -22,6 +24,7 @@ public class StockServiceImpl implements StockService {
 
     private final StockRepository stockRepository;
     private final ProductFactory productFactory;
+    private final OrderServiceClient orderClient;
 
     @Override
     @Transactional(readOnly = true)
@@ -35,31 +38,39 @@ public class StockServiceImpl implements StockService {
     @Override
     @Transactional
     public void deductStocks(List<StockRequestInternal> items) {
-        // 1. productIds 추출
         List<Long> productIds = items.stream()
                 .map(StockRequestInternal::getProductId)
                 .toList();
 
-        // 2. 다건 조회
         List<Stock> stocks = stockRepository.findStocksByIds(productIds);
 
-        // 3. Map 변환
         Map<Long, Stock> stockMap = stocks.stream()
                 .collect(Collectors.toMap(stock -> stock.getProduct().getId(), stock -> stock));
 
-        // 4. 검증 및 차감
+        //  pending 수량 미리 조회
+        Map<Long, Long> pendingMap = orderClient.getPendingQuantities(productIds).stream()
+                .collect(Collectors.toMap(PendingQuantityInternal::getProductId, PendingQuantityInternal::getQuantity));
+
         for (StockRequestInternal item : items) {
-            Stock stock = stockMap.get(item.getProductId());
+            Long productId = item.getProductId();
+            Long requestQty = item.getQuantity();
+
+            Stock stock = stockMap.get(productId);
             if (stock == null) {
                 throw new StockNotFoundException("해당 상품의 재고를 찾을 수 없습니다.");
             }
-            if (stock.getStockQuantity() < item.getQuantity()) {
-                throw new InsufficientStockException("상품 ID [" + item.getProductId() + "]의 재고가 부족합니다.");
+
+            Long pending = pendingMap.getOrDefault(productId, 0L);
+            Long availableStock = stock.getStockQuantity() - pending;
+
+            if (availableStock < requestQty) {
+                throw new InsufficientStockException(
+                        "상품 ID [" + productId + "]의 재고가 부족합니다. 요청 수량: " + requestQty + ", 사용 가능 재고: " + availableStock
+                );
             }
 
-            stock.decrease(item.getQuantity());
+            stock.decrease(requestQty);
 
-            //  재고가 0이면 상품 상태 SOLD_OUT 처리
             if (stock.getStockQuantity() == 0) {
                 stock.getProduct().updateStatus(ProductStatus.SOLD_OUT);
             }
