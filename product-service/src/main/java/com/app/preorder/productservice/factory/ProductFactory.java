@@ -82,6 +82,8 @@ public class ProductFactory {
                 .description(product.getDescription())
                 .category(product.getCategory())
                 .status(product.getStatus())
+                .startAt(product.getSalesPeriod() != null ? product.getSalesPeriod().getStartAt() : null)
+                .endAt(product.getSalesPeriod() != null ? product.getSalesPeriod().getEndAt() : null)
                 .build();
     }
 

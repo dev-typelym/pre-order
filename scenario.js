@@ -24,36 +24,37 @@ export const options = {
 
 // ✅ Refresh 로직
 function refreshAccessToken(user) {
-    const res = http.post('http://localhost:8081/api/auth/refresh', JSON.stringify({ refreshToken: user.refreshToken }), {
-        headers: { 'Content-Type': 'application/json' },
+    const res = http.post('http://localhost:8081/api/auth/refresh', JSON.stringify({
+        refreshToken: user.refreshToken
+    }), {
+        headers: { 'Content-Type': 'application/json' }
     });
 
     if (res.status === 200) {
-        const body = JSON.parse(res.body).data;
-        user.token = body.accessToken;
-        user.refreshToken = body.refreshToken;
+        const data = JSON.parse(res.body).data;
+        user.token = data.accessToken;
+        user.refreshToken = data.refreshToken;
         console.log(`✅ 토큰 갱신 성공: ${user.loginId}`);
     } else {
-        console.error(`❌ 토큰 갱신 실패: ${user.loginId}, status: ${res.status}, body: ${res.body}`);
+        console.error(`❌ 토큰 갱신 실패: ${user.loginId}`);
     }
 }
 
 function authorizedRequest(url, method, user, payload = null) {
-    let params = {
-        headers: {
-            Authorization: `Bearer ${user.token}`,
-            'Content-Type': 'application/json',
-        },
+    const headers = {
+        Authorization: `Bearer ${user.token}`,
+        'Content-Type': 'application/json',
     };
+    let res = method === 'GET'
+        ? http.get(url, { headers })
+        : http.post(url, payload, { headers });
 
-    let res = method === 'GET' ? http.get(url, params) : http.post(url, payload, params);
-
-    // 만료(401)면 refresh 시도
     if (res.status === 401) {
-        console.warn(`⚠️ 토큰 만료 감지: ${user.loginId} → 갱신 시도`);
         refreshAccessToken(user);
-        params.headers.Authorization = `Bearer ${user.token}`;
-        res = method === 'GET' ? http.get(url, params) : http.post(url, payload, params);
+        headers.Authorization = `Bearer ${user.token}`;
+        res = method === 'GET'
+            ? http.get(url, { headers })
+            : http.post(url, payload, { headers });
     }
 
     return res;
@@ -61,24 +62,47 @@ function authorizedRequest(url, method, user, payload = null) {
 
 export default function () {
     const user = users[Math.floor(Math.random() * users.length)];
+    const productId = Math.floor(Math.random() * 10) + 1; // 1 ~ 10
 
     // 1️⃣ 상품 목록 조회
     let res = authorizedRequest('http://localhost:8085/api/products', 'GET', user);
     check(res, { '✅ 상품 목록 조회 성공': (r) => r.status === 200 });
 
-    sleep(0.3);
+    sleep(Math.random() * 1);
 
     // 2️⃣ 상품 상세 조회
-    res = authorizedRequest('http://localhost:8085/api/products/1', 'GET', user);
+    res = authorizedRequest(`http://localhost:8085/api/products/${productId}`, 'GET', user);
     check(res, { '✅ 상품 상세 조회 성공': (r) => r.status === 200 });
 
-    sleep(Math.random() * 1);
+    sleep(Math.random() * 1.5);
 
-    // 3️⃣ 주문 생성
-    if (Math.random() > 0.2) {
-        res = authorizedRequest('http://localhost:8084/orders/items/1?count=1', 'POST', user);
-        check(res, { '✅ 주문 최종 성공': (r) => r.status === 200 });
+    // 3️⃣ 주문 준비 API
+    res = authorizedRequest(`http://localhost:8084/orders/prepare/items/${productId}?count=1`, 'POST', user);
+    check(res, { '✅ 주문 준비 성공': (r) => r.status === 200 });
+
+    // ❌ 이탈율 1 (prepare 이후)
+    if (Math.random() < 0.2) {
+        console.log('🚪 유저 이탈 시뮬레이션 (prepare 이후)');
+        return;
     }
 
-    sleep(Math.random() * 1);
+    sleep(Math.random() * 1.5);
+
+    // 4️⃣ 결제 시도 API
+    res = authorizedRequest(`http://localhost:8084/orders/attempt/items/${productId}`, 'POST', user);
+    check(res, { '✅ 결제 시도 성공': (r) => r.status === 200 });
+
+    // ❌ 이탈율 2 (attempt 이후)
+    if (Math.random() < 0.2) {
+        console.log('🚪 유저 이탈 시뮬레이션 (attempt 이후)');
+        return;
+    }
+
+    sleep(Math.random() * 1.5);
+
+    // 5️⃣ 결제 완료 API
+    res = authorizedRequest(`http://localhost:8084/orders/complete/items/${productId}`, 'POST', user);
+    check(res, { '✅ 결제 완료 성공': (r) => r.status === 200 });
+
+    sleep(Math.random()); // 랜덤 유저 행동 시뮬레이션
 }
