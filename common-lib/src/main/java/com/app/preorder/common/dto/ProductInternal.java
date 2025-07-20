@@ -5,6 +5,7 @@ import com.app.preorder.common.type.ProductStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
@@ -17,4 +18,6 @@ public class ProductInternal {
     private String description;
     private CategoryType category;
     private ProductStatus status;
+    private LocalDateTime startAt;
+    private LocalDateTime endAt;
 }

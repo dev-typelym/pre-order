@@ -59,6 +59,24 @@ public class OrderExceptionHandler {
                 .body(ApiResponse.failure(ex.getMessage(), "ORDER_INVALID_PRODUCT_STATUS"));
     }
 
+    // 상품 오픈 전 예외
+    @ExceptionHandler(ProductNotOpenException.class)
+    public ResponseEntity<ApiResponse<Void>> handleProductNotOpen(ProductNotOpenException ex) {
+        log.warn("[Order] 상품 오픈 전 예외", ex);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.failure(ex.getMessage(), "ORDER_PRODUCT_NOT_OPEN"));
+    }
+
+    // 상품 판매 종료 예외
+    @ExceptionHandler(ProductClosedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleProductClosed(ProductClosedException ex) {
+        log.warn("[Order] 상품 판매 종료 예외", ex);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.failure(ex.getMessage(), "ORDER_PRODUCT_CLOSED"));
+    }
+
     @ExceptionHandler(InsufficientStockException.class)
     public ResponseEntity<ApiResponse<Void>> handleStock(InsufficientStockException ex) {
         log.warn("[Order] 재고 부족 예외 발생", ex);

@@ -23,6 +23,7 @@
     import org.springframework.stereotype.Service;
     import org.springframework.transaction.annotation.Transactional;
 
+    import java.time.LocalDateTime;
     import java.util.ArrayList;
     import java.util.List;
     import java.util.Map;
@@ -62,7 +63,14 @@
                 throw new InvalidProductStatusException("상품이 판매 가능 상태가 아닙니다.");
             }
 
-            // ✅ pending 수량 다건 조회 → 단일 productId에 대한 값 추출
+            // 🔒 판매 시작 전 또는 판매 종료 후 여부 확인
+            if (product.getStartAt() != null && product.getStartAt().isAfter(LocalDateTime.now())) {
+                throw new ProductNotOpenException("상품의 판매가 아직 시작되지 않았습니다.");
+            }
+            if (product.getEndAt() != null && product.getEndAt().isBefore(LocalDateTime.now())) {
+                throw new ProductClosedException("상품의 판매가 종료되었습니다.");
+            }
+
             long pending = getPendingQuantities(List.of(productId)).stream()
                     .filter(p -> p.getProductId().equals(productId))
                     .findFirst()
@@ -83,7 +91,6 @@
         // 카트 다건 주문
         @Override
         public Long prepareCartOrder(Long memberId, List<OrderItemRequest> items) {
-
             Map<Long, Long> quantityMap = items.stream()
                     .collect(Collectors.toMap(OrderItemRequest::getProductId, OrderItemRequest::getQuantity));
             List<Long> productIds = new ArrayList<>(quantityMap.keySet());
@@ -103,9 +110,15 @@
                 if (!p.getStatus().name().equals("ENABLED")) {
                     throw new InvalidProductStatusException("상품이 판매 가능 상태가 아닙니다. id: " + p.getId());
                 }
+                // 🔒 판매 시작/종료 여부 체크
+                if (p.getStartAt() != null && p.getStartAt().isAfter(LocalDateTime.now())) {
+                    throw new ProductNotOpenException("상품 판매 시작 전입니다. id: " + p.getId());
+                }
+                if (p.getEndAt() != null && p.getEndAt().isBefore(LocalDateTime.now())) {
+                    throw new ProductClosedException("상품 판매가 종료되었습니다. id: " + p.getId());
+                }
             }
 
-            //  pending 수량 조회 → Map 변환
             Map<Long, Long> pendingMap = getPendingQuantities(productIds).stream()
                     .collect(Collectors.toMap(PendingQuantityInternal::getProductId, PendingQuantityInternal::getQuantity));
 

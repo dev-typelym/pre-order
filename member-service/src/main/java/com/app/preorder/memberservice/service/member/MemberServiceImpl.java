@@ -161,6 +161,9 @@ public class MemberServiceImpl implements MemberService {
 
         String encodedNewPassword = passwordUtil.encodePassword(newPassword);
         member.updatePassword(encodedNewPassword);
+
+        redisUtil.deleteData("RT:" + memberId);
+        log.info("[MemberService] 비밀번호 변경 - memberId: {}, 기존 RefreshToken 삭제 완료");
     }
 
     //  아이디, 이메일, 전화번호 중복 여부 확인
