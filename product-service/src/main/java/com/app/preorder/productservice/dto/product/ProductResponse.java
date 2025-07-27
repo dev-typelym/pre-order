@@ -1,7 +1,6 @@
 package com.app.preorder.productservice.dto.product;
 
 import com.app.preorder.common.type.ProductStatus;
-import com.app.preorder.productservice.dto.stock.ProductStockResponse;
 import com.app.preorder.common.type.CategoryType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Getter
 @NoArgsConstructor

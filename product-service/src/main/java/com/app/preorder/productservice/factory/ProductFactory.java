@@ -8,9 +8,7 @@ import com.app.preorder.productservice.domain.vo.SalesPeriod;
 import com.app.preorder.productservice.dto.product.ProductCreateRequest;
 import com.app.preorder.productservice.dto.product.ProductResponse;
 import com.app.preorder.productservice.dto.product.ProductUpdateRequest;
-import com.app.preorder.productservice.dto.stock.ProductStockResponse;
 import org.springframework.stereotype.Component;
-import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.trim;
 

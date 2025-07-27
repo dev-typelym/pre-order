@@ -3,15 +3,15 @@ package com.app.preorder.productservice.service;
 import com.app.preorder.common.dto.PendingQuantityInternal;
 import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.exception.custom.ProductNotFoundException;
+import com.app.preorder.common.exception.custom.StockNotFoundException;
 import com.app.preorder.common.type.CategoryType;
 import com.app.preorder.productservice.client.OrderServiceClient;
-import com.app.preorder.productservice.dto.product.ProductCreateRequest;
-import com.app.preorder.productservice.dto.product.ProductResponse;
-import com.app.preorder.productservice.dto.product.ProductSearchRequest;
+import com.app.preorder.productservice.domain.entity.Stock;
+import com.app.preorder.productservice.dto.product.*;
 import com.app.preorder.productservice.domain.entity.Product;
-import com.app.preorder.productservice.dto.product.ProductUpdateRequest;
 import com.app.preorder.productservice.factory.ProductFactory;
 import com.app.preorder.productservice.repository.ProductRepository;
+import com.app.preorder.productservice.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+    private final StockRepository stockRepository;
     private final ProductFactory productFactory;
     private final OrderServiceClient orderClient;
 
@@ -117,5 +118,23 @@ public class ProductServiceImpl implements ProductService {
         return products.stream()
                 .map(productFactory::toProductInternal)
                 .collect(Collectors.toList());
+    }
+
+
+    // 상품 ID 목록으로 가용 재고 수량 계산 (재고 - 결제대기수량)
+    @Override
+    public List<ProductAvailableStockResponse> getAvailableQuantities(List<Long> productIds) {
+        Map<Long, Long> pendingMap = orderClient.getPendingQuantities(productIds).stream()
+                .collect(Collectors.toMap(
+                        PendingQuantityInternal::getProductId,
+                        PendingQuantityInternal::getQuantity  // ✅ 여기 수정
+                ));
+
+        return stockRepository.findByProductIds(productIds).stream()
+                .map(stock -> {
+                    Long pending = pendingMap.getOrDefault(stock.getProduct().getId(), 0L);
+                    Long available = stock.getStockQuantity() - pending;
+                    return new ProductAvailableStockResponse(stock.getProduct().getId(), Math.max(available, 0L));
+                }).collect(Collectors.toList());
     }
 }

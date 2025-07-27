@@ -64,7 +64,7 @@ public class OrderController {
     }
 
     // 주문 목록
-    @GetMapping("/me/orders")
+    @GetMapping("/me")
     public ResponseEntity<ApiResponse<Page<OrderResponse>>> getOrders(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
