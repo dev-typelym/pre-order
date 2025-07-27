@@ -3,10 +3,7 @@ package com.app.preorder.productservice.service;
 
 import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.type.CategoryType;
-import com.app.preorder.productservice.dto.product.ProductCreateRequest;
-import com.app.preorder.productservice.dto.product.ProductResponse;
-import com.app.preorder.productservice.dto.product.ProductSearchRequest;
-import com.app.preorder.productservice.dto.product.ProductUpdateRequest;
+import com.app.preorder.productservice.dto.product.*;
 import org.springframework.data.domain.Page;
 import java.util.List;
 
@@ -32,6 +29,10 @@ public interface ProductService {
 
     //  상품 다건 조회(feign)
     List<ProductInternal> getProductsByIds(List<Long> productIds);
+
+    // 상품 ID 목록으로 가용 재고 수량 계산 (재고 - 결제대기수량)
+    List<ProductAvailableStockResponse> getAvailableQuantities(List<Long> productIds);
+
 
 }
 

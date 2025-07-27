@@ -7,6 +7,8 @@ import com.app.preorder.orderservice.domain.order.OrderItemResponse;
 import com.app.preorder.orderservice.domain.order.OrderResponse;
 import com.app.preorder.orderservice.entity.Order;
 import com.app.preorder.orderservice.entity.OrderItem;
+import com.app.preorder.orderservice.generator.OrderNumberGenerator;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -14,8 +16,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+@RequiredArgsConstructor
 @Component
 public class OrderFactory {
+
+    private final OrderNumberGenerator orderNumberGenerator;
 
     public OrderItem createOrderItem(ProductInternal product, Long quantity) {
         return OrderItem.builder()
@@ -31,6 +36,7 @@ public class OrderFactory {
 
         Order order = Order.builder()
                 .memberId(memberId)
+                .orderNumber(orderNumberGenerator.generate())
                 .orderDate(LocalDateTime.now())
                 .status(OrderStatus.PAYMENT_PREPARING)
                 .orderPrice(item.getProductPrice())
@@ -42,6 +48,7 @@ public class OrderFactory {
     public Order createOrderFromCart(Long memberId, List<ProductInternal> products, Map<Long, Long> quantityMap) {
         Order order = Order.builder()
                 .memberId(memberId)
+                .orderNumber(orderNumberGenerator.generate())
                 .orderDate(LocalDateTime.now())
                 .status(OrderStatus.PAYMENT_PREPARING)
                 .build();

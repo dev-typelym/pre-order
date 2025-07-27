@@ -2,8 +2,6 @@ package com.app.preorder.productservice.client;
 
 import com.app.preorder.common.dto.PendingQuantityInternal;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
