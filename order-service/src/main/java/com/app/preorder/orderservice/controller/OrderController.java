@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/orders")
+@RequestMapping("/api/orders")
 public class OrderController {
 
     private final OrderService orderService;
 
-    // 단일 상품 주문
-    @PostMapping("/items/{productId}")
+    // 단일 상품 주문 준비
+    @PostMapping("/prepare/{productId}")
     public ResponseEntity<ApiResponse<Long>> orderItem(
             @PathVariable Long productId,
             @RequestParam Long count) {
@@ -37,8 +37,8 @@ public class OrderController {
     }
 
 
-    // 카트에서 주문
-    @PostMapping("/cart")
+    // 카트에서 주문 준비
+    @PostMapping("/prepare/cart")
     public ResponseEntity<ApiResponse<Long>> orderFromCart(@RequestBody OrderFromCartRequest request) {
         TokenPayload payload = (TokenPayload) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Long memberId = payload.getId();

@@ -1,8 +1,8 @@
 const axios = require('axios');
 
 // ✅ 최신 발급된 토큰으로 교체
-let accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc1MzQ0MDgzMCwiZXhwIjoxNzUzNTI3MjMwfQ.AVDsYbsXJHUYfUiNB0dhM2Y-UzoeiC-9jTe2kobPhe4";
-let refreshToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc1MzQ0MDgzMCwiZXhwIjoxNzU0MDQ1NjMwfQ.5VoNIx0ewO2-acXxWakfSq5HjCY8mm9KuDwEXGQGOv0";
+let accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc1NDAzNTUzMiwiZXhwIjoxNzU0MTIxOTMyfQ.noFHKVh4AF5XNjoiu73bIPo7pfbLwae71LRgyujXi68";
+let refreshToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc1NDAzNTUzMiwiZXhwIjoxNzU0NjQwMzMyfQ.Xdus1SFhrYOXNnj0110LijtRX64VaxC9HdlIC-zFtHU";
 
 async function refreshAccessToken() {
     console.log('🔄 Access token 갱신 시도');

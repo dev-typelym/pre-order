@@ -40,6 +40,7 @@ public class OrderSecurityConfig {
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/internal/**").permitAll()
                         .anyRequest().authenticated()
                 );
 

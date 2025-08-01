@@ -45,7 +45,7 @@
             return orderRepository.getPendingQuantities(productIds);
         }
 
-        // 단건 주문
+        // 단건 주문 준비
         @Override
         public Long prepareSingleOrder(Long memberId, Long productId, Long quantity) {
             ProductInternal product;
@@ -88,7 +88,7 @@
             return orderTransactionalService.saveOrderInTransaction(memberId, product, quantity);
         }
 
-        // 카트 다건 주문
+        // 카트 다건 주문 준비
         @Override
         public Long prepareCartOrder(Long memberId, List<OrderItemRequest> items) {
             Map<Long, Long> quantityMap = items.stream()
@@ -138,7 +138,7 @@
             return orderTransactionalService.saveOrderFromCartInTransaction(memberId, products, quantityMap);
         }
 
-
+        // 결제 시도
         @Override
         public void attemptPayment(Long orderId, Long memberId) {
             Order order = findOrder(orderId);
@@ -154,6 +154,7 @@
             // PG 결제 시뮬 로직 or 실제 결제 요청
         }
 
+        // 결제 완료
         @Override
         public void completePayment(Long orderId, Long memberId) {
             Order order = findOrder(orderId);
