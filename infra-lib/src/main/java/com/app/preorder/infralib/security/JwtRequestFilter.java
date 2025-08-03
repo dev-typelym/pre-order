@@ -29,6 +29,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
+        // 내부 API는 인증 필터 우회
+        if (request.getRequestURI().startsWith("/api/internal/")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -55,6 +61,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 return;
             }
         }
+
         chain.doFilter(request, response);
     }
 }

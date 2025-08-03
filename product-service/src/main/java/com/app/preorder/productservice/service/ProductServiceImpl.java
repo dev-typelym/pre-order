@@ -66,15 +66,24 @@ public class ProductServiceImpl implements ProductService {
         List<Product> content = products.getContent();
         List<Long> productIds = content.stream().map(Product::getId).toList();
 
-        //  pending 수량 조회 후 Map으로 변환
+        // ✅ (1) pending 수량 미리 조회
         Map<Long, Long> pendingMap = orderClient.getPendingQuantities(productIds).stream()
                 .collect(Collectors.toMap(PendingQuantityInternal::getProductId, PendingQuantityInternal::getQuantity));
 
+        // ✅ (2) 재고 수량도 미리 조회 (N+1 제거 핵심)
+        Map<Long, Long> stockMap = stockRepository.findByProductIds(productIds).stream()
+                .collect(Collectors.toMap(
+                        stock -> stock.getProduct().getId(),
+                        stock -> stock.getStockQuantity()
+                ));
+
+        // ✅ (3) 각 상품에 대해 가용 수량 계산 → 응답 변환
         List<ProductResponse> responses = content.stream()
                 .map(product -> {
-                    long stock = product.getStocks().get(0).getStockQuantity(); // 단일 stock 가정
+                    long stock = stockMap.getOrDefault(product.getId(), 0L);
                     long pending = pendingMap.getOrDefault(product.getId(), 0L);
-                    return productFactory.toResponse(product, stock - pending);
+                    long available = Math.max(stock - pending, 0L);
+                    return productFactory.toResponse(product, available);
                 })
                 .collect(Collectors.toList());
 

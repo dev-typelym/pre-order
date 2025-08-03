@@ -23,3 +23,4 @@
         @PatchMapping("/stocks/restore")
         void restoreStocks(@RequestBody List<StockRequestInternal> items);
     }
+
