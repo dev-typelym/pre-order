@@ -2,7 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 
 const NUM_USERS = 5000;
-const BATCH_SIZE = 20;
+const BATCH_SIZE = 30;
 const tokens = [];
 const failedUsers = [];
 

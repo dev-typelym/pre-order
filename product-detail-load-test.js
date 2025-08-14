@@ -3,7 +3,6 @@ import { check, sleep } from 'k6';
 import { SharedArray } from 'k6/data';
 
 const users = new SharedArray("users", () => JSON.parse(open('./tokens.json')));
-const productId = 1;
 
 export const options = {
     stages: [
@@ -54,6 +53,7 @@ function authorizedRequest(url, method, user) {
 
 export default function () {
     const user = Object.assign({}, users[Math.floor(Math.random() * users.length)]);
+    const productId = Math.floor(Math.random() * 10) + 1; // 1~10 사이 무작위 ID
     const res = authorizedRequest(`http://localhost:8085/api/products/${productId}`, 'GET', user);
     check(res, { '✅ 상품 상세 조회 성공': (r) => r.status === 200 });
     sleep(Math.random() * 1.5);
