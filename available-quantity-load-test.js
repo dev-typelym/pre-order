@@ -3,7 +3,6 @@ import { check, sleep } from 'k6';
 import { SharedArray } from 'k6/data';
 
 const users = new SharedArray("users", () => JSON.parse(open('./tokens.json')));
-const productId = 1;
 
 export const options = {
     stages: [
@@ -54,7 +53,16 @@ function authorizedRequest(url, method, user, payload = null) {
 
 export default function () {
     const user = Object.assign({}, users[Math.floor(Math.random() * users.length)]);
-    const res = authorizedRequest(`http://localhost:8085/api/products/available-quantities`, 'POST', user, JSON.stringify([productId]));
+
+    const productId = Math.floor(Math.random() * 10) + 1; // 1~10번 상품 중 무작위 선택
+
+    const res = authorizedRequest(
+        'http://localhost:8085/api/products/available-quantities',
+        'POST',
+        user,
+        JSON.stringify([productId])
+    );
+
     check(res, { '✅ 가용 재고 수량 조회 성공': (r) => r.status === 200 });
     sleep(Math.random() * 1);
 }
