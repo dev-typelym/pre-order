@@ -7,10 +7,12 @@ import com.app.preorder.productservice.dto.product.ProductSearchRequest;
 import com.app.preorder.productservice.domain.entity.Product;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +23,7 @@ public class ProductQueryDslImpl implements ProductQueryDsl{
 
     private final JPAQueryFactory query;
     private final QProduct product = QProduct.product;
+    private final EntityManager em;
 
     // 상품 목록
     @Override
@@ -60,5 +63,16 @@ public class ProductQueryDslImpl implements ProductQueryDsl{
                 .fetchOne();
 
         return Optional.ofNullable(result);
+    }
+
+    @Override
+    @Transactional
+    public int updateStatus(Long productId, ProductStatus status) {
+        long updated = query.update(product)
+                .set(product.status, status)
+                .where(product.id.eq(productId))
+                .execute();
+        em.clear(); // ✔ 벌크 연산은 영속성 컨텍스트와 분리되므로 클리어 권장
+        return (int) updated;
     }
 }

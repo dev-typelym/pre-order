@@ -18,23 +18,38 @@ public class ProductInternalController {
     private final ProductService productService;
     private final StockService stockService;
 
-    @PostMapping("/list") // ✅ 상품 다건 조회 (Feign용)
+    // ✅ 상품 다건 조회 (Feign용)
+    @PostMapping("/list")
     public List<ProductInternal> getProductsByIds(@RequestBody List<Long> productIds) {
         return productService.getProductsByIds(productIds);
     }
 
-    @PostMapping("/stocks") // ✅ 재고 다건 조회 (Feign용)
+    // ✅ 재고 다건 조회 (Feign용)
+    @PostMapping("/stocks")
     public List<StockInternal> getStocksByIds(@RequestBody List<Long> productIds) {
         return stockService.getStocksByIds(productIds);
     }
 
-    @PatchMapping("/stocks/deduct") // ✅ 재고 차감 (Feign용)
-    public void deductStocks(@RequestBody List<StockRequestInternal> items) {
-        stockService.deductStocks(items);
+    // ✅ 예약 잡기 (prepare 단계)
+    @PostMapping("/stocks/reserve")
+    public void reserveStocks(@RequestBody List<StockRequestInternal> items) {
+        stockService.reserveStocks(items);
     }
 
+    // ✅ 예약 해제 (결제 전 취소/이탈 정리)
+    @PostMapping("/stocks/unreserve")
+    public void unreserveStocks(@RequestBody List<StockRequestInternal> items) {
+        stockService.unreserveStocks(items);
+    }
 
-    @PatchMapping("/stocks/restore") //✅ 재고 복원
+    // ✅ 커밋(= consumeReserved, complete 단계 한 방 처리: Q-=, R-=)
+    @PatchMapping("/stocks/commit")
+    public void commitStocks(@RequestBody List<StockRequestInternal> items) {
+        stockService.commitStocks(items);
+    }
+
+    // ✅ 재고 복원(결제 후 보상: 환불/반품)
+    @PatchMapping("/stocks/restore")
     public void restoreStocks(@RequestBody List<StockRequestInternal> items) {
         stockService.restoreStocks(items);
     }
