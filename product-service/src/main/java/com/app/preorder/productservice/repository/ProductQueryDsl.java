@@ -1,6 +1,7 @@
 package com.app.preorder.productservice.repository;
 
 import com.app.preorder.common.type.CategoryType;
+import com.app.preorder.common.type.ProductStatus;
 import com.app.preorder.productservice.dto.product.ProductSearchRequest;
 import com.app.preorder.productservice.domain.entity.Product;
 import org.springframework.data.domain.Page;
@@ -15,4 +16,6 @@ public interface ProductQueryDsl {
 
     //    상품 상세
     Optional<Product> findByIdWithStocks(Long productId);
+
+    int updateStatus(Long productId, ProductStatus status);
 }

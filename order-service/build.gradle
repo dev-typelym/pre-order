@@ -36,6 +36,8 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'io.github.openfeign:feign-okhttp'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+    implementation "org.springframework.cloud:spring-cloud-starter-loadbalancer"
 
     //  infra-lib
     implementation project(':infra-lib')
