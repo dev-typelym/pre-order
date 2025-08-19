@@ -32,7 +32,6 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final StockRepository stockRepository;
     private final ProductFactory productFactory;
-    private final OrderServiceClient orderClient;
 
     //  상품 등록
     @Override
@@ -63,29 +62,21 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public Page<ProductResponse> getProducts(int page, ProductSearchRequest searchRequest, CategoryType categoryType) {
         Page<Product> products = productRepository.findAllBySearchConditions(PageRequest.of(page, 5), searchRequest, categoryType);
+
         List<Product> content = products.getContent();
         List<Long> productIds = content.stream().map(Product::getId).toList();
 
-        // ✅ (1) pending 수량 미리 조회
-        Map<Long, Long> pendingMap = orderClient.getPendingQuantities(productIds).stream()
-                .collect(Collectors.toMap(PendingQuantityInternal::getProductId, PendingQuantityInternal::getQuantity));
-
-        // ✅ (2) 재고 수량도 미리 조회 (N+1 제거 핵심)
-        Map<Long, Long> stockMap = stockRepository.findByProductIds(productIds).stream()
+        // 재고 한 번에 조회 → availableMap 만들기
+        Map<Long, Long> availableMap = stockRepository.findByProductIds(productIds).stream()
                 .collect(Collectors.toMap(
-                        stock -> stock.getProduct().getId(),
-                        stock -> stock.getStockQuantity()
+                        s -> s.getProduct().getId(),
+                        s -> Math.max((s.getStockQuantity() == null ? 0L : s.getStockQuantity())
+                                - (s.getReserved() == null ? 0L : s.getReserved()), 0L)
                 ));
 
-        // ✅ (3) 각 상품에 대해 가용 수량 계산 → 응답 변환
         List<ProductResponse> responses = content.stream()
-                .map(product -> {
-                    long stock = stockMap.getOrDefault(product.getId(), 0L);
-                    long pending = pendingMap.getOrDefault(product.getId(), 0L);
-                    long available = Math.max(stock - pending, 0L);
-                    return productFactory.toResponse(product, available);
-                })
-                .collect(Collectors.toList());
+                .map(p -> productFactory.toResponse(p, availableMap.getOrDefault(p.getId(), 0L)))
+                .toList();
 
         return new PageImpl<>(responses, products.getPageable(), products.getTotalElements());
     }
@@ -94,17 +85,15 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductResponse getProductDetail(Long productId) {
-        Product product = productRepository.findByIdWithStocks(productId)
+        Product product = productRepository.findByIdWithStock(productId)
                 .orElseThrow(() -> new ProductNotFoundException("해당 상품을 찾을 수 없습니다."));
 
-        long stock = product.getStocks().get(0).getStockQuantity();
-        long pending = orderClient.getPendingQuantities(List.of(productId)).stream()
-                .filter(p -> p.getProductId().equals(productId))
-                .findFirst()
-                .map(PendingQuantityInternal::getQuantity)
-                .orElse(0L);
+        Stock stock = product.getStock(); // fetch join됨
+        long qty = stock.getStockQuantity() == null ? 0L : stock.getStockQuantity();
+        long res = stock.getReserved() == null ? 0L : stock.getReserved();
+        long available = Math.max(qty - res, 0L);
 
-        return productFactory.toResponse(product, stock - pending);
+        return productFactory.toResponse(product, available);
     }
 
     //  상품 단건 조회(feign)
@@ -132,18 +121,15 @@ public class ProductServiceImpl implements ProductService {
 
     // 상품 ID 목록으로 가용 재고 수량 계산 (재고 - 결제대기수량)
     @Override
+    @Transactional(readOnly = true)
     public List<ProductAvailableStockResponse> getAvailableQuantities(List<Long> productIds) {
-        Map<Long, Long> pendingMap = orderClient.getPendingQuantities(productIds).stream()
-                .collect(Collectors.toMap(
-                        PendingQuantityInternal::getProductId,
-                        PendingQuantityInternal::getQuantity  // ✅ 여기 수정
-                ));
-
         return stockRepository.findByProductIds(productIds).stream()
-                .map(stock -> {
-                    Long pending = pendingMap.getOrDefault(stock.getProduct().getId(), 0L);
-                    Long available = stock.getStockQuantity() - pending;
-                    return new ProductAvailableStockResponse(stock.getProduct().getId(), Math.max(available, 0L));
-                }).collect(Collectors.toList());
+                .map(s -> {
+                    long qty = s.getStockQuantity() == null ? 0L : s.getStockQuantity();
+                    long res = s.getReserved() == null ? 0L : s.getReserved();
+                    long available = Math.max(qty - res, 0L);
+                    return new ProductAvailableStockResponse(s.getProduct().getId(), available);
+                })
+                .toList();
     }
 }
