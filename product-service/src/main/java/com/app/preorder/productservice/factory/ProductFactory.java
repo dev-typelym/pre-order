@@ -37,7 +37,7 @@ public class ProductFactory {
                 .build();
 
         //  Product에 Stock 등록
-        product.getStocks().add(stock);
+        product.assignStock(stock);
 
         return product;
     }

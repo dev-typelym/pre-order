@@ -22,8 +22,8 @@ public class Stock extends AuditPeriod {
     @Column(nullable = false)
     private Long reserved = 0L;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "product_id", nullable = false) // 관계가 필수면 명시
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "product_id", nullable = false, unique = true)
     private Product product;
 
     @Builder

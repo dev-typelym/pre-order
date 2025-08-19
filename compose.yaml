@@ -158,6 +158,7 @@ services:
       - mariadb
       - redis
       - discovery-service
+      - kafka
 
   influxdb:
     image: influxdb:2.7

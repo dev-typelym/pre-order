@@ -2,6 +2,7 @@ package com.app.preorder.productservice.exception;
 
 import com.app.preorder.common.dto.ApiResponse;
 import com.app.preorder.common.exception.custom.InsufficientStockException;
+import com.app.preorder.common.exception.custom.ProductAlreadyHasStockException;
 import com.app.preorder.common.exception.custom.ProductNotFoundException;
 import com.app.preorder.common.exception.custom.StockNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,15 @@ public class ProductExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.failure(ex.getMessage(), "PRODUCT_STOCK_NOT_FOUND"));
+    }
+
+    // 상품에 이미 재고가 연결된 경우 (1:1 규칙 위반)
+    @ExceptionHandler(ProductAlreadyHasStockException.class)
+    public ResponseEntity<ApiResponse<Void>> handleProductAlreadyHasStock(ProductAlreadyHasStockException ex) {
+        log.warn("[Product] 재고 중복 연결 예외 발생", ex);
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.failure(ex.getMessage(), "PRODUCT_ALREADY_HAS_STOCK"));
     }
 
     // 일반 시스템 예외

@@ -56,9 +56,9 @@ public class ProductQueryDslImpl implements ProductQueryDsl{
 
     //    싱픔 상세보기
     @Override
-    public Optional<Product> findByIdWithStocks(Long productId) {
+    public Optional<Product> findByIdWithStock(Long productId) {
         Product result = query.selectFrom(product)
-                .leftJoin(product.stocks).fetchJoin()
+                .join(product.stock).fetchJoin()
                 .where(product.id.eq(productId))
                 .fetchOne();
 
@@ -72,7 +72,7 @@ public class ProductQueryDslImpl implements ProductQueryDsl{
                 .set(product.status, status)
                 .where(product.id.eq(productId))
                 .execute();
-        em.clear(); // ✔ 벌크 연산은 영속성 컨텍스트와 분리되므로 클리어 권장
+        em.clear();
         return (int) updated;
     }
 }

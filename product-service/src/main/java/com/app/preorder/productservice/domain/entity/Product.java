@@ -1,5 +1,6 @@
     package com.app.preorder.productservice.domain.entity;
 
+    import com.app.preorder.common.exception.custom.ProductAlreadyHasStockException;
     import com.app.preorder.common.type.CategoryType;
     import com.app.preorder.common.type.ProductStatus;
     import com.app.preorder.productservice.domain.entity.audit.AuditPeriod;
@@ -14,13 +15,13 @@
 
     @Entity
     @Getter
-    @ToString
+    @ToString(exclude = "stock")
     @Table(name = "tbl_product")
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     public class Product extends AuditPeriod {
 
         @Id
-        @GeneratedValue(strategy = GenerationType.AUTO)
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long id;
 
         @Column(nullable = false)
@@ -43,8 +44,8 @@
         @Embedded
         private SalesPeriod salesPeriod;
 
-        @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-        private List<Stock> stocks = new ArrayList<>();
+        @OneToOne(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+        private Stock stock;
 
         @Builder
         public Product(String productName, BigDecimal productPrice, String description, CategoryType category, SalesPeriod salesPeriod) {
@@ -53,8 +54,9 @@
             this.description = description;
             this.category = category;
             this.salesPeriod = salesPeriod;
-            this.status = ProductStatus.ENABLED; // 기본값
+            this.status = ProductStatus.ENABLED;
         }
+
 
         // === 도메인 메서드 ===
         public void updateProductName(String productName) {
@@ -79,5 +81,13 @@
 
         public void updatePeriod(SalesPeriod salesPeriod) {
             this.salesPeriod = salesPeriod;
+        }
+
+
+        public void assignStock(Stock stock) {
+            if (this.stock != null) {
+                throw new ProductAlreadyHasStockException("이미 재고가 연결된 상품");
+            }
+            this.stock = stock;
         }
     }
