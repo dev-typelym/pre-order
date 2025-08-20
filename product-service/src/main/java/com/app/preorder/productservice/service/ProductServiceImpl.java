@@ -1,11 +1,8 @@
 package com.app.preorder.productservice.service;
 
-import com.app.preorder.common.dto.PendingQuantityInternal;
 import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.exception.custom.ProductNotFoundException;
-import com.app.preorder.common.exception.custom.StockNotFoundException;
 import com.app.preorder.common.type.CategoryType;
-import com.app.preorder.productservice.client.OrderServiceClient;
 import com.app.preorder.productservice.domain.entity.Stock;
 import com.app.preorder.productservice.dto.product.*;
 import com.app.preorder.productservice.domain.entity.Product;
