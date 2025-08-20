@@ -3,12 +3,10 @@ package com.app.preorder.productservice.service;
 import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.exception.custom.ProductNotFoundException;
 import com.app.preorder.common.type.CategoryType;
-import com.app.preorder.productservice.domain.entity.Stock;
-import com.app.preorder.productservice.dto.product.*;
 import com.app.preorder.productservice.domain.entity.Product;
+import com.app.preorder.productservice.dto.product.*;
 import com.app.preorder.productservice.factory.ProductFactory;
 import com.app.preorder.productservice.repository.ProductRepository;
-import com.app.preorder.productservice.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -18,8 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-
 
 @Transactional
 @Service
@@ -27,10 +23,10 @@ import java.util.stream.Collectors;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
-    private final StockRepository stockRepository;
     private final ProductFactory productFactory;
+    private final AvailableCacheService availableCache; // ✅ 캐시 서비스 주입
 
-    //  상품 등록
+    // 상품 등록
     @Override
     public Long createProduct(ProductCreateRequest request) {
         Product product = productFactory.createFrom(request);
@@ -38,7 +34,7 @@ public class ProductServiceImpl implements ProductService {
         return product.getId();
     }
 
-    //  상품 수정
+    // 상품 수정
     @Override
     public void updateProduct(Long productId, ProductUpdateRequest request) {
         Product product = productRepository.findById(productId)
@@ -46,7 +42,7 @@ public class ProductServiceImpl implements ProductService {
         productFactory.updateFrom(request, product);
     }
 
-    //  상품 삭제
+    // 상품 삭제
     @Override
     public void deleteProduct(Long productId) {
         Product product = productRepository.findById(productId)
@@ -54,7 +50,7 @@ public class ProductServiceImpl implements ProductService {
         productRepository.delete(product);
     }
 
-    //  상품 목록
+    // 상품 목록 조회(페이지네이션 + 검색/카테고리 필터, 응답에 가용재고 포함)
     @Override
     @Transactional(readOnly = true)
     public Page<ProductResponse> getProducts(int page, ProductSearchRequest searchRequest, CategoryType categoryType) {
@@ -63,13 +59,8 @@ public class ProductServiceImpl implements ProductService {
         List<Product> content = products.getContent();
         List<Long> productIds = content.stream().map(Product::getId).toList();
 
-        // 재고 한 번에 조회 → availableMap 만들기
-        Map<Long, Long> availableMap = stockRepository.findByProductIds(productIds).stream()
-                .collect(Collectors.toMap(
-                        s -> s.getProduct().getId(),
-                        s -> Math.max((s.getStockQuantity() == null ? 0L : s.getStockQuantity())
-                                - (s.getReserved() == null ? 0L : s.getReserved()), 0L)
-                ));
+        // ✅ 다건 캐시 조회 → 캐시 미스만 DB (AvailableCacheService 내부에서 처리)
+        Map<Long, Long> availableMap = availableCache.getMany(productIds);
 
         List<ProductResponse> responses = content.stream()
                 .map(p -> productFactory.toResponse(p, availableMap.getOrDefault(p.getId(), 0L)))
@@ -78,31 +69,27 @@ public class ProductServiceImpl implements ProductService {
         return new PageImpl<>(responses, products.getPageable(), products.getTotalElements());
     }
 
-    //  상품 상세
+    // 상품 상세 조회
     @Override
     @Transactional(readOnly = true)
     public ProductResponse getProductDetail(Long productId) {
-        Product product = productRepository.findByIdWithStock(productId)
+        var product = productRepository.findByIdWithStock(productId)
                 .orElseThrow(() -> new ProductNotFoundException("해당 상품을 찾을 수 없습니다."));
-
-        Stock stock = product.getStock(); // fetch join됨
-        long qty = stock.getStockQuantity() == null ? 0L : stock.getStockQuantity();
-        long res = stock.getReserved() == null ? 0L : stock.getReserved();
-        long available = Math.max(qty - res, 0L);
-
+        // ✅ 캐시 단건 조회 (DB 미스만 조회)
+        long available = availableCache.get(productId);
         return productFactory.toResponse(product, available);
     }
 
-    //  상품 단건 조회(feign)
+    // 상품 단건 내부 조회(Feign용)
     @Override
     @Transactional(readOnly = true)
     public ProductInternal getProductById(Long productId) {
-        Product product = productRepository.findById(productId) // ✅ 명확하고 일관됨
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException("해당 상품을 찾을 수 없습니다."));
         return productFactory.toProductInternal(product);
     }
 
-    //  상품 다건 조회(feign)
+    // 상품 다건 내부 조회(Feign용)
     @Override
     @Transactional(readOnly = true)
     public List<ProductInternal> getProductsByIds(List<Long> productIds) {
@@ -112,21 +99,25 @@ public class ProductServiceImpl implements ProductService {
         }
         return products.stream()
                 .map(productFactory::toProductInternal)
-                .collect(Collectors.toList());
+                .toList();
     }
 
+    // 가용재고 단건 조회(숫자만 반환) — 폴링/배지용 경량 API
+    @Override
+    @Transactional(readOnly = true)
+    public long getAvailable(Long productId) {
+        // ✅ 캐시 단건
+        return availableCache.get(productId);
+    }
 
-    // 상품 ID 목록으로 가용 재고 수량 계산 (재고 - 결제대기수량)
+    // 가용재고 다건 조회(카트/목록 재동기화용)
     @Override
     @Transactional(readOnly = true)
     public List<ProductAvailableStockResponse> getAvailableQuantities(List<Long> productIds) {
-        return stockRepository.findByProductIds(productIds).stream()
-                .map(s -> {
-                    long qty = s.getStockQuantity() == null ? 0L : s.getStockQuantity();
-                    long res = s.getReserved() == null ? 0L : s.getReserved();
-                    long available = Math.max(qty - res, 0L);
-                    return new ProductAvailableStockResponse(s.getProduct().getId(), available);
-                })
+        // ✅ 캐시 다건
+        Map<Long, Long> map = availableCache.getMany(productIds);
+        return productIds.stream()
+                .map(pid -> new ProductAvailableStockResponse(pid, map.getOrDefault(pid, 0L)))
                 .toList();
     }
 }
