@@ -3,6 +3,9 @@ package com.app.preorder.productservice.service;
 import com.app.preorder.common.dto.StockRequestInternal;
 import com.app.preorder.common.dto.StockInternal;
 import com.app.preorder.common.exception.custom.InsufficientStockException;
+import com.app.preorder.common.exception.custom.InvalidStockRequestException;
+import com.app.preorder.common.exception.custom.RestockFailedException;
+import com.app.preorder.common.exception.custom.UnreserveFailedException;
 import com.app.preorder.productservice.domain.entity.Stock;
 import com.app.preorder.productservice.messaging.producer.StockEventProducer;
 import com.app.preorder.productservice.factory.ProductFactory;
@@ -13,7 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +27,7 @@ public class StockServiceImpl implements StockService {
 
     private final StockRepository stockRepository;
     private final ProductFactory productFactory;
+    private final AvailableCacheService availableCache;
     private final StockEventProducer stockEvents;
 
     // 트랜잭션 커밋 이후에만 콜백 실행(이벤트 발행 시점 보호)
@@ -46,21 +53,28 @@ public class StockServiceImpl implements StockService {
     @Override
     @Transactional
     public void reserveStocks(List<StockRequestInternal> items) {
-        for (StockRequestInternal it : items) {
-            long pid = it.getProductId();
-            long qty = it.getQuantity();
+        if (items == null || items.isEmpty())
+            throw new InvalidStockRequestException("요청 항목(items)은 비어 있을 수 없습니다.");
+
+        Set<Long> touched = new LinkedHashSet<>();
+        for (var it : items) {
+            long pid = it.getProductId(), qty = it.getQuantity();
             if (qty <= 0) continue;
 
             if (stockRepository.reserve(pid, qty) != 1) {
                 throw new InsufficientStockException("재고 부족(예약 실패): productId=" + pid + ", qty=" + qty);
             }
+            touched.add(pid);
+        }
 
-            // 🔁 트랜잭션 커밋 후에만 이벤트 발행
+        if (!touched.isEmpty()) {
             afterCommit(() -> {
-                long available = stockRepository.findAvailable(pid).orElse(0L);
-                stockEvents.sendStockChanged(pid, available);
-                if (available == 0) {
-                    stockEvents.sendSoldOut(pid);
+                availableCache.invalidateMany(touched);
+                var av = availableCache.getMany(List.copyOf(touched));
+                for (Long pid : touched) {
+                    long available = av.getOrDefault(pid, 0L);
+                    stockEvents.sendStockChanged(pid, available);
+                    if (available == 0) stockEvents.sendSoldOut(pid);
                 }
             });
         }
@@ -70,19 +84,27 @@ public class StockServiceImpl implements StockService {
     @Override
     @Transactional
     public void unreserveStocks(List<StockRequestInternal> items) {
-        for (StockRequestInternal it : items) {
-            long pid = it.getProductId();
-            long qty = it.getQuantity();
+        if (items == null || items.isEmpty())
+            throw new InvalidStockRequestException("요청 항목(items)은 비어 있을 수 없습니다.");
+
+        Set<Long> touched = new LinkedHashSet<>();
+        for (var it : items) {
+            long pid = it.getProductId(), qty = it.getQuantity();
             if (qty <= 0) continue;
 
             if (stockRepository.unreserve(pid, qty) != 1) {
-                throw new IllegalStateException("예약 해제 실패: productId=" + pid + ", qty=" + qty);
+                throw new UnreserveFailedException("예약 해제 실패: productId=" + pid + ", qty=" + qty);
             }
+            touched.add(pid);
+        }
 
-            // 커밋 후에만 이벤트 발행
+        if (!touched.isEmpty()) {
             afterCommit(() -> {
-                long available = stockRepository.findAvailable(pid).orElse(0L);
-                stockEvents.sendStockChanged(pid, available);
+                availableCache.invalidateMany(touched);
+                var av = availableCache.getMany(List.copyOf(touched));
+                for (Long pid : touched) {
+                    stockEvents.sendStockChanged(pid, av.getOrDefault(pid, 0L));
+                }
             });
         }
     }
@@ -93,6 +115,9 @@ public class StockServiceImpl implements StockService {
     @Override
     @Transactional
     public void commitStocks(List<StockRequestInternal> items) {
+        if (items == null || items.isEmpty())
+            throw new InvalidStockRequestException("요청 항목(items)은 비어 있을 수 없습니다.");
+
         for (var it : items) {
             long pid = it.getProductId(), qty = it.getQuantity();
             if (qty <= 0) continue;
@@ -109,19 +134,27 @@ public class StockServiceImpl implements StockService {
     @Override
     @Transactional
     public void restoreStocks(List<StockRequestInternal> items) {
-        for (StockRequestInternal it : items) {
-            long pid = it.getProductId();
-            long qty = it.getQuantity();
+        if (items == null || items.isEmpty())
+            throw new InvalidStockRequestException("요청 항목(items)은 비어 있을 수 없습니다.");
+
+        Set<Long> touched = new LinkedHashSet<>();
+        for (var it : items) {
+            long pid = it.getProductId(), qty = it.getQuantity();
             if (qty <= 0) continue;
 
             if (stockRepository.restock(pid, qty) != 1) {
-                throw new IllegalStateException("재입고(보상) 실패: productId=" + pid + ", qty=" + qty);
+                throw new RestockFailedException("재입고(보상) 실패: productId=" + pid + ", qty=" + qty);
             }
+            touched.add(pid);
+        }
 
-            // 커밋 후에만 이벤트 발행
+        if (!touched.isEmpty()) {
             afterCommit(() -> {
-                long available = stockRepository.findAvailable(pid).orElse(0L);
-                stockEvents.sendStockChanged(pid, available);
+                availableCache.invalidateMany(touched);
+                var av = availableCache.getMany(List.copyOf(touched));
+                for (Long pid : touched) {
+                    stockEvents.sendStockChanged(pid, av.getOrDefault(pid, 0L));
+                }
             });
         }
     }
