@@ -67,10 +67,13 @@ public class ProductQueryDslImpl implements ProductQueryDsl{
 
     @Override
     @Transactional
-    public int updateStatus(Long productId, ProductStatus status) {
+    public int updateStatus(Long productId, ProductStatus target) {
         long updated = query.update(product)
-                .set(product.status, status)
-                .where(product.id.eq(productId))
+                .set(product.status, target)
+                .where(
+                        product.id.eq(productId)
+                                .and(product.status.ne(target))
+                )
                 .execute();
         em.clear();
         return (int) updated;
