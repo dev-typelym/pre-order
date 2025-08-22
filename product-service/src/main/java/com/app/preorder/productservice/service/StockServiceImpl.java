@@ -7,16 +7,13 @@ import com.app.preorder.common.exception.custom.InvalidStockRequestException;
 import com.app.preorder.common.exception.custom.RestockFailedException;
 import com.app.preorder.common.exception.custom.UnreserveFailedException;
 import com.app.preorder.productservice.domain.entity.Stock;
-import com.app.preorder.productservice.messaging.producer.StockEventProducer;
+import com.app.preorder.productservice.messaging.publisher.ProductEventPublisher;
 import com.app.preorder.productservice.factory.ProductFactory;
 import com.app.preorder.productservice.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,14 +25,7 @@ public class StockServiceImpl implements StockService {
     private final StockRepository stockRepository;
     private final ProductFactory productFactory;
     private final AvailableCacheService availableCache;
-    private final StockEventProducer stockEvents;
-
-    // 트랜잭션 커밋 이후에만 콜백 실행(이벤트 발행 시점 보호)
-    private void afterCommit(Runnable r) {
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override public void afterCommit() { r.run(); }
-        });
-    }
+    private final ProductEventPublisher stockEvents;
 
     // productId 목록으로 재고 조회 후 내부 DTO(StockInternal)로 변환
     @Override
@@ -68,14 +58,10 @@ public class StockServiceImpl implements StockService {
         }
 
         if (!touched.isEmpty()) {
-            afterCommit(() -> {
-                availableCache.invalidateMany(touched);
-                var av = availableCache.getMany(List.copyOf(touched));
-                for (Long pid : touched) {
-                    long available = av.getOrDefault(pid, 0L);
-                    stockEvents.sendStockChanged(pid, available);
-                    if (available == 0) stockEvents.sendSoldOut(pid);
-                }
+            // 🔄 (변경) 커밋 이후 캐시 무효화+재계산 → 콜백으로 이벤트 발행
+            availableCache.refreshAfterCommit(touched, (pid, available) -> {
+                stockEvents.publishStockChanged(pid, available);
+                if (available == 0) stockEvents.publishSoldOut(pid);
             });
         }
     }
@@ -99,12 +85,9 @@ public class StockServiceImpl implements StockService {
         }
 
         if (!touched.isEmpty()) {
-            afterCommit(() -> {
-                availableCache.invalidateMany(touched);
-                var av = availableCache.getMany(List.copyOf(touched));
-                for (Long pid : touched) {
-                    stockEvents.sendStockChanged(pid, av.getOrDefault(pid, 0L));
-                }
+            // 🔄 (변경) 커밋 이후 캐시 무효화+재계산 → 콜백으로 이벤트 발행
+            availableCache.refreshAfterCommit(touched, (pid, available) -> {
+                stockEvents.publishStockChanged(pid, available);
             });
         }
     }
@@ -126,6 +109,7 @@ public class StockServiceImpl implements StockService {
                 throw new InsufficientStockException("커밋 실패: productId=" + pid + ", qty=" + qty);
             }
         }
+        // available 불변 → 캐시/이벤트 불필요
     }
 
     /* ========== 보상/재입고(배치) ========== */
@@ -149,12 +133,9 @@ public class StockServiceImpl implements StockService {
         }
 
         if (!touched.isEmpty()) {
-            afterCommit(() -> {
-                availableCache.invalidateMany(touched);
-                var av = availableCache.getMany(List.copyOf(touched));
-                for (Long pid : touched) {
-                    stockEvents.sendStockChanged(pid, av.getOrDefault(pid, 0L));
-                }
+            // 🔄 (변경) 커밋 이후 캐시 무효화+재계산 → 콜백으로 이벤트 발행
+            availableCache.refreshAfterCommit(touched, (pid, available) -> {
+                stockEvents.publishStockChanged(pid, available);
             });
         }
     }

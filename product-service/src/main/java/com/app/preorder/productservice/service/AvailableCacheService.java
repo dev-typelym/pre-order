@@ -4,8 +4,11 @@ import com.app.preorder.infralib.util.RedisUtil;
 import com.app.preorder.productservice.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 @Service
@@ -14,7 +17,7 @@ public class AvailableCacheService {
 
     private static final String AVAIL_PREFIX = "stock:avail:";
     private static final long TTL_SECONDS = 2L;
-    private static final long TTL_JITTER_SECONDS = 1L; // ✅ 0~1초 지터 추가
+    private static final long TTL_JITTER_SECONDS = 1L; // 0~1초 지터
 
     private final RedisUtil redis;
     private final StockRepository stockRepository;
@@ -27,7 +30,6 @@ public class AvailableCacheService {
         if (cached != null) return Long.parseLong(cached);
 
         long available = stockRepository.findAvailable(pid).orElse(0L);
-        // ✅ 지터 적용
         redis.setDataExpire(key(pid), String.valueOf(available), TTL_SECONDS, TTL_JITTER_SECONDS);
         return available;
     }
@@ -39,8 +41,7 @@ public class AvailableCacheService {
         Map<Long, Long> result = new LinkedHashMap<>(pids.size());
         List<String> keys = pids.stream().map(this::key).toList();
 
-        // 1) 캐시 다건 조회(mget)
-        List<String> values = redis.getDataMulti(keys); // 값 없으면 각 슬롯에 null
+        List<String> values = redis.getDataMulti(keys);
         List<Long> misses = new ArrayList<>();
 
         for (int i = 0; i < pids.size(); i++) {
@@ -49,12 +50,11 @@ public class AvailableCacheService {
                 try {
                     result.put(pids.get(i), Long.parseLong(v));
                     continue;
-                } catch (NumberFormatException ignore) { /* fallthrough to miss */ }
+                } catch (NumberFormatException ignore) { /* miss 처리 */ }
             }
             misses.add(pids.get(i));
         }
 
-        // 2) 캐시 미스만 DB에서 조회(중복 제거)
         if (!misses.isEmpty()) {
             List<Long> uniqueMisses = misses.stream().distinct().toList();
 
@@ -67,14 +67,12 @@ public class AvailableCacheService {
                     (a, b) -> a
             ));
 
-            // 3) 결과 합치고 캐시 채우기(배치 setex + TTL+지터)
             Map<String, String> toCache = new LinkedHashMap<>();
             for (Long pid : uniqueMisses) {
                 long available = byPid.getOrDefault(pid, 0L);
                 result.put(pid, available);
                 toCache.put(key(pid), Long.toString(available));
             }
-            // ✅ 지터 적용
             redis.setDataExpireBatch(toCache, TTL_SECONDS, TTL_JITTER_SECONDS);
         }
 
@@ -91,5 +89,29 @@ public class AvailableCacheService {
         if (pids == null || pids.isEmpty()) return;
         Set<String> keys = pids.stream().map(this::key).collect(Collectors.toSet());
         redis.deleteDataBatch(keys);
+    }
+
+    /**
+     * ✅ 커밋 이후 캐시 무효화 + 재계산 실행, 결과를 콜백으로 전달
+     * - 트랜잭션 있으면 afterCommit, 없으면 즉시 실행
+     */
+    public void refreshAfterCommit(Collection<Long> pids, BiConsumer<Long, Long> onAvailable) {
+        if (pids == null || pids.isEmpty()) return;
+
+        Runnable work = () -> {
+            invalidateMany(pids);
+            Map<Long, Long> av = getMany(new ArrayList<>(pids)); // DB→캐시 반영 후 계산
+            for (Long pid : pids) {
+                onAvailable.accept(pid, av.getOrDefault(pid, 0L));
+            }
+        };
+
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override public void afterCommit() { work.run(); }
+            });
+        } else {
+            work.run();
+        }
     }
 }

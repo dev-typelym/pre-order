@@ -11,8 +11,6 @@ import java.util.List;
 
 public interface OrderService {
 
-    List<PendingQuantityInternal> getPendingQuantities(List<Long> productIds);
-
     // 단건 주문
     Long prepareSingleOrder(Long memberId, Long productId, Long quantity);
 
