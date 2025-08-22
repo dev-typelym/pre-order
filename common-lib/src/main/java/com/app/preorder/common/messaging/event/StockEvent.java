@@ -1,4 +1,4 @@
-package com.app.preorder.common.events;
+package com.app.preorder.common.messaging.event;
 
 public record StockEvent(
         String type,        // "STOCK_CHANGED" | "SOLD_OUT" ... (확장 여지)

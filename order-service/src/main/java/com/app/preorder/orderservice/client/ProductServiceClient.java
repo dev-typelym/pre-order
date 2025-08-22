@@ -11,15 +11,24 @@
     @FeignClient(name = "product-service", path = "/api/internal/products")
     public interface ProductServiceClient {
 
+        // 조회
         @PostMapping("/list")
-        List<ProductInternal> getProductsByIds(@RequestBody List<Long> ids); // ✅ 다건 상품
+        List<ProductInternal> getProductsByIds(@RequestBody List<Long> ids);
 
         @PostMapping("/stocks")
-        List<StockInternal> getStocksByIds(@RequestBody List<Long> ids);     // ✅ 다건 재고
+        List<StockInternal> getStocksByIds(@RequestBody List<Long> ids);
 
-        @PatchMapping("/stocks/deduct")
-        void deductStocks(@RequestBody List<StockRequestInternal> items);     // ✅ 재고 차감
+        // 🔁 기존 deduct/restore → ❌ deduct 삭제 / ✅ reserve·unreserve·commit 사용
+        @PostMapping("/stocks/reserve")
+        void reserveStocks(@RequestBody List<StockRequestInternal> items);
 
+        @PostMapping("/stocks/unreserve")
+        void unreserveStocks(@RequestBody List<StockRequestInternal> items);
+
+        @PatchMapping("/stocks/commit")
+        void commitStocks(@RequestBody List<StockRequestInternal> items);
+
+        // 결제 후 환불/반품(재입고)
         @PatchMapping("/stocks/restore")
         void restoreStocks(@RequestBody List<StockRequestInternal> items);
     }
