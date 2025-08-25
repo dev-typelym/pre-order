@@ -24,7 +24,7 @@ public class OrderOutboxProcessor {
     @Transactional
     public void flush() {
         List<OrderOutboxEvent> batch =
-                outboxRepo.findTop100ByStatusOrderByCreatedAtAsc(OutboxStatus.PENDING);
+                outboxRepo.findTop100ByStatusOrderByCreatedAtAsc(OrderOutboxStatus.PENDING);
 
         for (OrderOutboxEvent e : batch) {
             try {

@@ -105,7 +105,7 @@ public class StockServiceImpl implements StockService {
             long pid = it.getProductId(), qty = it.getQuantity();
             if (qty <= 0) continue;
 
-            if (stockRepository.consumeReserved(pid, qty) != 1) {
+            if (stockRepository.commit(pid, qty) != 1) {
                 throw new InsufficientStockException("커밋 실패: productId=" + pid + ", qty=" + qty);
             }
         }

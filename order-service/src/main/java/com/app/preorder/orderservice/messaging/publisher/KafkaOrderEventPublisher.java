@@ -5,7 +5,7 @@ import com.app.preorder.common.messaging.command.StockRestoreRequest;
 import com.app.preorder.common.messaging.topics.KafkaTopics;
 import com.app.preorder.orderservice.messaging.outbox.OrderOutboxEvent;
 import com.app.preorder.orderservice.messaging.outbox.OrderOutboxEventRepository;
-import com.app.preorder.orderservice.messaging.outbox.OutboxStatus;
+import com.app.preorder.orderservice.messaging.outbox.OrderOutboxStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -36,7 +36,7 @@ public class KafkaOrderEventPublisher implements OrderEventPublisher {
                     .topic(KafkaTopics.INVENTORY_STOCK_RESTORE_REQUEST_V1)
                     .partitionKey(String.valueOf(partitionKey))
                     .payloadJson(json)
-                    .status(OutboxStatus.PENDING)
+                    .status(OrderOutboxStatus.PENDING)
                     .build();
 
             outboxRepo.save(event);
