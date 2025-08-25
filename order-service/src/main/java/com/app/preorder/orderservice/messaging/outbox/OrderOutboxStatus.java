@@ -1,5 +1,5 @@
 package com.app.preorder.orderservice.messaging.outbox;
 
-public enum OutboxStatus {
+public enum OrderOutboxStatus {
     PENDING, SENT, FAILED
 }

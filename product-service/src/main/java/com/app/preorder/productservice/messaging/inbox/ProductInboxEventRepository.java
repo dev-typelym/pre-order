@@ -10,5 +10,5 @@ public interface ProductInboxEventRepository extends JpaRepository<ProductInboxE
     Optional<ProductInboxEvent> findByMessageKey(String messageKey);
 
     // 한 줄 주석: PENDING 배치 조회(오래된 것부터)
-    List<ProductInboxEvent> findTop100ByStatusOrderByCreatedAtAsc(ProductInboxEvent.InboxStatus status);
+    List<ProductInboxEvent> findTop100ByStatusOrderByCreatedAtAsc(ProductInboxStatus status);
 }

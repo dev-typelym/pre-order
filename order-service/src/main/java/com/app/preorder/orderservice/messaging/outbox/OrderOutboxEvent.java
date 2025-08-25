@@ -29,7 +29,7 @@ public class OrderOutboxEvent {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
-    private OutboxStatus status;   // PENDING / SENT / FAILED
+    private OrderOutboxStatus status;   // PENDING / SENT / FAILED
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -41,10 +41,10 @@ public class OrderOutboxEvent {
 
     // === 도메인 메서드(세터 대신) ===
     public void markSent() {
-        this.status = OutboxStatus.SENT;   // updatedAt은 @UpdateTimestamp가 알아서 갱신
+        this.status = OrderOutboxStatus.SENT;   // updatedAt은 @UpdateTimestamp가 알아서 갱신
     }
 
     public void markFailed() {
-        this.status = OutboxStatus.FAILED;
+        this.status = OrderOutboxStatus.FAILED;
     }
 }

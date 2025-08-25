@@ -61,18 +61,18 @@ public class StockQueryDslImpl implements StockQueryDsl {
 
     @Override
     @Transactional
-    public int consumeReserved(long pid, long q) {
+    public int commit(long pid, long q) {
         long updated = query.update(s)
                 .set(s.stockQuantity, s.stockQuantity.subtract(q))
-                .set(s.reserved,     s.reserved.subtract(q))
+                .set(s.reserved,      s.reserved.subtract(q))
                 .where(
                         s.product.id.eq(pid)
                                 .and(s.stockQuantity.goe(q))
                                 .and(s.reserved.goe(q))
                 )
                 .execute();
-        em.clear();
-        return (int) updated; // 1=성공, 0=조건불충족
+        em.clear(); // 벌크 업데이트 후 1차 캐시 비우기
+        return (int) updated; // 1=성공, 0=실패(수량/예약 부족)
     }
 
     @Override
