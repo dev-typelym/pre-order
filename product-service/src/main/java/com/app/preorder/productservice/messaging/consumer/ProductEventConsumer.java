@@ -4,55 +4,52 @@ import com.app.preorder.common.messaging.command.StockRestoreRequest;
 import com.app.preorder.common.messaging.event.StockEvent;
 import com.app.preorder.common.messaging.topics.KafkaTopics;
 import com.app.preorder.common.type.ProductStatus;
-import com.app.preorder.productservice.messaging.idempotency.ProcessedEvent;
-import com.app.preorder.productservice.messaging.idempotency.ProcessedEventRepository;
+import com.app.preorder.productservice.messaging.inbox.ProductInboxEvent;
+import com.app.preorder.productservice.messaging.inbox.ProductInboxEventRepository;
 import com.app.preorder.productservice.repository.ProductRepository;
-import com.app.preorder.productservice.service.StockService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.annotation.RetryableTopic;
-import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Product 서비스가 소비하는 Kafka 메시지들을 한 클래스에 모아서 처리.
- * 메서드별로 topic/group/containerFactory, retry 정책을 각각 줄 수 있다.
- */
 @Component
 @RequiredArgsConstructor
 public class ProductEventConsumer {
 
+    private final ProductInboxEventRepository inboxRepo;
     private final ProductRepository productRepository;
-    private final StockService stockService;                       // 실제 복원 로직 호출
-    private final ProcessedEventRepository processedEventRepo;     // 멱등 처리
+    private final ObjectMapper om;
 
-    /** 재고 복원 요청(요청/커맨드) 소비: 멱등 + 재시도 */
+    // 한 줄 주석: 재고 복원 요청 수신 → Inbox(PENDING) 적재만
     @Transactional
-    @RetryableTopic(
-            attempts = 4,
-            backoff = @Backoff(delay = 60_000, multiplier = 2.0)
-    )
     @KafkaListener(
-            id = "stockRestoreConsumer",
+            id = "stockRestoreInboxWriter",
             topics = KafkaTopics.INVENTORY_STOCK_RESTORE_REQUEST_V1,
-            groupId = "product-stock-restore",
-            containerFactory = "stockRestoreKafkaListenerContainerFactory"
+            groupId = "product-inbox-writer"
     )
-    public void onStockRestoreRequest(StockRestoreRequest req) {
-        if (processedEventRepo.existsById(req.eventId())) return;  // 멱등
-        stockService.restoreStocks(req.items());                    // 재고 복원
-        processedEventRepo.save(new ProcessedEvent(req.eventId()));
+    public void onStockRestoreRequest(StockRestoreRequest req) throws Exception {
+        String json = om.writeValueAsString(req);
+        ProductInboxEvent inbox = ProductInboxEvent.of(
+                req.eventId(),
+                KafkaTopics.INVENTORY_STOCK_RESTORE_REQUEST_V1,
+                json
+        );
+
+        try {
+            inboxRepo.save(inbox); // UNIQUE(messageKey)로 중복 차단
+        } catch (DataIntegrityViolationException ignore) {
+            // 이미 들어온 메시지면 무시(멱등)
+        }
     }
 
-    /** 재고 상태 알림(Event) 소비: 읽기모델(status) 동기화 */
+    // 한 줄 주석: 읽기모델 동기화 이벤트는 즉시 처리(인박스 비대상)
     @Transactional
     @KafkaListener(
             id = "stockEventsConsumer",
             topics = KafkaTopics.INVENTORY_STOCK_EVENTS_V1,
-            groupId = "product-readmodel",
-            containerFactory = "stockEventsKafkaListenerContainerFactory",
-            concurrency = "6"    // 파티션 수와 맞추거나 yml/팩토리로 이동해도 OK
+            groupId = "product-readmodel"
     )
     public void onStockEvent(StockEvent evt) {
         switch (evt.type()) {
@@ -64,7 +61,7 @@ public class ProductEventConsumer {
                         (a != null && a > 0) ? ProductStatus.ENABLED : ProductStatus.SOLD_OUT
                 );
             }
-            default -> { /* 무시 */ }
+            default -> { /* ignore */ }
         }
     }
 }
