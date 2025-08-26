@@ -15,7 +15,7 @@ public interface ProductQueryDsl {
     Page<Product> findAllBySearchConditions(Pageable pageable, ProductSearchRequest searchRequest, CategoryType categoryType);
 
     //    상품 상세
-    Optional<Product> findByIdWithStock(Long productId);
+    Optional<Product> findDetailById(Long productId);
 
     int updateStatus(Long productId, ProductStatus status);
 }
