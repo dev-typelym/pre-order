@@ -27,7 +27,8 @@ public class ProductEventConsumer {
     @KafkaListener(
             id = "stockRestoreInboxWriter",
             topics = KafkaTopics.INVENTORY_STOCK_RESTORE_REQUEST_V1,
-            groupId = "product-inbox-writer"
+            groupId = "product-inbox-writer",
+            containerFactory = "stockRestoreKafkaListenerContainerFactory"   // ★ 추가
     )
     public void onStockRestoreRequest(StockRestoreRequest req) throws Exception {
         String json = om.writeValueAsString(req);
@@ -49,7 +50,8 @@ public class ProductEventConsumer {
     @KafkaListener(
             id = "stockEventsConsumer",
             topics = KafkaTopics.INVENTORY_STOCK_EVENTS_V1,
-            groupId = "product-readmodel"
+            groupId = "product-readmodel",
+            containerFactory = "stockEventsKafkaListenerContainerFactory"
     )
     public void onStockEvent(StockEvent evt) {
         switch (evt.type()) {

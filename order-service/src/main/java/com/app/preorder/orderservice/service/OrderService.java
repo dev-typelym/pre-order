@@ -1,6 +1,5 @@
 package com.app.preorder.orderservice.service;
 
-import com.app.preorder.common.dto.PendingQuantityInternal;
 import com.app.preorder.orderservice.domain.order.OrderDetailResponse;
 import com.app.preorder.orderservice.domain.order.OrderItemRequest;
 import com.app.preorder.orderservice.domain.order.OrderResponse;

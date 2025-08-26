@@ -73,9 +73,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductResponse getProductDetail(Long productId) {
-        var product = productRepository.findByIdWithStock(productId)
+        Product product = productRepository.findDetailById(productId)
                 .orElseThrow(() -> new ProductNotFoundException("해당 상품을 찾을 수 없습니다."));
-        // ✅ 캐시 단건 조회 (DB 미스만 조회)
         long available = availableCache.get(productId);
         return productFactory.toResponse(product, available);
     }
@@ -106,7 +105,6 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public long getAvailable(Long productId) {
-        // ✅ 캐시 단건
         return availableCache.get(productId);
     }
 
