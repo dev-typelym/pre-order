@@ -35,6 +35,3 @@ dependencies {
     //  common-lib
     implementation project(':common-lib')
 }
-
-bootJar { enabled = false }
-jar { enabled = true }

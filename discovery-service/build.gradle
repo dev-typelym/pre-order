@@ -17,20 +17,11 @@ repositories {
 	mavenCentral()
 }
 
-ext {
-	set('springCloudVersion', "2023.0.1")
-}
-
 dependencies {
 	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-server'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-dependencyManagement {
-	imports {
-		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-	}
 }
 
 tasks.named('test') {
@@ -38,7 +29,8 @@ tasks.named('test') {
 }
 
 tasks.named('bootJar') {
-	archiveFileName = 'app.jar'
+	it.mainClass.set('com.app.preorder.discoveryservice.DiscoveryServiceApplication')
+	it.archiveFileName = 'app.jar'
 }
 
 tasks.named('jar') {

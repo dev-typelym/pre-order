@@ -1,9 +1,11 @@
 rootProject.name = 'pre-order'
 include 'infra-lib'
 include 'common-lib'
+include 'gateway-service'
 include 'discovery-service'
 include 'auth-service'
 include 'member-service'
 include 'order-service'
 include 'product-service'
 include 'cart-service'
+

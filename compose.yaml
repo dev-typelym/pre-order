@@ -35,7 +35,8 @@ services:
     container_name: kafka
     environment:
       - TZ=Asia/Seoul
-      - KAFKA_KRAFT_CLUSTER_ID=kafka-cluster-1
+      # ✅ KRaft 단일 노드용 cluster id (예시: 22자 토큰)
+      - KAFKA_KRAFT_CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk
       - KAFKA_CFG_NODE_ID=1
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
@@ -59,6 +60,22 @@ services:
     environment:
       - TZ=Asia/Seoul
 
+  gateway-service:
+    build:
+      context: ./gateway-service
+    container_name: gateway-service
+    ports:
+      - "8086:8086"
+    environment:
+      - TZ=Asia/Seoul
+      # Eureka/Redis 주소는 컨테이너 이름으로
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+    depends_on:
+      - discovery-service
+      - redis
+
   auth-service:
     build:
       context: ./auth-service
@@ -76,6 +93,7 @@ services:
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - HIKARI_MAX_POOL_SIZE=${HIKARI_MAX_POOL_SIZE}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
     depends_on:
       - mariadb
@@ -99,6 +117,7 @@ services:
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - EMAIL_AUTO_VERIFY=${EMAIL_AUTO_VERIFY}
       - HIKARI_MAX_POOL_SIZE=${HIKARI_MAX_POOL_SIZE}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
     depends_on:
       - mariadb
@@ -117,6 +136,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
       - JWT_SECRET=${JWT_SECRET}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
     depends_on:
       - mariadb
@@ -134,13 +154,16 @@ services:
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - JWT_SECRET=${JWT_SECRET}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
     depends_on:
       - mariadb
       - redis
       - member-service
       - discovery-service
+      - kafka
 
   product-service:
     build:
@@ -153,6 +176,8 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
       - REDIS_HOST=${REDIS_HOST}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
     depends_on:
       - mariadb
@@ -190,5 +215,6 @@ services:
 
 volumes:
   redis_data:
+  kafka_data:
   influxdb_data:
   grafana_data:
