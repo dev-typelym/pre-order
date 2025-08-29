@@ -1,20 +1,36 @@
 package com.app.preorder.gatewayservice.config;
 
+import java.net.InetSocketAddress;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import reactor.core.publisher.Mono;
 
 @Configuration
 public class GatewayConfig {
+
     @Bean
     public KeyResolver userKeyResolver() {
         return exchange -> {
-            String key = exchange.getRequest().getHeaders().getFirst("X-User-Id");
-            if (key == null && exchange.getRequest().getRemoteAddress() != null) {
-                key = exchange.getRequest().getRemoteAddress().getAddress().getHostAddress();
+            HttpHeaders headers = exchange.getRequest().getHeaders();
+
+            String uid = headers.getFirst("X-User-Id");
+            if (uid != null && !uid.isBlank()) {
+                return Mono.just("u:" + uid);
             }
-            return Mono.just(key != null ? key : "anon");
+
+            String xff = headers.getFirst("X-Forwarded-For");
+            if (xff != null && !xff.isBlank()) {
+                String ipFromXff = xff.split(",")[0].trim();
+                return Mono.just("ip:" + ipFromXff);
+            }
+
+            InetSocketAddress remoteAddress = exchange.getRequest().getRemoteAddress();
+            String ip = (remoteAddress != null && remoteAddress.getAddress() != null)
+                    ? remoteAddress.getAddress().getHostAddress()
+                    : "anon";
+            return Mono.just("ip:" + ip);
         };
     }
 }
