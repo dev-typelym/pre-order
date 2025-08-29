@@ -16,9 +16,14 @@ services:
       - ./mariadb/data:/var/lib/mysql
       - ./mariadb/config:/etc/mysql/conf.d
     command: >
-      --default-authentication-plugin=mysql_native_password
       --character-set-server=utf8mb4
       --max_connections=500
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u $$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
 
   redis:
     image: redis:latest
@@ -29,13 +34,19 @@ services:
       - TZ=Asia/Seoul
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
 
   kafka:
     image: bitnami/kafka:3.7
     container_name: kafka
     environment:
       - TZ=Asia/Seoul
-      # ✅ KRaft 단일 노드용 cluster id (예시: 22자 토큰)
+      # ✅ KRaft (단일 노드)
       - KAFKA_KRAFT_CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk
       - KAFKA_CFG_NODE_ID=1
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
@@ -50,6 +61,12 @@ services:
       - "9094:9094"
     volumes:
       - kafka_data:/bitnami/kafka
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
 
   discovery-service:
     build:
@@ -59,6 +76,12 @@ services:
       - "8761:8761"
     environment:
       - TZ=Asia/Seoul
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8761 > /dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
 
   gateway-service:
     build:
@@ -68,13 +91,16 @@ services:
       - "8086:8086"
     environment:
       - TZ=Asia/Seoul
-      # Eureka/Redis 주소는 컨테이너 이름으로
+      # ✅ Eureka/Redis는 컨테이너 DNS 이름으로 주입
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
     depends_on:
-      - discovery-service
-      - redis
+      discovery-service:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
   auth-service:
     build:
@@ -96,9 +122,13 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
     depends_on:
-      - mariadb
-      - redis
-      - discovery-service
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+    restart: unless-stopped
 
   member-service:
     build:
@@ -120,10 +150,15 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
     depends_on:
-      - mariadb
-      - redis
-      - auth-service
-      - discovery-service
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      discovery-service:
+        condition: service_healthy
+    restart: unless-stopped
 
   cart-service:
     build:
@@ -139,10 +174,15 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
     depends_on:
-      - mariadb
-      - redis
-      - member-service
-      - discovery-service
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      member-service:
+        condition: service_started
+      discovery-service:
+        condition: service_healthy
+    restart: unless-stopped
 
   order-service:
     build:
@@ -159,11 +199,17 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
     depends_on:
-      - mariadb
-      - redis
-      - member-service
-      - discovery-service
-      - kafka
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      member-service:
+        condition: service_started
+      discovery-service:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
 
   product-service:
     build:
@@ -180,10 +226,15 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
     depends_on:
-      - mariadb
-      - redis
-      - discovery-service
-      - kafka
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
 
   influxdb:
     image: influxdb:2.7
@@ -199,6 +250,12 @@ services:
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_TOKEN}
     volumes:
       - influxdb_data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8086/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana
@@ -209,9 +266,11 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     depends_on:
-      - influxdb
+      influxdb:
+        condition: service_healthy
     volumes:
       - grafana_data:/var/lib/grafana
+    restart: unless-stopped
 
 volumes:
   redis_data:
