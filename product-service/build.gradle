@@ -35,6 +35,8 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
     implementation 'org.apache.commons:commons-lang3:3.13.0'
     implementation 'org.springframework.kafka:spring-kafka'
+    implementation "org.springframework.cloud:spring-cloud-starter-loadbalancer"
+
 
     implementation 'org.mariadb.jdbc:mariadb-java-client'
 
