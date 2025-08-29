@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: auth-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mariadb://mariadb:3306/preorder}
+    username: ${SPRING_DATASOURCE_USERNAME:taek}
+    password: ${SPRING_DATASOURCE_PASSWORD:1234}
+    driver-class-name: org.mariadb.jdbc.Driver
+
+    hikari:
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:50}
+      minimum-idle: 10
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: 6379
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - profile
+              - email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            client-name: Google
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+
+jwt:
+  secret: ${JWT_SECRET:Pr5aQ!9zdT7XgW2mXyCb$$Hr4LdS6kJvB}
+
+server:
+  port: 8081
+
+eureka:
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    registry-fetch-interval-seconds: 5
+    service-url:
+      defaultZone: http://discovery-service:8761/eureka
+
+  instance:
+    instance-id: ${spring.application.name}:${random.value}
+    prefer-ip-address: true
+
+email:
+  auto-verify: ${EMAIL_AUTO_VERIFY:false}

@@ -1,0 +1,102 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      discovery.locator:
+        enabled: true
+        lower-case-service-id: true
+
+      httpclient:
+        connect-timeout: 1500
+        response-timeout: 2s
+
+      routes:
+        - id: product
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**,/api/internal/products/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: productCB
+                fallbackUri: forward:/__fallback
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 300
+                redis-rate-limiter.burstCapacity: 600
+            - name: Retry
+              args:
+                retries: 1
+                methods: GET
+                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE,GATEWAY_TIMEOUT
+
+        - id: order
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**,/api/internal/orders/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: orderCB
+                fallbackUri: forward:/__fallback
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 200
+                redis-rate-limiter.burstCapacity: 400
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      productCB:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        recordExceptions:
+          - java.io.IOException
+          - org.springframework.web.reactive.function.client.WebClientRequestException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+      orderCB:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        recordExceptions:
+          - java.io.IOException
+          - org.springframework.web.reactive.function.client.WebClientRequestException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+
+  timelimiter:
+    instances:
+      productCB:
+        timeoutDuration: 2s
+      orderCB:
+        timeoutDuration: 2s
