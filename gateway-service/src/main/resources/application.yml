@@ -4,21 +4,34 @@ server:
 spring:
   application:
     name: gateway-service
+
   cloud:
     gateway:
-      discovery.locator:
-        enabled: true
-        lower-case-service-id: true
+      # 동적 라우팅 비활성화: 의도치 않은 경로 노출 방지
+      discovery:
+        locator:
+          enabled: false
 
       httpclient:
-        connect-timeout: 1500
-        response-timeout: 2s
+        connect-timeout: 2000
+        response-timeout: 4s
 
       routes:
+        # 0) 내부 API 전면 차단 (가장 먼저 매칭되도록 최상단)
+        - id: block-internal
+          uri: no://op
+          predicates:
+            - Path=/api/internal/**
+          filters:
+            - name: SetStatus
+              args:
+                status: 403
+
+        # 1) Product 외부 API
         - id: product
           uri: lb://product-service
           predicates:
-            - Path=/api/products/**,/api/internal/products/**
+            - Path=/api/products/**
           filters:
             - name: CircuitBreaker
               args:
@@ -35,10 +48,11 @@ spring:
                 methods: GET
                 statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE,GATEWAY_TIMEOUT
 
+        # 2) Order 외부 API
         - id: order
           uri: lb://order-service
           predicates:
-            - Path=/api/orders/**,/api/internal/orders/**
+            - Path=/api/orders/**
           filters:
             - name: CircuitBreaker
               args:
@@ -52,13 +66,15 @@ spring:
 
   data:
     redis:
-      host: localhost
-      port: 6379
+      # 컨테이너에선 ENV로 덮여쓰고, 로컬 실행시에도 안전한 기본값 제공
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      # 컨테이너 기본값(ENV로도 덮어쓰기 가능)
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://discovery-service:8761/eureka/}
   instance:
     prefer-ip-address: true
 
@@ -97,6 +113,6 @@ resilience4j:
   timelimiter:
     instances:
       productCB:
-        timeoutDuration: 2s
+        timeoutDuration: 4s
       orderCB:
-        timeoutDuration: 2s
+        timeoutDuration: 4s
