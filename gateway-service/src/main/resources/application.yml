@@ -14,18 +14,17 @@ spring:
 
       httpclient:
         connect-timeout: 2000
-        response-timeout: 4s
+        response-timeout: 4s   # 유지
 
       routes:
-        # 0) 내부 API 전면 차단 (가장 먼저 매칭되도록 최상단)
+        # 0) 내부 API 전면 차단 (가장 먼저 매칭)
         - id: block-internal
           uri: no://op
           predicates:
             - Path=/api/internal/**
           filters:
             - name: SetStatus
-              args:
-                status: 403
+              args: { status: 403 }
 
         # 1) Product 외부 API
         - id: product
@@ -37,6 +36,11 @@ spring:
               args:
                 name: productCB
                 fallbackUri: forward:/__fallback
+                statusCodes:
+                  - 500
+                  - 502
+                  - 503
+                  - 504
             - name: RequestRateLimiter
               args:
                 key-resolver: "#{@userKeyResolver}"
@@ -58,6 +62,11 @@ spring:
               args:
                 name: orderCB
                 fallbackUri: forward:/__fallback
+                statusCodes:
+                  - 500
+                  - 502
+                  - 503
+                  - 504
             - name: RequestRateLimiter
               args:
                 key-resolver: "#{@userKeyResolver}"
@@ -66,7 +75,7 @@ spring:
 
   data:
     redis:
-      # 컨테이너에선 ENV로 덮여쓰고, 로컬 실행시에도 안전한 기본값 제공
+      # 컨테이너에선 ENV로 덮어쓰고, 로컬 실행시에도 안전한 기본값 제공
       host: ${SPRING_DATA_REDIS_HOST:redis}
       port: ${SPRING_DATA_REDIS_PORT:6379}
 
@@ -89,30 +98,42 @@ resilience4j:
     instances:
       productCB:
         slidingWindowType: COUNT_BASED
-        slidingWindowSize: 20
-        minimumNumberOfCalls: 10
+        slidingWindowSize: 50
+        minimumNumberOfCalls: 20
         failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: 1s
         waitDurationInOpenState: 10s
-        permittedNumberOfCallsInHalfOpenState: 3
+        permittedNumberOfCallsInHalfOpenState: 5
         recordExceptions:
           - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - io.netty.channel.ConnectTimeoutException
+          - reactor.netty.http.client.PrematureCloseException
+          - org.springframework.cloud.gateway.support.TimeoutException
           - org.springframework.web.reactive.function.client.WebClientRequestException
           - org.springframework.web.reactive.function.client.WebClientResponseException
       orderCB:
         slidingWindowType: COUNT_BASED
-        slidingWindowSize: 20
-        minimumNumberOfCalls: 10
+        slidingWindowSize: 50
+        minimumNumberOfCalls: 20
         failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: 1s
         waitDurationInOpenState: 10s
-        permittedNumberOfCallsInHalfOpenState: 3
+        permittedNumberOfCallsInHalfOpenState: 5
         recordExceptions:
           - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - io.netty.channel.ConnectTimeoutException
+          - reactor.netty.http.client.PrematureCloseException
+          - org.springframework.cloud.gateway.support.TimeoutException
           - org.springframework.web.reactive.function.client.WebClientRequestException
           - org.springframework.web.reactive.function.client.WebClientResponseException
 
   timelimiter:
     instances:
       productCB:
-        timeoutDuration: 4s
+        timeoutDuration: 4s   # 유지
       orderCB:
-        timeoutDuration: 4s
+        timeoutDuration: 4s   # 유지

@@ -7,8 +7,9 @@ import com.app.preorder.common.exception.custom.InsufficientStockException;
 import com.app.preorder.common.exception.custom.InvalidOrderStatusException;
 import com.app.preorder.common.exception.custom.OrderNotFoundException;
 import com.app.preorder.common.exception.custom.ProductNotFoundException;
+import com.app.preorder.common.exception.custom.ProductCommandException;
+import com.app.preorder.common.exception.custom.ProductQueryException;
 import com.app.preorder.common.type.OrderStatus;
-import com.app.preorder.orderservice.client.ProductServiceClient;
 import com.app.preorder.orderservice.domain.order.OrderDetailResponse;
 import com.app.preorder.orderservice.domain.order.OrderItemRequest;
 import com.app.preorder.orderservice.domain.order.OrderResponse;
@@ -19,7 +20,7 @@ import com.app.preorder.orderservice.idempotency.OrderStepIdempotency;
 import com.app.preorder.orderservice.messaging.publisher.OrderEventPublisher;
 import com.app.preorder.orderservice.repository.OrderRepository;
 import com.app.preorder.orderservice.scheduler.OrderScheduler;
-import feign.FeignException;
+import com.app.preorder.orderservice.service.invoke.ProductInvoker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -38,7 +39,7 @@ import java.util.stream.Collectors;
 @Service
 public class OrderServiceImpl implements OrderService {
 
-    private final ProductServiceClient productClient;
+    private final ProductInvoker productInvoker;
     private final OrderRepository orderRepository;
     private final OrderFactory orderFactory;
     private final OrderScheduler orderScheduler;
@@ -51,17 +52,17 @@ public class OrderServiceImpl implements OrderService {
     public Long prepareSingleOrder(Long memberId, Long productId, Long quantity) {
         List<ProductInternal> products;
         try {
-            products = productClient.getProductsByIds(List.of(productId));
-        } catch (FeignException e) {
+            products = productInvoker.getProductsByIds(List.of(productId));
+        } catch (ProductQueryException e) {
             throw new RuntimeException("상품 조회 실패", e);
         }
         if (products.isEmpty()) throw new ProductNotFoundException("상품을 찾을 수 없습니다.");
 
         List<StockRequestInternal> reserveList = List.of(new StockRequestInternal(productId, quantity));
         try {
-            productClient.reserveStocks(reserveList);
-        } catch (FeignException e) {
-            throw new InsufficientStockException("재고 예약 실패");
+            productInvoker.reserveStocks(reserveList);
+        } catch (ProductCommandException e) {
+            throw new InsufficientStockException("재고 예약 실패", e);
         }
 
         return orderTransactionalService.saveOrderInTransaction(memberId, products.get(0), quantity);
@@ -76,8 +77,8 @@ public class OrderServiceImpl implements OrderService {
 
         List<ProductInternal> products;
         try {
-            products = productClient.getProductsByIds(productIds);
-        } catch (FeignException e) {
+            products = productInvoker.getProductsByIds(productIds);
+        } catch (ProductQueryException e) {
             throw new RuntimeException("상품 조회 실패", e);
         }
         if (products.isEmpty()) throw new ProductNotFoundException("상품을 찾을 수 없습니다.");
@@ -87,9 +88,9 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
 
         try {
-            productClient.reserveStocks(reserveList);
-        } catch (FeignException e) {
-            throw new InsufficientStockException("재고 예약 실패(장바구니)");
+            productInvoker.reserveStocks(reserveList);
+        } catch (ProductCommandException e) {
+            throw new InsufficientStockException("재고 예약 실패(장바구니)", e);
         }
 
         return orderTransactionalService.saveOrderFromCartInTransaction(memberId, products, quantityMap);
@@ -126,11 +127,11 @@ public class OrderServiceImpl implements OrderService {
 
         try {
             idem.begin(orderId, "COMPLETE", null);
-            productClient.commitStocks(items);
+            productInvoker.commitStocks(items);
             orderTransactionalService.completeOrder(order);
         } catch (OrderStepIdempotency.AlreadyProcessedException ignore) {
-        } catch (FeignException e) {
-            try { productClient.unreserveStocks(items); } catch (FeignException ignore) {}
+        } catch (ProductCommandException e) {
+            try { productInvoker.unreserveStocks(items); } catch (ProductCommandException ignore) {}
             idem.undo(orderId, "COMPLETE", null);
             throw new RuntimeException("결제 완료 실패(재고 커밋 불가)", e);
         } catch (RuntimeException e) {
@@ -187,8 +188,8 @@ public class OrderServiceImpl implements OrderService {
             idem.begin(orderId, "CANCEL", null);
             orderTransactionalService.cancelOrderInTransaction(order);
             try {
-                productClient.restoreStocks(restoreItems);
-            } catch (FeignException e) {
+                productInvoker.restoreStocks(restoreItems);
+            } catch (ProductCommandException e) {
                 log.warn("동기 재고 복원 실패 → Outbox 전환. orderId={}", orderId, e);
                 orderEventPublisher.publishStockRestoreRequest(orderId, restoreItems);
             }
@@ -265,8 +266,8 @@ public class OrderServiceImpl implements OrderService {
             idem.begin(orderId, "RETURN", null);
             orderTransactionalService.updateOrderStatusToReturnComplete(order);
             try {
-                productClient.restoreStocks(restoreItems);
-            } catch (FeignException e) {
+                productInvoker.restoreStocks(restoreItems);
+            } catch (ProductCommandException e) {
                 log.warn("반품 재고 복원 동기 실패 → Outbox 전환. orderId={}", orderId, e);
                 orderEventPublisher.publishStockRestoreRequest(orderId, restoreItems);
             }

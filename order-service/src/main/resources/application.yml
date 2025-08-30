@@ -24,15 +24,15 @@ spring:
       ddl-auto: create
     show-sql: true
 
-  # ✅ Boot의 KafkaAdmin 자동구성을 확실히 켜기 위한 한 줄
+  # ✅ Kafka Admin 초기화용
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
 
-jwt:
-  secret: ${JWT_SECRET:Pr5aQ!9zdT7XgW2mXyCb$$Hr4LdS6kJvB}
-
 server:
   port: 8084
+
+jwt:
+  secret: ${JWT_SECRET:Pr5aQ!9zdT7XgW2mXyCb$$Hr4LdS6kJvB}
 
 eureka:
   client:
@@ -40,7 +40,8 @@ eureka:
     register-with-eureka: true
     registry-fetch-interval-seconds: 5
     service-url:
-      defaultZone: http://discovery-service:8761/eureka
+      # 끝에 슬래시 포함 권장
+      defaultZone: http://discovery-service:8761/eureka/
   instance:
     instance-id: ${spring.application.name}:${random.value}
     prefer-ip-address: true
@@ -53,8 +54,64 @@ feign:
     enabled: false
   okhttp:
     enabled: true
+  # per-client 타임아웃/Retry는 각 Feign Config에서 설정
 
 logging:
   level:
     feign: DEBUG
     okhttp3: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      productQuery:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 50
+        minimumNumberOfCalls: 20
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: 800ms
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      productCommand:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 50
+        minimumNumberOfCalls: 20
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: 800ms
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      memberQuery:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 50
+        minimumNumberOfCalls: 20
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: 800ms
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+  retry:
+    instances:
+      # 조회만 1회 재시도(= maxAttempts 2). 상태변경은 등록하지 않음.
+      productQuery:
+        maxAttempts: 2
+        waitDuration: 150ms
+        retryExceptions:
+          - feign.RetryableException
+          - java.io.IOException
+      memberQuery:
+        maxAttempts: 2
+        waitDuration: 150ms
+        retryExceptions:
+          - feign.RetryableException
+          - java.io.IOException
