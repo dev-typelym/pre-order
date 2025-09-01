@@ -7,35 +7,22 @@ import com.app.preorder.common.exception.custom.InvalidStockRequestException;
 import com.app.preorder.common.exception.custom.RestockFailedException;
 import com.app.preorder.common.exception.custom.UnreserveFailedException;
 import com.app.preorder.productservice.domain.entity.Stock;
-import com.app.preorder.productservice.messaging.publisher.ProductEventPublisher;
 import com.app.preorder.productservice.factory.ProductFactory;
+import com.app.preorder.productservice.messaging.publisher.ProductEventPublisher;
 import com.app.preorder.productservice.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class StockServiceImpl implements StockService {
 
     private final StockRepository stockRepository;
-    private final ProductFactory productFactory;
     private final AvailableCacheService availableCache;
     private final ProductEventPublisher stockEvents;
-
-    // productId 목록으로 재고 조회 후 내부 DTO(StockInternal)로 변환
-    @Override
-    @Transactional(readOnly = true)
-    public List<StockInternal> getStocksByIds(List<Long> productIds) {
-        List<Stock> stocks = stockRepository.findByProductIds(productIds);
-        return stocks.stream()
-                .map(productFactory::toStockInternal)
-                .toList();
-    }
 
     /* ========== 예약/해제(배치) ========== */
 
@@ -58,11 +45,18 @@ public class StockServiceImpl implements StockService {
         }
 
         if (!touched.isEmpty()) {
-            // 🔄 (변경) 커밋 이후 캐시 무효화+재계산 → 콜백으로 이벤트 발행
-            availableCache.refreshAfterCommit(touched, (pid, available) -> {
-                stockEvents.publishStockChanged(pid, available);
-                if (available == 0) stockEvents.publishSoldOut(pid);
-            });
+            // 트랜잭션 내부에서 Outbox 적재(이벤트 발행 의도 기록) - 배치 가용재고 조회
+            List<Long> pids = new ArrayList<>(touched);
+            Map<Long, Long> availMap = stockRepository.findAvailableMapByProductIds(pids);
+
+            for (Long pid : pids) {
+                long available = Math.max(0L, availMap.getOrDefault(pid, 0L));
+                stockEvents.publishStockChangedEvent(pid, available);
+                if (available == 0) stockEvents.publishSoldOutEvent(pid);
+            }
+
+            // 커밋 이후 캐시 무효화 + 재계산(웜업)만 수행
+            availableCache.refreshAfterCommit(touched);
         }
     }
 
@@ -85,10 +79,17 @@ public class StockServiceImpl implements StockService {
         }
 
         if (!touched.isEmpty()) {
-            // 🔄 (변경) 커밋 이후 캐시 무효화+재계산 → 콜백으로 이벤트 발행
-            availableCache.refreshAfterCommit(touched, (pid, available) -> {
-                stockEvents.publishStockChanged(pid, available);
-            });
+            // 트랜잭션 내부에서 Outbox 적재 - 배치 가용재고 조회
+            List<Long> pids = new ArrayList<>(touched);
+            Map<Long, Long> availMap = stockRepository.findAvailableMapByProductIds(pids);
+
+            for (Long pid : pids) {
+                long available = Math.max(0L, availMap.getOrDefault(pid, 0L));
+                stockEvents.publishStockChangedEvent(pid, available);
+            }
+
+            // 커밋 이후 캐시 무효화 + 재계산(웜업)
+            availableCache.refreshAfterCommit(touched);
         }
     }
 
@@ -133,10 +134,17 @@ public class StockServiceImpl implements StockService {
         }
 
         if (!touched.isEmpty()) {
-            // 🔄 (변경) 커밋 이후 캐시 무효화+재계산 → 콜백으로 이벤트 발행
-            availableCache.refreshAfterCommit(touched, (pid, available) -> {
-                stockEvents.publishStockChanged(pid, available);
-            });
+            // 트랜잭션 내부에서 Outbox 적재 - 배치 가용재고 조회
+            List<Long> pids = new ArrayList<>(touched);
+            Map<Long, Long> availMap = stockRepository.findAvailableMapByProductIds(pids);
+
+            for (Long pid : pids) {
+                long available = Math.max(0L, availMap.getOrDefault(pid, 0L));
+                stockEvents.publishStockChangedEvent(pid, available);
+            }
+
+            // 커밋 이후 캐시 무효화 + 재계산(웜업)
+            availableCache.refreshAfterCommit(touched);
         }
     }
 }
