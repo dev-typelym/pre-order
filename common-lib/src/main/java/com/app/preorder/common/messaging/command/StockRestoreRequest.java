@@ -5,8 +5,8 @@ import com.app.preorder.common.dto.StockRequestInternal;
 import java.util.List;
 
 public record StockRestoreRequest(
-        Long orderId,
+        String eventId,                 // UUID
+        Long orderId,                   // aggregateId
         List<StockRequestInternal> items,
-        String eventId,    // UUID
-        Long partitionKey  // 보통 첫 productId
+        String occurredAt               // ISO-8601 (Instant.now().toString())
 ) {}
