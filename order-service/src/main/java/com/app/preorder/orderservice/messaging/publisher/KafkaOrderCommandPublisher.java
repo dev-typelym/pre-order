@@ -3,45 +3,46 @@ package com.app.preorder.orderservice.messaging.publisher;
 import com.app.preorder.common.dto.StockRequestInternal;
 import com.app.preorder.common.messaging.command.StockRestoreRequest;
 import com.app.preorder.common.messaging.topics.KafkaTopics;
+import com.app.preorder.common.type.OutboxStatus;
 import com.app.preorder.orderservice.messaging.outbox.OrderOutboxEvent;
 import com.app.preorder.orderservice.messaging.outbox.OrderOutboxEventRepository;
-import com.app.preorder.orderservice.messaging.outbox.OrderOutboxStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class KafkaOrderEventPublisher implements OrderEventPublisher {
+public class KafkaOrderCommandPublisher implements OrderCommandPublisher {
 
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper om;
     private final OrderOutboxEventRepository outboxRepo;
 
     @Override
     @Transactional
-    public void publishStockRestoreRequest(Long orderId, List<StockRequestInternal> items) {
-        Long partitionKey = items.isEmpty() ? orderId : items.get(0).getProductId();
-
-        StockRestoreRequest payload = new StockRestoreRequest(
-                orderId, items, UUID.randomUUID().toString(), partitionKey
-        );
+    public void publishStockRestoreCommand(Long orderId, List<StockRequestInternal> items) {
         try {
-            String json = objectMapper.writeValueAsString(payload);
+            var cmd = new StockRestoreRequest(
+                    UUID.randomUUID().toString(),
+                    orderId,
+                    items,
+                    Instant.now().toString()
+            );
+            var json = om.writeValueAsString(cmd);
 
-            OrderOutboxEvent event = OrderOutboxEvent.builder()
+            outboxRepo.save(OrderOutboxEvent.builder()
                     .topic(KafkaTopics.INVENTORY_STOCK_RESTORE_REQUEST_V1)
-                    .partitionKey(String.valueOf(partitionKey))
+                    .partitionKey(String.valueOf(orderId))   // ★ 키는 여기(Outbox 컬럼)만
                     .payloadJson(json)
-                    .status(OrderOutboxStatus.PENDING)
-                    .build();
-
-            outboxRepo.save(event);
+                    .status(OutboxStatus.NEW)
+                    .build());
         } catch (Exception e) {
             throw new RuntimeException("Outbox 적재 실패", e);
         }
     }
 }
+

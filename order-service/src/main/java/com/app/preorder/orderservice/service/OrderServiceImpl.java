@@ -17,7 +17,7 @@ import com.app.preorder.orderservice.domain.order.UpdateOrderAddressRequest;
 import com.app.preorder.orderservice.entity.Order;
 import com.app.preorder.orderservice.factory.OrderFactory;
 import com.app.preorder.orderservice.idempotency.OrderStepIdempotency;
-import com.app.preorder.orderservice.messaging.publisher.OrderEventPublisher;
+import com.app.preorder.orderservice.messaging.publisher.OrderCommandPublisher;
 import com.app.preorder.orderservice.repository.OrderRepository;
 import com.app.preorder.orderservice.scheduler.OrderScheduler;
 import com.app.preorder.orderservice.service.invoke.ProductInvoker;
@@ -44,7 +44,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderFactory orderFactory;
     private final OrderScheduler orderScheduler;
     private final OrderTransactionalService orderTransactionalService;
-    private final OrderEventPublisher orderEventPublisher;
+    private final OrderCommandPublisher orderCommandPublisher;
     private final OrderStepIdempotency idem;
 
     // 단건 주문 준비
@@ -191,7 +191,7 @@ public class OrderServiceImpl implements OrderService {
                 productInvoker.restoreStocks(restoreItems);
             } catch (ProductCommandException e) {
                 log.warn("동기 재고 복원 실패 → Outbox 전환. orderId={}", orderId, e);
-                orderEventPublisher.publishStockRestoreRequest(orderId, restoreItems);
+                orderCommandPublisher.publishStockRestoreCommand(orderId, restoreItems);
             }
         } catch (OrderStepIdempotency.AlreadyProcessedException ignore) {
         } catch (RuntimeException e) {
@@ -269,7 +269,7 @@ public class OrderServiceImpl implements OrderService {
                 productInvoker.restoreStocks(restoreItems);
             } catch (ProductCommandException e) {
                 log.warn("반품 재고 복원 동기 실패 → Outbox 전환. orderId={}", orderId, e);
-                orderEventPublisher.publishStockRestoreRequest(orderId, restoreItems);
+                orderCommandPublisher.publishStockRestoreCommand(orderId, restoreItems);
             }
         } catch (OrderStepIdempotency.AlreadyProcessedException ignore) {
         } catch (RuntimeException e) {
