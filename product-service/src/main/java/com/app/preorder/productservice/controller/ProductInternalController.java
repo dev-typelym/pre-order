@@ -24,12 +24,6 @@ public class ProductInternalController {
         return productService.getProductsByIds(productIds);
     }
 
-    // ✅ 재고 다건 조회 (Feign용)
-    @PostMapping("/stocks")
-    public List<StockInternal> getStocksByIds(@RequestBody List<Long> productIds) {
-        return stockService.getStocksByIds(productIds);
-    }
-
     // ✅ 예약 잡기 (prepare 단계)
     @PostMapping("/stocks/reserve")
     public void reserveStocks(@RequestBody List<StockRequestInternal> items) {

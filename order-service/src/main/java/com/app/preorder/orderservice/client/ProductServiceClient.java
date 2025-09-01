@@ -15,9 +15,6 @@
         @PostMapping("/list")
         List<ProductInternal> getProductsByIds(@RequestBody List<Long> productIds);
 
-        @PostMapping("/stocks")
-        List<ProductInternal> getStocks(@RequestBody List<Long> productIds);
-
         // 상태 변경(재고)
         @PostMapping("/stocks/reserve")
         void reserveStocks(@RequestBody List<StockRequestInternal> items);

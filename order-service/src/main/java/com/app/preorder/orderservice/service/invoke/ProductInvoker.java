@@ -24,11 +24,6 @@ public class ProductInvoker {
         return client.getProductsByIds(ids);
     }
 
-    @CircuitBreaker(name = "productQuery", fallbackMethod = "queryFallback")
-    @Retry(name = "productQuery")
-    public List<ProductInternal> getStocks(List<Long> ids) {
-        return client.getStocks(ids);
-    }
 
     private List<ProductInternal> queryFallback(List<Long> ids, Throwable ex) {
         throw new ProductQueryException("상품 조회 실패", ex);

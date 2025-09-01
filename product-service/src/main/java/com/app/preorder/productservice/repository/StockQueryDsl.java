@@ -4,6 +4,7 @@ package com.app.preorder.productservice.repository;
 import com.app.preorder.productservice.domain.entity.Stock;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface StockQueryDsl {
@@ -17,5 +18,5 @@ public interface StockQueryDsl {
     int restock(long productId, long qty);
     int commit(long productId, long qty);
     // ✅ 가용 재고 조회: quantity - reserved
-    Optional<Long> findAvailable(long productId);
+    Map<Long, Long> findAvailableMapByProductIds(List<Long> productIds);
 }
