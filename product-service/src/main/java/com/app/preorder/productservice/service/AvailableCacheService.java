@@ -8,7 +8,6 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,12 +25,8 @@ public class AvailableCacheService {
 
     /** 단건 (캐시 미스 시 DB → 캐시 set + TTL+지터) */
     public long get(long pid) {
-        String cached = redis.getData(key(pid));
-        if (cached != null) return Long.parseLong(cached);
-
-        long available = stockRepository.findAvailable(pid).orElse(0L);
-        redis.setDataExpire(key(pid), String.valueOf(available), TTL_SECONDS, TTL_JITTER_SECONDS);
-        return available;
+        // 단건도 배치 경로로 통일 → 음수/NULL 보정, TTL/지터, 배치 DB 조회 로직 일관화
+        return getMany(java.util.List.of(pid)).getOrDefault(pid, 0L);
     }
 
     /** 다건: mget → 미스만 DB → 배치 setex(+지터) */
@@ -48,6 +43,7 @@ public class AvailableCacheService {
             String v = (values != null && i < values.size()) ? values.get(i) : null;
             if (v != null) {
                 try {
+                    // 캐시에 이미 있는 값은 그대로 사용(쓰기 시 하한 보정이 들어가므로 음수일 가능성 낮음)
                     result.put(pids.get(i), Long.parseLong(v));
                     continue;
                 } catch (NumberFormatException ignore) { /* miss 처리 */ }
@@ -58,21 +54,16 @@ public class AvailableCacheService {
         if (!misses.isEmpty()) {
             List<Long> uniqueMisses = misses.stream().distinct().toList();
 
-            var stocks = stockRepository.findByProductIds(uniqueMisses);
-            Map<Long, Long> byPid = stocks.stream().collect(Collectors.toMap(
-                    s -> s.getProduct().getId(),
-                    s -> Math.max(
-                            (s.getStockQuantity() == null ? 0L : s.getStockQuantity())
-                                    - (s.getReserved() == null ? 0L : s.getReserved()), 0L),
-                    (a, b) -> a
-            ));
+            // ✅ 엔티티 로드 대신 DB에서 바로 pid→available 맵 조회 (배치 1쿼리)
+            Map<Long, Long> byPid = stockRepository.findAvailableMapByProductIds(uniqueMisses);
 
             Map<String, String> toCache = new LinkedHashMap<>();
             for (Long pid : uniqueMisses) {
-                long available = byPid.getOrDefault(pid, 0L);
+                long available = Math.max(0L, byPid.getOrDefault(pid, 0L)); // 음수/NULL 하한 보정
                 result.put(pid, available);
                 toCache.put(key(pid), Long.toString(available));
             }
+            // TTL + 지터 동일 적용
             redis.setDataExpireBatch(toCache, TTL_SECONDS, TTL_JITTER_SECONDS);
         }
 
@@ -92,18 +83,16 @@ public class AvailableCacheService {
     }
 
     /**
-     * ✅ 커밋 이후 캐시 무효화 + 재계산 실행, 결과를 콜백으로 전달
+     * ✅ 커밋 이후: 캐시 무효화 → 즉시 재계산(웜업)
      * - 트랜잭션 있으면 afterCommit, 없으면 즉시 실행
      */
-    public void refreshAfterCommit(Collection<Long> pids, BiConsumer<Long, Long> onAvailable) {
+    public void refreshAfterCommit(Collection<Long> pids) {
         if (pids == null || pids.isEmpty()) return;
 
         Runnable work = () -> {
             invalidateMany(pids);
-            Map<Long, Long> av = getMany(new ArrayList<>(pids)); // DB→캐시 반영 후 계산
-            for (Long pid : pids) {
-                onAvailable.accept(pid, av.getOrDefault(pid, 0L));
-            }
+            // 재계산해서 캐시에 반영(반환값은 사용하지 않아도 캐시가 채워짐)
+            getMany(new ArrayList<>(pids));
         };
 
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
