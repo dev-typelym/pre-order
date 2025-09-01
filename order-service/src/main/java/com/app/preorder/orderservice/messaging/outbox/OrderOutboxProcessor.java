@@ -1,6 +1,7 @@
 package com.app.preorder.orderservice.messaging.outbox;
 
 import com.app.preorder.common.messaging.command.StockRestoreRequest;
+import com.app.preorder.common.type.OutboxStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,19 +24,16 @@ public class OrderOutboxProcessor {
     @Scheduled(fixedDelay = 700)
     @Transactional
     public void flush() {
-        List<OrderOutboxEvent> batch =
-                outboxRepo.findTop100ByStatusOrderByCreatedAtAsc(OrderOutboxStatus.PENDING);
-
-        for (OrderOutboxEvent e : batch) {
+        var batch = outboxRepo.findTop100ByStatusOrderByCreatedAtAsc(OutboxStatus.NEW);
+        for (var e : batch) {
             try {
-                StockRestoreRequest req = om.readValue(e.getPayloadJson(), StockRestoreRequest.class);
+                var req = om.readValue(e.getPayloadJson(), StockRestoreRequest.class);
                 kafkaTemplate.send(e.getTopic(), e.getPartitionKey(), req).get();
-                e.markSent(); // 더티체킹으로 UPDATE
+                e.markSent();
             } catch (Exception ex) {
-                log.warn("Outbox 전송 실패 id={}", e.getId(), ex);
-                // 필요하면 정책에 따라 e.markFailed(); 추가
+                log.warn("Outbox 전송 실패 id={}, reason={}", e.getId(), ex.toString());
+                e.markFailed(); // 실패 표시(무한 재시도 루프 방지)
             }
         }
-        // @Transactional 이라 루프 종료 시점에 한 번 flush/commit
     }
 }

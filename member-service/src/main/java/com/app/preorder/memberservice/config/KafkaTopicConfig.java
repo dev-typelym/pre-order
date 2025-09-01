@@ -8,15 +8,21 @@ import org.springframework.kafka.config.TopicBuilder;
 
 @Configuration
 public class KafkaTopicConfig {
+    /** 멤버→카트 커맨드 토픽 */
     @Bean
-    public NewTopic memberRegisterEventsV1() {
-        return TopicBuilder.name(KafkaTopics.MEMBER_REGISTER_EVENTS_V1)
-                .partitions(3).replicas(1).build();
+    public NewTopic memberCartCreateRequestV1() {
+        return TopicBuilder.name(KafkaTopics.MEMBER_CART_CREATE_REQUEST_V1)
+                .partitions(3)
+                .replicas(1)
+                .build();
     }
 
+    /** DLT (컨슈머에서 DeadLetterPublishingRecoverer 사용 시) */
     @Bean
-    public NewTopic memberRegisterEventsV1Dlt() {
-        return TopicBuilder.name(KafkaTopics.MEMBER_REGISTER_EVENTS_V1 + ".DLT")
-                .partitions(3).replicas(1).build();
+    public NewTopic memberCartCreateRequestV1Dlt() {
+        return TopicBuilder.name(KafkaTopics.MEMBER_CART_CREATE_REQUEST_V1 + ".DLT")
+                .partitions(3)
+                .replicas(1)
+                .build();
     }
 }

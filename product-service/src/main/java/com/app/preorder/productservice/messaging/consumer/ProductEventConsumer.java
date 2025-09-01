@@ -18,34 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ProductEventConsumer {
 
-    private final ProductInboxEventRepository inboxRepo;
     private final ProductRepository productRepository;
-    private final ObjectMapper om;
 
-    // 한 줄 주석: 재고 복원 요청 수신 → Inbox(PENDING) 적재만
-    @Transactional
-    @KafkaListener(
-            id = "stockRestoreInboxWriter",
-            topics = KafkaTopics.INVENTORY_STOCK_RESTORE_REQUEST_V1,
-            groupId = "product-inbox-writer",
-            containerFactory = "stockRestoreKafkaListenerContainerFactory"   // ★ 추가
-    )
-    public void onStockRestoreRequest(StockRestoreRequest req) throws Exception {
-        String json = om.writeValueAsString(req);
-        ProductInboxEvent inbox = ProductInboxEvent.of(
-                req.eventId(),
-                KafkaTopics.INVENTORY_STOCK_RESTORE_REQUEST_V1,
-                json
-        );
-
-        try {
-            inboxRepo.save(inbox); // UNIQUE(messageKey)로 중복 차단
-        } catch (DataIntegrityViolationException ignore) {
-            // 이미 들어온 메시지면 무시(멱등)
-        }
-    }
-
-    // 한 줄 주석: 읽기모델 동기화 이벤트는 즉시 처리(인박스 비대상)
     @Transactional
     @KafkaListener(
             id = "stockEventsConsumer",
