@@ -1,6 +1,7 @@
 // member-service/.../messaging/outbox/MemberOutboxEvent.java
 package com.app.preorder.memberservice.messaging.outbox;
 
+import com.app.preorder.common.type.OutboxStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -19,8 +20,6 @@ import java.time.LocalDateTime;
 @Builder
 public class MemberOutboxEvent {
 
-    public enum MemberOutboxStatus { PENDING, SENT, FAILED }
-
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -36,7 +35,7 @@ public class MemberOutboxEvent {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
-    private MemberOutboxStatus status;
+    private OutboxStatus status; // ★ 공통 OutboxStatus: NEW/SENT/FAILED
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -46,6 +45,16 @@ public class MemberOutboxEvent {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public void markSent() { this.status = MemberOutboxStatus.SENT; }
-    public void markFailed() { this.status = MemberOutboxStatus.FAILED; }
+    /** 생성 시 기본값 NEW로 세팅할 수 있게 팩토리 제공(권장) */
+    public static MemberOutboxEvent of(String topic, String partitionKey, String payloadJson) {
+        return MemberOutboxEvent.builder()
+                .topic(topic)
+                .partitionKey(partitionKey)
+                .payloadJson(payloadJson)
+                .status(OutboxStatus.NEW) // ★ 기본값 NEW
+                .build();
+    }
+
+    public void markSent()   { this.status = OutboxStatus.SENT; }
+    public void markFailed() { this.status = OutboxStatus.FAILED; }
 }
