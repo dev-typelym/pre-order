@@ -1,28 +1,32 @@
+// product-service/src/main/java/com/app/preorder/productservice/messaging/inbox/ProductInboxEvent.java
 package com.app.preorder.productservice.messaging.inbox;
 
+
+import com.app.preorder.common.type.InboxStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
         name = "product_inbox_event",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uq_inbox_message_key", columnNames = "message_key")
-        },
-        indexes = {
-                @Index(name = "idx_product_inbox_status_id", columnList = "status,id")
-        }
+        uniqueConstraints = @UniqueConstraint(name = "uq_inbox_message_key", columnNames = "message_key"),
+        indexes = @Index(name = "idx_product_inbox_status_id", columnList = "status,id")
 )
-@Getter @Setter @NoArgsConstructor
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 public class ProductInboxEvent {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "message_key", nullable = false, length = 100)
-    private String messageKey;               // 이벤트 id 등
+    private String messageKey;        // 이벤트 id (멱등 키)
 
     @Column(name = "topic", nullable = false, length = 200)
     private String topic;
@@ -33,21 +37,28 @@ public class ProductInboxEvent {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private ProductInboxStatus status = ProductInboxStatus.PENDING;
+    private InboxStatus status;
 
-    @Column(name = "created_at", nullable = false)
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    @Column(name = "last_error")
+    private String lastError;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     public static ProductInboxEvent of(String messageKey, String topic, String payloadJson) {
-        ProductInboxEvent e = new ProductInboxEvent();
-        e.setMessageKey(messageKey);
-        e.setTopic(topic);
-        e.setPayloadJson(payloadJson);
-        e.setStatus(ProductInboxStatus.PENDING);
-        return e;
+        return ProductInboxEvent.builder()
+                .messageKey(messageKey)
+                .topic(topic)
+                .payloadJson(payloadJson)
+                .status(InboxStatus.PENDING)
+                .build();
     }
 
-    public void markProcessed() {
-        this.status = ProductInboxStatus.PROCESSED;
-    }
+    public void markProcessed() { this.status = InboxStatus.PROCESSED; this.lastError = null; }
+    public void markFailed(String reason) { this.status = InboxStatus.FAILED; this.lastError = reason; }
 }
