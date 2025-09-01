@@ -1,4 +1,5 @@
-package com.app.preorder.orderservice.messaging.outbox;
+// member-service/.../messaging/outbox/MemberOutboxEvent.java
+package com.app.preorder.memberservice.messaging.outbox;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,16 +10,17 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(
-        name = "order_outbox_event",
-        indexes = {
-                @Index(name = "idx_order_outbox_status_id", columnList = "status,id")
-        }
+        name = "member_outbox_event",
+        indexes = @Index(name = "idx_member_outbox_status_id", columnList = "status,id")
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class OrderOutboxEvent {
+public class MemberOutboxEvent {
+
+    public enum MemberOutboxStatus { PENDING, SENT, FAILED }
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -34,7 +36,7 @@ public class OrderOutboxEvent {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
-    private OrderOutboxStatus status;   // PENDING / SENT / FAILED
+    private MemberOutboxStatus status;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -44,12 +46,6 @@ public class OrderOutboxEvent {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // === 도메인 메서드(세터 대신) ===
-    public void markSent() {
-        this.status = OrderOutboxStatus.SENT;   // updatedAt은 @UpdateTimestamp가 알아서 갱신
-    }
-
-    public void markFailed() {
-        this.status = OrderOutboxStatus.FAILED;
-    }
+    public void markSent() { this.status = MemberOutboxStatus.SENT; }
+    public void markFailed() { this.status = MemberOutboxStatus.FAILED; }
 }

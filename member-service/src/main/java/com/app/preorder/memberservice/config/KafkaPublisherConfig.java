@@ -1,7 +1,7 @@
-// order-service/src/main/java/com/app/preorder/orderservice/config/KafkaPublisherConfig.java
-package com.app.preorder.orderservice.config;
+// member-service/src/main/java/com/app/preorder/memberservice/config/KafkaPublisherConfig.java
+package com.app.preorder.memberservice.config;
 
-import com.app.preorder.common.messaging.command.StockRestoreRequest;
+import com.app.preorder.common.messaging.event.MemberRegisterEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.context.annotation.Bean;
@@ -17,7 +17,7 @@ import java.util.Map;
 public class KafkaPublisherConfig {
 
     @Bean
-    public ProducerFactory<String, StockRestoreRequest> stockRestoreProducerFactory() {
+    public ProducerFactory<String, MemberRegisterEvent> memberRegisterProducerFactory() {
         return new DefaultKafkaProducerFactory<>(
                 Map.of(
                         ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
@@ -34,8 +34,8 @@ public class KafkaPublisherConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, StockRestoreRequest> stockRestoreKafkaTemplate(
-            ProducerFactory<String, StockRestoreRequest> pf) {
+    public KafkaTemplate<String, MemberRegisterEvent> memberRegisterKafkaTemplate(
+            ProducerFactory<String, MemberRegisterEvent> pf) {
         return new KafkaTemplate<>(pf);
     }
 }
