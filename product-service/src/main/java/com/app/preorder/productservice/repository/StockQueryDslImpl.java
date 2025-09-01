@@ -8,7 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+import static com.querydsl.core.group.GroupBy.groupBy;
 
 
 @RequiredArgsConstructor
@@ -87,16 +90,16 @@ public class StockQueryDslImpl implements StockQueryDsl {
     }
 
     // ------------ ✅ 가용 재고 조회 ------------
-
     @Override
-    public Optional<Long> findAvailable(long pid) {
-        Long v = query
-                .select(s.stockQuantity.subtract(s.reserved))
-                .from(s)
-                .where(s.product.id.eq(pid))
-                .fetchOne();
-        return Optional.ofNullable(v);
-    }
+    public Map<Long, Long> findAvailableMapByProductIds(List<Long> productIds) {
+        QStock s = QStock.stock;
 
+        return query
+                .from(s)
+                .where(s.product.id.in(productIds))                    // 연관이면 s.product.id.in(...)
+                .transform(groupBy(s.product.id)                        // 연관이면 s.product.id
+                        .as(s.stockQuantity.coalesce(0L)
+                                .subtract(s.reserved.coalesce(0L))));
+    }
 }
 
