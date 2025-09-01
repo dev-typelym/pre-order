@@ -1,3 +1,4 @@
+// order-service/src/main/java/com/app/preorder/orderservice/config/KafkaPublisherConfig.java
 package com.app.preorder.orderservice.config;
 
 import com.app.preorder.common.messaging.command.StockRestoreRequest;
@@ -14,6 +15,7 @@ import java.util.Map;
 
 @Configuration
 public class KafkaPublisherConfig {
+
     @Bean
     public ProducerFactory<String, StockRestoreRequest> stockRestoreProducerFactory() {
         return new DefaultKafkaProducerFactory<>(
@@ -22,7 +24,11 @@ public class KafkaPublisherConfig {
                         System.getenv().getOrDefault("SPRING_KAFKA_BOOTSTRAP_SERVERS", "kafka:9092"),
                         ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
                         ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class,
-                        JsonSerializer.ADD_TYPE_INFO_HEADERS, false
+                        JsonSerializer.ADD_TYPE_INFO_HEADERS, false,           // 컨슈머 setUseTypeHeaders(false)와 대칭
+                        ProducerConfig.ACKS_CONFIG, "all",                     // 신뢰성 4줄
+                        ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true,
+                        ProducerConfig.RETRIES_CONFIG, 10,
+                        ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 30_000
                 )
         );
     }
