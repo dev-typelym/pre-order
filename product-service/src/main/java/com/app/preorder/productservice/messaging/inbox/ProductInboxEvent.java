@@ -6,8 +6,15 @@ import lombok.*;
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "product_inbox_event",
-        uniqueConstraints = @UniqueConstraint(name = "uq_inbox_message_key", columnNames = "message_key"))
+@Table(
+        name = "product_inbox_event",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_inbox_message_key", columnNames = "message_key")
+        },
+        indexes = {
+                @Index(name = "idx_product_inbox_status_id", columnList = "status,id")
+        }
+)
 @Getter @Setter @NoArgsConstructor
 public class ProductInboxEvent {
 
