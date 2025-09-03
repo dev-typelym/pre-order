@@ -10,6 +10,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
+// product-service/src/main/java/com/app/preorder/productservice/messaging/inbox/ProductInboxEvent.java
+// 변경 포인트: lastError 필드명/컬럼명을 errorMessage/error_message 로 교체
+
 @Entity
 @Table(
         name = "product_inbox_event",
@@ -26,7 +29,7 @@ public class ProductInboxEvent {
     private Long id;
 
     @Column(name = "message_key", nullable = false, length = 100)
-    private String messageKey;        // 이벤트 id (멱등 키)
+    private String messageKey;
 
     @Column(name = "topic", nullable = false, length = 200)
     private String topic;
@@ -39,8 +42,8 @@ public class ProductInboxEvent {
     @Column(name = "status", nullable = false, length = 20)
     private InboxStatus status;
 
-    @Column(name = "last_error")
-    private String lastError;
+    @Column(name = "error_message")               // ★ 여기 통일
+    private String errorMessage;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -59,6 +62,7 @@ public class ProductInboxEvent {
                 .build();
     }
 
-    public void markProcessed() { this.status = InboxStatus.PROCESSED; this.lastError = null; }
-    public void markFailed(String reason) { this.status = InboxStatus.FAILED; this.lastError = reason; }
+    public void markProcessed() { this.status = InboxStatus.PROCESSED; this.errorMessage = null; }
+    public void markFailed(String reason) { this.status = InboxStatus.FAILED; this.errorMessage = reason; }
 }
+

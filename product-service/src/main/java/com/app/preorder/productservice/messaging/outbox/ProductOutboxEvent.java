@@ -36,6 +36,9 @@ public class ProductOutboxEvent {
     @Column(nullable = false, length = 16)
     private OutboxStatus status; // NEW / SENT / FAILED
 
+    @Column(name = "error_message")
+    private String errorMessage;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -54,6 +57,6 @@ public class ProductOutboxEvent {
                 .build();
     }
 
-    public void markSent()  { this.status = OutboxStatus.SENT; }
-    public void markFailed(){ this.status = OutboxStatus.FAILED; }
+    public void markSent()   { this.status = OutboxStatus.SENT;   this.errorMessage = null; }
+    public void markFailed(String reason) { this.status = OutboxStatus.FAILED; this.errorMessage = reason; }
 }

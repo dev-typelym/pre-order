@@ -1,7 +1,7 @@
 package com.app.preorder.orderservice.messaging.publisher;
 
 import com.app.preorder.common.dto.StockRequestInternal;
-import com.app.preorder.common.messaging.command.StockRestoreRequest;
+import com.app.preorder.common.messaging.command.*;
 import com.app.preorder.common.messaging.topics.KafkaTopics;
 import com.app.preorder.common.type.OutboxStatus;
 import com.app.preorder.orderservice.messaging.outbox.OrderOutboxEvent;
@@ -24,19 +24,42 @@ public class KafkaOrderCommandPublisher implements OrderCommandPublisher {
 
     @Override
     @Transactional
-    public void publishStockRestoreCommand(Long orderId, List<StockRequestInternal> items) {
-        try {
-            var cmd = new StockRestoreRequest(
-                    UUID.randomUUID().toString(),
-                    orderId,
-                    items,
-                    Instant.now().toString()
-            );
-            var json = om.writeValueAsString(cmd);
+    public void publishReserveCommand(Long orderId, List<StockRequestInternal> items) {
+        enqueue(KafkaTopics.INVENTORY_STOCK_RESERVE_REQUEST_V1,
+                orderId,
+                new ReserveStocksRequest(newId(), orderId, items, now()));
+    }
 
+    @Override
+    @Transactional
+    public void publishCommitCommand(Long orderId, List<StockRequestInternal> items) {
+        enqueue(KafkaTopics.INVENTORY_STOCK_COMMIT_REQUEST_V1,
+                orderId,
+                new CommitStocksRequest(newId(), orderId, items, now()));
+    }
+
+    @Override
+    @Transactional
+    public void publishUnreserveCommand(Long orderId, List<StockRequestInternal> items) {
+        enqueue(KafkaTopics.INVENTORY_STOCK_UNRESERVE_REQUEST_V1,
+                orderId,
+                new UnreserveStocksRequest(newId(), orderId, items, now()));
+    }
+
+    @Override
+    @Transactional
+    public void publishStockRestoreCommand(Long orderId, List<StockRequestInternal> items) {
+        enqueue(KafkaTopics.INVENTORY_STOCK_RESTORE_REQUEST_V1,
+                orderId,
+                new StockRestoreRequest(newId(), orderId, items, now()));
+    }
+
+    private void enqueue(String topic, Long orderId, Object payload) {
+        try {
+            String json = om.writeValueAsString(payload);
             outboxRepo.save(OrderOutboxEvent.builder()
-                    .topic(KafkaTopics.INVENTORY_STOCK_RESTORE_REQUEST_V1)
-                    .partitionKey(String.valueOf(orderId))   // ★ 키는 여기(Outbox 컬럼)만
+                    .topic(topic)
+                    .partitionKey(String.valueOf(orderId))
                     .payloadJson(json)
                     .status(OutboxStatus.NEW)
                     .build());
@@ -44,5 +67,7 @@ public class KafkaOrderCommandPublisher implements OrderCommandPublisher {
             throw new RuntimeException("Outbox 적재 실패", e);
         }
     }
-}
 
+    private static String newId() { return UUID.randomUUID().toString(); }
+    private static String now()   { return Instant.now().toString(); }
+}
