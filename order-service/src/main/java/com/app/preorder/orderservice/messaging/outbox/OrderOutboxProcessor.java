@@ -1,6 +1,7 @@
 package com.app.preorder.orderservice.messaging.outbox;
 
-import com.app.preorder.common.messaging.command.StockRestoreRequest;
+import com.app.preorder.common.messaging.command.*;
+import com.app.preorder.common.messaging.topics.KafkaTopics;
 import com.app.preorder.common.type.OutboxStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -18,21 +19,32 @@ import java.util.List;
 public class OrderOutboxProcessor {
 
     private final OrderOutboxEventRepository outboxRepo;
-    private final KafkaTemplate<String, StockRestoreRequest> kafkaTemplate;
     private final ObjectMapper om;
+    /** 제네릭 템플릿 (KafkaPublisherConfig에서 Bean 제공) */
+    private final KafkaTemplate<Object, Object> kafkaTemplate;
 
-    @Scheduled(fixedDelay = 700)
+    @Scheduled(fixedDelayString = "${outbox.order.publish-interval-ms:700}")
     @Transactional
     public void flush() {
-        var batch = outboxRepo.findTop100ByStatusOrderByCreatedAtAsc(OutboxStatus.NEW);
-        for (var e : batch) {
+        List<OrderOutboxEvent> batch =
+                outboxRepo.findTop100ByStatusOrderByCreatedAtAsc(OutboxStatus.NEW);
+
+        for (OrderOutboxEvent e : batch) {
             try {
-                var req = om.readValue(e.getPayloadJson(), StockRestoreRequest.class);
-                kafkaTemplate.send(e.getTopic(), e.getPartitionKey(), req).get();
+                Object payload = switch (e.getTopic()) {
+                    case KafkaTopics.INVENTORY_STOCK_RESERVE_REQUEST_V1   -> om.readValue(e.getPayloadJson(), ReserveStocksRequest.class);
+                    case KafkaTopics.INVENTORY_STOCK_COMMIT_REQUEST_V1    -> om.readValue(e.getPayloadJson(), CommitStocksRequest.class);
+                    case KafkaTopics.INVENTORY_STOCK_UNRESERVE_REQUEST_V1 -> om.readValue(e.getPayloadJson(), UnreserveStocksRequest.class);
+                    case KafkaTopics.INVENTORY_STOCK_RESTORE_REQUEST_V1   -> om.readValue(e.getPayloadJson(), StockRestoreRequest.class);
+                    default -> throw new IllegalArgumentException("지원되지 않는 토픽입니다: " + e.getTopic());
+                };
+
+                kafkaTemplate.send(e.getTopic(), e.getPartitionKey(), payload).get();
                 e.markSent();
+
             } catch (Exception ex) {
-                log.warn("Outbox 전송 실패 id={}, reason={}", e.getId(), ex.toString());
-                e.markFailed(); // 실패 표시(무한 재시도 루프 방지)
+                log.warn("[Outbox][order] 전송 실패 id={}, topic={}, 사유={}", e.getId(), e.getTopic(), ex.toString());
+                e.markFailed(ex.toString()); // ★ 실패 사유 기록
             }
         }
     }

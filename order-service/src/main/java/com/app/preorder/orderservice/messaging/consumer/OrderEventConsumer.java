@@ -1,0 +1,91 @@
+package com.app.preorder.orderservice.messaging.consumer;
+
+import com.app.preorder.common.messaging.event.StockCommandResult;
+import com.app.preorder.common.messaging.topics.KafkaTopics;
+import com.app.preorder.common.type.StockCommandResultType;
+import com.app.preorder.orderservice.entity.Order;
+import com.app.preorder.orderservice.idempotency.OrderStepIdempotency;
+import com.app.preorder.orderservice.repository.OrderRepository;
+import com.app.preorder.orderservice.service.OrderTransactionalService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class OrderEventConsumer {
+
+    private final OrderRepository orderRepository;
+    private final OrderTransactionalService tx;
+    private final OrderStepIdempotency idem;
+
+    // ========= 1) 재고 커맨드 결과 =========
+    @KafkaListener(
+            id = "order-stock-result-consumer",
+            topics = KafkaTopics.INVENTORY_STOCK_COMMAND_RESULTS_V1,
+            groupId = "order-service",
+            containerFactory = "stockCommandResultKafkaListenerContainerFactory"
+    )
+    @Transactional
+    public void onStockCommandResult(StockCommandResult r) {
+        Order order = orderRepository.findById(r.orderId()).orElse(null);
+        if (order == null) {
+            log.warn("[Result][order] 주문을 찾을 수 없습니다. orderId={}", r.orderId());
+            return;
+        }
+
+        // 멱등 처리: 동일 eventId는 한 번만
+        try {
+            idem.begin(r.orderId(), "RESULT:" + r.eventId(), null);
+        } catch (OrderStepIdempotency.AlreadyProcessedException ignore) {
+            return;
+        }
+
+        try {
+            StockCommandResultType t = r.result();
+            switch (t) {
+                case COMMITTED -> {
+                    tx.completeOrder(order);
+                    log.info("[Result][order] 결제 커밋 완료 처리: orderId={}", r.orderId());
+                }
+                case RESERVE_FAILED -> {
+                    // 필요 시 상태 전환 메서드 연결
+                    log.warn("[Result][order] 재고 예약 실패: orderId={}, reason={}", r.orderId(), r.reason());
+                }
+                case COMMIT_FAILED -> {
+                    // 필요 시 결제 실패 전환 메서드 연결
+                    log.warn("[Result][order] 재고 커밋 실패: orderId={}, reason={}", r.orderId(), r.reason());
+                }
+                case RESERVED, UNRESERVED, RESTORED -> {
+                    log.info("[Result][order] 후처리 이벤트 수신: orderId={}, result={}", r.orderId(), t);
+                }
+                default -> log.info("[Result][order] 처리 대상 아님: orderId={}, result={}", r.orderId(), t);
+            }
+        } catch (RuntimeException e) {
+            idem.undo(r.orderId(), "RESULT:" + r.eventId(), null);
+            throw e;
+        }
+    }
+
+    // ========= 2) (예시) 결제 결과 등 다른 이벤트들 추가 자리 =========
+    // @KafkaListener(
+    //   id = "order-payment-result-consumer",
+    //   topics = KafkaTopics.PAYMENT_RESULTS_V1,
+    //   groupId = "order-service",
+    //   containerFactory = "paymentResultKafkaListenerContainerFactory"
+    // )
+    // @Transactional
+    // public void onPaymentResult(PaymentResult r) { ... }
+
+    // @KafkaListener(
+    //   id = "order-delivery-result-consumer",
+    //   topics = KafkaTopics.DELIVERY_RESULTS_V1,
+    //   groupId = "order-service",
+    //   containerFactory = "deliveryResultKafkaListenerContainerFactory"
+    // )
+    // @Transactional
+    // public void onDeliveryResult(DeliveryResult r) { ... }
+}
