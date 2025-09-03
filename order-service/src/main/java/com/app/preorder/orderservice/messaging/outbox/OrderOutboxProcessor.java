@@ -44,7 +44,7 @@ public class OrderOutboxProcessor {
 
             } catch (Exception ex) {
                 log.warn("[Outbox][order] 전송 실패 id={}, topic={}, 사유={}", e.getId(), e.getTopic(), ex.toString());
-                e.markFailed(ex.toString()); // ★ 실패 사유 기록
+                e.markFailed(ex.toString());
             }
         }
     }
