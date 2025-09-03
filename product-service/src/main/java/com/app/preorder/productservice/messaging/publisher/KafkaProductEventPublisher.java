@@ -1,7 +1,9 @@
 package com.app.preorder.productservice.messaging.publisher;
 
+import com.app.preorder.common.messaging.event.StockCommandResult;
 import com.app.preorder.common.messaging.event.StockEvent;
 import com.app.preorder.common.messaging.topics.KafkaTopics;
+import com.app.preorder.common.type.OutboxStatus;
 import com.app.preorder.productservice.messaging.outbox.ProductOutboxEvent;
 import com.app.preorder.productservice.messaging.outbox.ProductOutboxEventRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,6 +53,22 @@ public class KafkaProductEventPublisher implements ProductEventPublisher {
                     .build());
         } catch (Exception e) {
             throw new RuntimeException("프로덕트 아웃박스 적재 실패", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void publishStockCommandResult(StockCommandResult result) {
+        try {
+            String json = om.writeValueAsString(result);
+            outboxRepo.save(ProductOutboxEvent.builder()
+                    .topic(KafkaTopics.INVENTORY_STOCK_COMMAND_RESULTS_V1)
+                    .partitionKey(String.valueOf(result.orderId()))
+                    .payloadJson(json)
+                    .status(OutboxStatus.NEW)
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException("ProductOutbox 적재 실패(StockCommandResult)", e);
         }
     }
 }

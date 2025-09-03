@@ -1,4 +1,3 @@
-// product-service/src/main/java/com/app/preorder/productservice/config/KafkaTopicConfig.java
 package com.app.preorder.productservice.config;
 
 import org.apache.kafka.clients.admin.NewTopic;
@@ -22,6 +21,28 @@ public class KafkaTopicConfig {
                 .partitions(6).replicas(1).build();
     }
 
+    @Bean
+    public NewTopic stockReserveRequest() {
+        return TopicBuilder.name("inventory.stock-reserve.request.v1")
+                .partitions(6).replicas(1).build();
+    }
+    @Bean
+    public NewTopic stockCommitRequest() {
+        return TopicBuilder.name("inventory.stock-commit.request.v1")
+                .partitions(6).replicas(1).build();
+    }
+    @Bean
+    public NewTopic stockUnreserveRequest() {
+        return TopicBuilder.name("inventory.stock-unreserve.request.v1")
+                .partitions(6).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic stockCommandResults() {
+        return TopicBuilder.name("inventory.stock-command-results.v1")
+                .partitions(6).replicas(1).build();
+    }
+
     // DLT 토픽들(Dead Letter)
     @Bean
     public NewTopic stockEventsDlt() {
@@ -32,6 +53,28 @@ public class KafkaTopicConfig {
     @Bean
     public NewTopic stockRestoreRequestDlt() {
         return TopicBuilder.name("inventory.stock-restore.request.v1.DLT")
+                .partitions(6).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic stockReserveRequestDlt() {
+        return TopicBuilder.name("inventory.stock-reserve.request.v1.DLT")
+                .partitions(6).replicas(1).build();
+    }
+    @Bean
+    public NewTopic stockCommitRequestDlt() {
+        return TopicBuilder.name("inventory.stock-commit.request.v1.DLT")
+                .partitions(6).replicas(1).build();
+    }
+    @Bean
+    public NewTopic stockUnreserveRequestDlt() {
+        return TopicBuilder.name("inventory.stock-unreserve.request.v1.DLT")
+                .partitions(6).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic stockCommandResultsDlt() {
+        return TopicBuilder.name("inventory.stock-command-results.v1.DLT")
                 .partitions(6).replicas(1).build();
     }
 }
