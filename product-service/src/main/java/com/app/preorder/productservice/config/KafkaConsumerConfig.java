@@ -4,6 +4,7 @@ import com.app.preorder.common.messaging.command.*;
 import com.app.preorder.common.messaging.event.StockEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.beans.factory.annotation.Value;                // ★ 추가
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -22,6 +23,13 @@ import java.util.Map;
 @EnableKafka
 @Configuration
 public class KafkaConsumerConfig {
+
+    // ★ 환경변수/YA​ML로 조절 가능하게
+    @Value("${kafka.consumer.command.concurrency:6}")
+    private int commandConcurrency; // Reserve/Commit/Unreserve/Restore 용
+
+    @Value("${kafka.consumer.event.concurrency:6}")
+    private int eventConcurrency;   // StockEvent(브로드캐스트) 용
 
     // 공통 에러 핸들러
     private DefaultErrorHandler buildErrorHandler(KafkaTemplate<Object, Object> dltTemplate) {
@@ -65,6 +73,7 @@ public class KafkaConsumerConfig {
         f.setConsumerFactory(stockRestoreConsumerFactory());
         f.setCommonErrorHandler(buildErrorHandler(kafkaTemplate));
         f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        f.setConcurrency(commandConcurrency); // ★ 추가
         return f;
     }
 
@@ -84,6 +93,7 @@ public class KafkaConsumerConfig {
         f.setConsumerFactory(stockReserveConsumerFactory());
         f.setCommonErrorHandler(buildErrorHandler(kafkaTemplate));
         f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        f.setConcurrency(commandConcurrency); // ★ 추가
         return f;
     }
 
@@ -103,6 +113,7 @@ public class KafkaConsumerConfig {
         f.setConsumerFactory(stockCommitConsumerFactory());
         f.setCommonErrorHandler(buildErrorHandler(kafkaTemplate));
         f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        f.setConcurrency(commandConcurrency); // ★ 추가
         return f;
     }
 
@@ -122,6 +133,7 @@ public class KafkaConsumerConfig {
         f.setConsumerFactory(stockUnreserveConsumerFactory());
         f.setCommonErrorHandler(buildErrorHandler(kafkaTemplate));
         f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        f.setConcurrency(commandConcurrency); // ★ 추가
         return f;
     }
 
@@ -141,6 +153,7 @@ public class KafkaConsumerConfig {
         f.setConsumerFactory(stockEventsConsumerFactory());
         f.setCommonErrorHandler(buildErrorHandler(kafkaTemplate));
         f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        f.setConcurrency(eventConcurrency); // ★ 추가
         return f;
     }
 }

@@ -24,7 +24,6 @@ spring:
       ddl-auto: create
     show-sql: true
 
-  # ✅ KafkaAdmin 및 바인딩을 위해 이것만 유지
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
 
@@ -47,3 +46,11 @@ eureka:
 
 email:
   auto-verify: ${EMAIL_AUTO_VERIFY:false}
+
+kafka:
+  consumer:
+    command:
+      concurrency: 6
+    event:
+      concurrency: 6
+
