@@ -16,7 +16,13 @@ import java.util.List;
 @Entity
 @Getter
 @ToString
-@Table(name = "tbl_order")
+@Table(
+        name = "tbl_order",
+        indexes = {
+                // DB 컬럼명 기준으로 적는 게 안전함 (status, expires_at)
+                @Index(name = "ix_order_status_expires_at", columnList = "status, expires_at")
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @DynamicUpdate
 @DynamicInsert

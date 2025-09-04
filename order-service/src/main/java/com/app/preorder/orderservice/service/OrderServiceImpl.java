@@ -118,10 +118,11 @@ public class OrderServiceImpl implements OrderService {
 
         try {
             idem.begin(orderId, "COMPLETE", null);
-            // 재고 커밋 커맨드 발행 (결과: StockCommandResult.COMMITTED/COMMIT_FAILED)
             orderCommandPublisher.publishCommitCommand(orderId, items);
-            // 주문 완료 전이는 StockCommandResultConsumer가 수행
         } catch (OrderStepIdempotency.AlreadyProcessedException ignore) {
+        } catch (RuntimeException e) {
+            idem.undo(orderId, "COMPLETE", null);
+            throw e;
         }
     }
 
