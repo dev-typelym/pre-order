@@ -1,107 +1,65 @@
 package com.app.preorder.orderservice.scheduler;
 
-import com.app.preorder.orderservice.scheduler.job.OrderDeliveredJob;
-import com.app.preorder.orderservice.scheduler.job.OrderNonReturnableJob;
-import com.app.preorder.orderservice.scheduler.job.OrderShippingJob;
-import com.app.preorder.orderservice.scheduler.job.ReturnProcessingJob;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
+import com.app.preorder.common.dto.StockRequestInternal;
+import com.app.preorder.orderservice.idempotency.OrderStepIdempotency;
+import com.app.preorder.orderservice.messaging.publisher.OrderCommandPublisher;
+import com.app.preorder.orderservice.repository.OrderRepository;
+import com.app.preorder.orderservice.service.OrderTransactionalService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.quartz.*;
-import org.quartz.impl.StdSchedulerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Slf4j
-@DisallowConcurrentExecution
-@Component
+@Component("orderExpirationSweepScheduler")
+@RequiredArgsConstructor
 public class OrderScheduler {
 
-    private Scheduler scheduler;
+    private final OrderRepository repo;
+    private final OrderCommandPublisher publisher;
+    private final OrderTransactionalService tx;
+    private final OrderStepIdempotency idem;
 
-    @PostConstruct
-    public void init() {
-        try {
-            scheduler = StdSchedulerFactory.getDefaultScheduler();
-            scheduler.start();
-        } catch (SchedulerException e) {
-            log.error("Scheduler 초기화 실패", e);
-        }
-    }
+    @Value("${order.expiration.batch-size:300}")
+    private int batchSize;
 
-    @PreDestroy
-    public void shutdown() {
-        try {
-            if (scheduler != null) {
-                scheduler.shutdown();
-            }
-        } catch (SchedulerException e) {
-            log.error("Scheduler 종료 실패", e);
-        }
-    }
+    @Value("${order.expiration.grace-seconds:10}")
+    private int graceSeconds;
 
-    public void scheduleAll(Long orderId) {
-        scheduleOrderShipping(orderId);
-        scheduleOrderDelivered(orderId);
-        scheduleNonReturnable(orderId);
-    }
+    @Value("${order.expiration.max-rounds:10}") // 한 틱에 최대 라운드
+    private int maxRounds;
 
-    public void scheduleOrderShipping(Long orderId) {
-        scheduleJob(orderId, OrderShippingJob.class, 1, "OrderShipping");
-    }
+    @Scheduled(fixedDelayString = "${order.expiration.sweep-interval-ms:10000}")
+    @Transactional
+    public void sweepExpiredBeforeCommit() {
+        var threshold = LocalDateTime.now().minusSeconds(graceSeconds);
 
-    public void scheduleOrderDelivered(Long orderId) {
-        scheduleJob(orderId, OrderDeliveredJob.class, 2, "OrderDelivered");
-    }
+        int rounds = 0;
+        while (rounds++ < maxRounds) {
+            var list = repo.findExpiredBeforeCommit(threshold, batchSize);
+            if (list.isEmpty()) break;
 
-    public void scheduleReturnProcess(Long orderId) {
-        scheduleJob(orderId, ReturnProcessingJob.class, 1, "ReturnProcessing");
-    }
+            for (var o : list) {
+                try { idem.begin(o.getId(), "EXPIRE:" + o.getId(), null); }
+                catch (OrderStepIdempotency.AlreadyProcessedException ignore) { continue; }
 
-    public void scheduleNonReturnable(Long orderId) {
-        scheduleJob(orderId, OrderNonReturnableJob.class, 3, "OrderNonReturnable");
-    }
+                var items = o.getOrderItems().stream()
+                        .map(i -> new StockRequestInternal(
+                                i.getProductId(),
+                                i.getProductQuantity()    // 필요 시 .intValue()
+                        ))
+                        .toList();
 
-    public void cancelReturnProcess(Long orderId) {
-        try {
-            JobKey jobKey = new JobKey("ReturnProcessingJob-" + orderId);
-            if (scheduler.checkExists(jobKey)) {
-                scheduler.deleteJob(jobKey);
-                log.info("[Scheduler] ReturnProcessingJob 취소 완료 - orderId: {}", orderId);
-            } else {
-                log.warn("[Scheduler] 취소 시도했으나 Job 존재하지 않음 - orderId: {}", orderId);
-            }
-        } catch (SchedulerException e) {
-            log.error("[Scheduler] ReturnProcessingJob 취소 실패 - orderId: {}", orderId, e);
-            throw new RuntimeException("스케줄 취소 실패", e);
-        }
-    }
-
-    private void scheduleJob(Long orderId, Class<? extends Job> jobClass, int delayInDays, String keyPrefix) {
-        if (orderId == null || orderId <= 0) {
-            log.warn("[Scheduler] 유효하지 않은 orderId: {}", orderId);
-            return;
-        }
-
-        try {
-            JobKey jobKey = new JobKey(keyPrefix + "Job-" + orderId);
-            if (scheduler.checkExists(jobKey)) {
-                log.warn("[Scheduler] {} Job 이미 등록됨 - orderId: {}", keyPrefix, orderId);
-                return;
+                publisher.publishUnreserveCommand(o.getId(), items);
+                tx.cancelOrderInTransaction(o); // 내부에서 expiresAt=null 처리 권장
+                log.info("[SWEEP] expired→UNRESERVE: orderId={}", o.getId());
             }
 
-            JobDetail jobDetail = JobBuilder.newJob(jobClass)
-                    .withIdentity(jobKey)
-                    .usingJobData("orderId", orderId)
-                    .build();
-
-            Trigger trigger = TriggerBuilder.newTrigger()
-                    .withIdentity(keyPrefix + "Trigger-" + orderId)
-                    .startAt(DateBuilder.futureDate(delayInDays, DateBuilder.IntervalUnit.DAY))
-                    .build();
-
-            scheduler.scheduleJob(jobDetail, trigger);
-        } catch (SchedulerException e) {
-            log.error("[Scheduler] {} 등록 실패 - orderId: {}", keyPrefix, orderId, e);
+            if (list.size() < batchSize) break; // 이번 라운드로 충분히 비웠으면 종료
         }
     }
 }

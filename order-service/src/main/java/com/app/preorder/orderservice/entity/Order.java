@@ -45,6 +45,9 @@ public class Order extends AuditPeriod {
 
     private LocalDateTime orderDate;
 
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
@@ -66,6 +69,8 @@ public class Order extends AuditPeriod {
     public void updateOrderPrice(BigDecimal totalPrice) {
         this.orderPrice = totalPrice;
     }
+
+    public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
 
     @Builder
     public Order(String orderNumber, Long memberId, OrderAddress deliveryAddress, OrderStatus status,

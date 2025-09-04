@@ -9,7 +9,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableJpaAuditing
 @EnableScheduling
 @SpringBootApplication(scanBasePackages = "com.app.preorder")
-@EnableFeignClients(basePackages = "com.app.preorder")
 public class ProductServiceApplication {
 
     public static void main(String[] args) {
