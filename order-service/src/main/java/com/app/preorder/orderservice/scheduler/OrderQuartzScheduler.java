@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @DisallowConcurrentExecution
 @Component
-public class OrderScheduler {
+public class OrderQuartzScheduler {
 
     private Scheduler scheduler;
 
