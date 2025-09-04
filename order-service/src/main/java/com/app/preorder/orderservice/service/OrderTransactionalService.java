@@ -8,28 +8,40 @@ import com.app.preorder.orderservice.domain.vo.OrderAddress;
 import com.app.preorder.orderservice.entity.Order;
 import com.app.preorder.orderservice.factory.OrderFactory;
 import com.app.preorder.orderservice.repository.OrderRepository;
-import com.app.preorder.orderservice.scheduler.OrderScheduler;
+import com.app.preorder.orderservice.scheduler.OrderQuartzScheduler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 @RequiredArgsConstructor
 @Service
 public class OrderTransactionalService {
 
     private final OrderRepository orderRepository;
-    private final OrderScheduler orderScheduler;
+    private final OrderQuartzScheduler orderQuartzScheduler;
     private final OrderFactory orderFactory;
+
+    // 홀드 타임(3분) + 지터
+    private static final long HOLD_MINUTES = 3L;
+    private static final Random RND = new Random();
+    private static LocalDateTime holdUntil() {
+        long base = HOLD_MINUTES * 60;
+        long jitter = RND.nextInt(60);
+        return LocalDateTime.now().plusSeconds(base + jitter);
+    }
 
     // 단건 주문 생성 트랜잭션
     @Transactional
     public Long saveOrderInTransaction(Long memberId, ProductInternal product, Long quantity) {
         Order order = orderFactory.createOrder(memberId, product, quantity);
+        order.setExpiresAt(holdUntil());
         orderRepository.save(order);
         return order.getId();
     }
@@ -38,6 +50,7 @@ public class OrderTransactionalService {
     @Transactional
     public Long saveOrderFromCartInTransaction(Long memberId, List<ProductInternal> products, Map<Long, Long> quantityMap) {
         Order order = orderFactory.createOrderFromCart(memberId, products, quantityMap);
+        order.setExpiresAt(holdUntil());
         orderRepository.save(order);
         return order.getId();
     }
@@ -46,6 +59,7 @@ public class OrderTransactionalService {
     @Transactional
     public void updateOrderStatusToProcessing(Order order) {
         order.updateOrderStatus(OrderStatus.PAYMENT_PROCESSING);
+        order.setExpiresAt(holdUntil());
         orderRepository.save(order);
     }
 
@@ -53,13 +67,14 @@ public class OrderTransactionalService {
     @Transactional
     public void completeOrder(Order order) {
         order.updateOrderStatus(OrderStatus.ORDER_COMPLETE);
+        order.setExpiresAt(null);
         orderRepository.save(order);
 
         final Long orderId = order.getId();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override public void afterCommit() {
                 try {
-                    orderScheduler.scheduleAll(orderId);
+                    orderQuartzScheduler.scheduleAll(orderId);
                 } catch (Exception e) {
                     throw new OrderScheduleFailedException("주문 스케줄 등록 실패", e);
                 }
@@ -83,6 +98,7 @@ public class OrderTransactionalService {
     @Transactional
     public void cancelOrderInTransaction(Order order) {
         order.updateOrderStatus(OrderStatus.ORDER_CANCEL);
+        order.setExpiresAt(null);
         orderRepository.save(order);
     }
 
@@ -114,13 +130,6 @@ public class OrderTransactionalService {
         orderRepository.save(order);
     }
 
-    // 반품 불가 상태 전이 트랜잭션(주문 조회 포함)
-    @Transactional
-    public void updateOrderStatusToNonReturnable(Long orderId) {
-        Order order = orderRepository.findOrderById(orderId).orElseThrow();
-        order.updateOrderStatus(OrderStatus.RETURN_NOT_PERMITTED);
-        orderRepository.save(order);
-    }
 
     // 반품 불가 상태 전이 트랜잭션(인스턴스 보유 시)
     @Transactional

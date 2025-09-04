@@ -1,18 +1,18 @@
 package com.app.preorder.orderservice.repository;
 
-
-import com.app.preorder.common.dto.PendingQuantityInternal;
-import com.app.preorder.common.type.OrderStatus;
 import com.app.preorder.orderservice.entity.Order;
 import com.app.preorder.orderservice.entity.QOrder;
-import com.app.preorder.orderservice.entity.QOrderItem;
-import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+
+import java.time.LocalDateTime;
 import java.util.List;
+
+import static com.app.preorder.common.type.OrderStatus.PAYMENT_PREPARING;
+import static com.app.preorder.common.type.OrderStatus.PAYMENT_PROCESSING;
 
 @RequiredArgsConstructor
 public class OrderQueryDslImpl implements OrderQueryDsl {
@@ -41,22 +41,19 @@ public class OrderQueryDslImpl implements OrderQueryDsl {
         return new PageImpl<>(orders, pageable, total != null ? total : 0);
     }
 
-    @Override
-    public List<PendingQuantityInternal> getPendingQuantities(List<Long> productIds) {
-        QOrderItem orderItem = QOrderItem.orderItem;
-        QOrder order = QOrder.order;
 
-        return query.select(Projections.constructor(PendingQuantityInternal.class,
-                        orderItem.productId,
-                        orderItem.productQuantity.sum()))
-                .from(orderItem)
-                .join(orderItem.order, order)
+    @Override
+    public List<Order> findExpiredBeforeCommit(LocalDateTime threshold, int limit) {
+        QOrder order = QOrder.order;
+        return query
+                .selectFrom(order)
                 .where(
-                        order.status.eq(OrderStatus.PAYMENT_PREPARING),
-                        orderItem.productId.in(productIds)
+                        order.status.in(PAYMENT_PREPARING, PAYMENT_PROCESSING),
+                        order.expiresAt.isNotNull(),
+                        order.expiresAt.loe(threshold)
                 )
-                .groupBy(orderItem.productId)
+                .orderBy(order.expiresAt.asc(), order.id.asc()) // 안정 정렬
+                .limit(limit)
                 .fetch();
     }
-
 }
