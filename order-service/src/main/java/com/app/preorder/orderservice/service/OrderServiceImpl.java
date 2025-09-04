@@ -12,7 +12,7 @@ import com.app.preorder.orderservice.factory.OrderFactory;
 import com.app.preorder.orderservice.idempotency.OrderStepIdempotency;
 import com.app.preorder.orderservice.messaging.publisher.OrderCommandPublisher;
 import com.app.preorder.orderservice.repository.OrderRepository;
-import com.app.preorder.orderservice.scheduler.OrderScheduler;
+import com.app.preorder.orderservice.scheduler.OrderQuartzScheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
@@ -32,7 +32,7 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderFactory orderFactory;
-    private final OrderScheduler orderScheduler;
+    private final OrderQuartzScheduler orderQuartzScheduler;
     private final OrderTransactionalService orderTransactionalService;
 
     // ▼ Kafka 커맨드 퍼블리셔 사용
@@ -191,7 +191,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         try {
-            orderScheduler.scheduleReturnProcess(orderId);
+            orderQuartzScheduler.scheduleReturnProcess(orderId);
         } catch (Exception e) {
             throw new RuntimeException("반품 스케줄 등록 실패", e);
         }
@@ -199,7 +199,7 @@ public class OrderServiceImpl implements OrderService {
         try {
             orderTransactionalService.updateOrderStatusToReturning(order);
         } catch (Exception e) {
-            try { orderScheduler.cancelReturnProcess(orderId); }
+            try { orderQuartzScheduler.cancelReturnProcess(orderId); }
             catch (Exception cancelEx) { log.error("보상 트랜잭션(스케줄 취소) 실패 - orderId: {}", orderId, cancelEx); }
             throw e;
         }
