@@ -1,10 +1,12 @@
 package com.app.preorder.orderservice.messaging.consumer;
 
+import com.app.preorder.common.dto.StockRequestInternal;
 import com.app.preorder.common.messaging.event.StockCommandResult;
 import com.app.preorder.common.messaging.topics.KafkaTopics;
 import com.app.preorder.common.type.StockCommandResultType;
 import com.app.preorder.orderservice.entity.Order;
 import com.app.preorder.orderservice.idempotency.OrderStepIdempotency;
+import com.app.preorder.orderservice.messaging.publisher.OrderCommandPublisher; // ✅ 추가
 import com.app.preorder.orderservice.repository.OrderRepository;
 import com.app.preorder.orderservice.service.OrderTransactionalService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,8 @@ public class OrderEventConsumer {
     private final OrderRepository orderRepository;
     private final OrderTransactionalService tx;
     private final OrderStepIdempotency idem;
+
+    private final OrderCommandPublisher commandPublisher; // ✅ 추가
 
     // ========= 1) 재고 커맨드 결과 =========
     @KafkaListener(
@@ -51,17 +55,29 @@ public class OrderEventConsumer {
                     tx.completeOrder(order);
                     log.info("[Result][order] 결제 커밋 완료 처리: orderId={}", r.orderId());
                 }
+
+                case COMMIT_FAILED -> {
+                    // ✅ 보상: 예약 해제 커맨드 발행
+                    var items = order.getOrderItems().stream()
+                            .map(i -> new StockRequestInternal(i.getProductId(), i.getProductQuantity()))
+                            .toList();
+
+                    commandPublisher.publishUnreserveCommand(order.getId(), items); // Outbox → Kafka
+                    tx.cancelOrderInTransaction(order); // 정책에 맞게 실패/취소 상태 전이
+
+                    log.warn("[Result][order] COMMIT_FAILED → UNRESERVE 발행 완료: orderId={}, reason={}", r.orderId(), r.reason());
+                }
+
                 case RESERVE_FAILED -> {
-                    // 필요 시 상태 전환 메서드 연결
+                    // 예약 자체가 실패했으면 주문을 취소로 정리(원하면 유지/변경)
+                    tx.cancelOrderInTransaction(order);
                     log.warn("[Result][order] 재고 예약 실패: orderId={}, reason={}", r.orderId(), r.reason());
                 }
-                case COMMIT_FAILED -> {
-                    // 필요 시 결제 실패 전환 메서드 연결
-                    log.warn("[Result][order] 재고 커밋 실패: orderId={}, reason={}", r.orderId(), r.reason());
-                }
+
                 case RESERVED, UNRESERVED, RESTORED -> {
                     log.info("[Result][order] 후처리 이벤트 수신: orderId={}, result={}", r.orderId(), t);
                 }
+
                 default -> log.info("[Result][order] 처리 대상 아님: orderId={}, result={}", r.orderId(), t);
             }
         } catch (RuntimeException e) {
@@ -70,22 +86,5 @@ public class OrderEventConsumer {
         }
     }
 
-    // ========= 2) (예시) 결제 결과 등 다른 이벤트들 추가 자리 =========
-    // @KafkaListener(
-    //   id = "order-payment-result-consumer",
-    //   topics = KafkaTopics.PAYMENT_RESULTS_V1,
-    //   groupId = "order-service",
-    //   containerFactory = "paymentResultKafkaListenerContainerFactory"
-    // )
-    // @Transactional
-    // public void onPaymentResult(PaymentResult r) { ... }
-
-    // @KafkaListener(
-    //   id = "order-delivery-result-consumer",
-    //   topics = KafkaTopics.DELIVERY_RESULTS_V1,
-    //   groupId = "order-service",
-    //   containerFactory = "deliveryResultKafkaListenerContainerFactory"
-    // )
-    // @Transactional
-    // public void onDeliveryResult(DeliveryResult r) { ... }
+    // (다른 리스너는 그대로)
 }

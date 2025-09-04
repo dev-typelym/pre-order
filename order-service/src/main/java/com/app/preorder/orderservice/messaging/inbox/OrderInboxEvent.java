@@ -3,10 +3,17 @@ package com.app.preorder.orderservice.messaging.inbox;
 import com.app.preorder.common.type.InboxStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "order_inbox_event",
-        uniqueConstraints = @UniqueConstraint(name = "uk_order_inbox_message_key", columnNames = "message_key"))
+@Table(
+        name = "order_inbox_event",
+        uniqueConstraints = @UniqueConstraint(name = "uq_order_inbox_message_key", columnNames = "message_key"),
+        indexes = @Index(name = "idx_order_inbox_status_id", columnList = "status,id")
+)
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class OrderInboxEvent {
 
@@ -29,6 +36,14 @@ public class OrderInboxEvent {
 
     @Column(name = "error_message")
     private String errorMessage;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     public static OrderInboxEvent of(String key, String topic, String json) {
         return OrderInboxEvent.builder()
