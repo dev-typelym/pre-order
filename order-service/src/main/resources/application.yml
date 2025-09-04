@@ -59,7 +59,6 @@ feign:
 logging:
   level:
     feign: INFO         # 운영에선 INFO 권장
-    okhttp3: INFO       # OkHttp 안 써도 있어도 무해. 없어도 됨.
 
 management:
   endpoints:
@@ -73,3 +72,8 @@ order:
     batch-size: 300
     grace-seconds: 10
     max-rounds: 10
+
+kafka:
+  consumer:
+    stock-result:
+      concurrency: 6
