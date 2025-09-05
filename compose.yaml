@@ -151,6 +151,7 @@ services:
       - HIKARI_MAX_POOL_SIZE=${HIKARI_MAX_POOL_SIZE}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
       mariadb:
         condition: service_healthy
@@ -159,6 +160,8 @@ services:
       auth-service:
         condition: service_started
       discovery-service:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     restart: unless-stopped
 
@@ -175,6 +178,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
       mariadb:
         condition: service_healthy
@@ -183,6 +187,8 @@ services:
       member-service:
         condition: service_started
       discovery-service:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     restart: unless-stopped
 
