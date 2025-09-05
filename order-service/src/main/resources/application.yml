@@ -26,6 +26,16 @@ spring:
 
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    listener:
+      missing-topics-fatal: false
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+    consumer:
+      properties:
+        spring.json.use.type.headers: false
 
 server:
   port: 8084
@@ -50,15 +60,15 @@ email:
 feign:
   client:
     config:
-      product-service:  # @FeignClient(name="product-service")와 동일해야 적용
+      product-service:
         connectTimeout: 800
         readTimeout: 1200
         loggerLevel: none
-        retryer: 'feign.Retryer$NeverRetry'   # 짧은 타임아웃 + 무재시도
+        retryer: 'feign.Retryer$NeverRetry'
 
 logging:
   level:
-    feign: INFO         # 운영에선 INFO 권장
+    feign: INFO
 
 management:
   endpoints:

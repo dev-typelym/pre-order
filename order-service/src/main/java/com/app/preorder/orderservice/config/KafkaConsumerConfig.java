@@ -25,7 +25,7 @@ import java.util.Map;
 public class KafkaConsumerConfig {
 
     @Value("${kafka.consumer.stock-result.concurrency:6}")
-    private int stockResultConcurrency; // 성능 튜닝을 프로퍼티로
+    private int stockResultConcurrency;
 
     private Map<String, Object> baseProps() {
         Map<String, Object> props = new HashMap<>();

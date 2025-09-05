@@ -25,6 +25,11 @@ spring:
       ddl-auto: create
     show-sql: true
 
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    listener:
+      missing-topics-fatal: false
+
 jwt:
   secret: ${JWT_SECRET:Pr5aQ!9zdT7XgW2mXyCb$$Hr4LdS6kJvB}
 
@@ -45,3 +50,8 @@ eureka:
 
 email:
   auto-verify: ${EMAIL_AUTO_VERIFY:false}
+
+kafka:
+  consumer:
+    cart-create:
+      concurrency: 3

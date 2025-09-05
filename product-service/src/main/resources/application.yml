@@ -26,6 +26,16 @@ spring:
 
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    listener:
+      missing-topics-fatal: false
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+    consumer:
+      properties:
+        spring.json.use.type.headers: false
 
 jwt:
   secret: ${JWT_SECRET:Pr5aQ!9zdT7XgW2mXyCb$$Hr4LdS6kJvB}
@@ -53,4 +63,3 @@ kafka:
       concurrency: 6
     event:
       concurrency: 6
-
