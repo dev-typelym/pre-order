@@ -8,9 +8,6 @@ import java.util.List;
 
 public interface CartService {
 
-    // 회원가입시 카트 생성
-    void createCartForMember(Long memberId);
-
     // 카트 존재 보장
     void ensureCartExists(Long memberId);
 

@@ -8,5 +8,4 @@ import java.util.Optional;
 
 public interface CartRepository extends JpaRepository<Cart, Long>, CartQueryDsl {
     Optional<Cart> findCartByMemberId(Long memberId);
-    boolean existsByMemberId(Long memberId);
 }

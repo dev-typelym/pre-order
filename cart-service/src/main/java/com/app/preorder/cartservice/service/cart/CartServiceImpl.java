@@ -15,10 +15,12 @@ import com.app.preorder.common.exception.custom.InvalidCartOperationException;
 import com.app.preorder.common.exception.custom.ProductNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -34,21 +36,21 @@ public class CartServiceImpl implements CartService{
     private final CartFactory cartFactory;
     private final ProductServiceClient productServiceClient;
 
-    // 회원가입시 카트 생성
-    @Override
-    public void createCartForMember(Long memberId) {
-        Cart cart = Cart.builder()
-                .memberId(memberId)
-                .build();
-
-        cartRepository.save(cart);
-    }
-
     // 카트 존재 보장
+    @Transactional
+    @Override
     public void ensureCartExists(Long memberId) {
-        boolean exists = cartRepository.existsByMemberId(memberId);
-        if (!exists) {
-            createCartForMember(memberId);
+        try {
+            cartRepository.saveAndFlush(
+                    Cart.builder().memberId(memberId).build()
+            );
+            if (log.isDebugEnabled()) {
+                log.debug("[Cart] 카트 생성 -> memberId={}", memberId);
+            }
+        } catch (DataIntegrityViolationException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("[Cart] 카트가 이미 존재함 -> memberId={}", memberId);
+            }
         }
     }
 

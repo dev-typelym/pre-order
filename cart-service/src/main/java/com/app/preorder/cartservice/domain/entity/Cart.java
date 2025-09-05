@@ -11,14 +11,18 @@ import java.util.List;
 @Entity
 @Getter
 @ToString
-@Table(name = "tbl_cart")
+@Table(
+        name = "tbl_cart",
+        uniqueConstraints = @UniqueConstraint(name = "uq_cart_member", columnNames = "MEMBER_ID"),
+        indexes = @Index(name = "idx_cart_member", columnList = "MEMBER_ID")
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @DynamicUpdate
 @DynamicInsert
 public class Cart {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
     private Long id;
 
