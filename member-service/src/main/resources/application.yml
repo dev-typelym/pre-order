@@ -34,6 +34,16 @@ spring:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
 
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+    admin:
+      fail-fast: false
+
 jwt:
   secret: ${JWT_SECRET:Pr5aQ!9zdT7XgW2mXyCb$$Hr4LdS6kJvB}
 
