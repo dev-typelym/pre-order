@@ -5,6 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value; // ★ 추가
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -28,6 +29,9 @@ import java.util.Map;
 @EnableKafka
 @Configuration
 public class KafkaConsumerConfig {
+
+    @Value("${kafka.consumer.cart-create.concurrency:3}")
+    private int cartConcurrency;
 
     @Bean
     public Map<String, Object> baseProps() {
@@ -56,7 +60,6 @@ public class KafkaConsumerConfig {
 
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(dltTemplate);
         DefaultErrorHandler handler = new DefaultErrorHandler(recoverer, backoff);
-        // 인박스 unique 충돌 등은 재시도 불필요
         handler.addNotRetryableExceptions(DataIntegrityViolationException.class);
         return handler;
     }
@@ -69,7 +72,9 @@ public class KafkaConsumerConfig {
         f.setConsumerFactory(cartCreateConsumerFactory());
         f.setCommonErrorHandler(errorHandler(kafkaTemplate));
         f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
-        f.setConcurrency(3); // 필요 시 조정
+
+        f.setConcurrency(cartConcurrency); // ★ 변경: 고정값(3) 대신 프로퍼티 바인딩
+
         return f;
     }
 
