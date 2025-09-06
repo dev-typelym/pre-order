@@ -1,6 +1,5 @@
 package com.app.preorder.cartservice.controller;
 
-import com.app.preorder.cartservice.client.MemberServiceClient;
 import com.app.preorder.cartservice.dto.cart.AddCartItemRequest;
 import com.app.preorder.cartservice.dto.cart.CartItemResponse;
 import com.app.preorder.cartservice.service.cart.CartService;
@@ -22,7 +21,6 @@ import java.util.List;
 public class CartController {
 
     private final CartService cartService;
-    private final MemberServiceClient memberFeignClient;
 
     @PostMapping("/me/items")
     public ResponseEntity<ApiResponse<Void>> addCartItem(@RequestBody AddCartItemRequest request) {
