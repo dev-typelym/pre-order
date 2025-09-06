@@ -71,3 +71,12 @@ eureka:
 
 email:
   auto-verify: ${EMAIL_AUTO_VERIFY:false}
+
+feign:
+  client:
+    config:
+      auth-service:
+        connectTimeout: 500
+        readTimeout: 800
+        loggerLevel: none
+        retryer: feign.Retryer$NeverRetry

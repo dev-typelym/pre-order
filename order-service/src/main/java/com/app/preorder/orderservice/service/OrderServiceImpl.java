@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,14 +35,12 @@ public class OrderServiceImpl implements OrderService {
     private final OrderFactory orderFactory;
     private final OrderQuartzScheduler orderQuartzScheduler;
     private final OrderTransactionalService orderTransactionalService;
-
-    // ▼ Kafka 커맨드 퍼블리셔 사용
     private final OrderCommandPublisher orderCommandPublisher;
-
     private final OrderStepIdempotency idem;
 
     // 단건 주문 준비: 상품 조회(Feign) → 주문 저장 → 재고 예약 커맨드 발행(Kafka)
     @Override
+    @CircuitBreaker(name = "productClient")
     public Long prepareSingleOrder(Long memberId, Long productId, Long quantity) {
         List<ProductInternal> products;
         try {
@@ -64,6 +63,7 @@ public class OrderServiceImpl implements OrderService {
 
     // 장바구니 다건 주문 준비: 조회 → 주문 저장 → 예약 커맨드 발행
     @Override
+    @CircuitBreaker(name = "productClient")
     public Long prepareCartOrder(Long memberId, List<OrderItemRequest> items) {
         Map<Long, Long> quantityMap = items.stream()
                 .collect(Collectors.toMap(OrderItemRequest::getProductId, OrderItemRequest::getQuantity));

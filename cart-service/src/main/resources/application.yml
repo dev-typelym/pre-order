@@ -1,40 +1,35 @@
 spring:
   application:
     name: cart-service
-
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mariadb://mariadb:3306/preorder}
     username: ${SPRING_DATASOURCE_USERNAME:taek}
     password: ${SPRING_DATASOURCE_PASSWORD:1234}
     driver-class-name: org.mariadb.jdbc.Driver
-
     hikari:
       maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:50}
       minimum-idle: 10
       idle-timeout: 30000
       max-lifetime: 1800000
       connection-timeout: 30000
-
   data:
     redis:
       host: ${REDIS_HOST:redis}
       port: 6379
-
   jpa:
     hibernate:
       ddl-auto: create
     show-sql: true
-
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
     listener:
       missing-topics-fatal: false
 
-jwt:
-  secret: ${JWT_SECRET:Pr5aQ!9zdT7XgW2mXyCb$$Hr4LdS6kJvB}
-
 server:
   port: 8083
+
+jwt:
+  secret: ${JWT_SECRET:Pr5aQ!9zdT7XgW2mXyCb$$Hr4LdS6kJvB}
 
 eureka:
   client:
@@ -43,13 +38,32 @@ eureka:
     registry-fetch-interval-seconds: 5
     service-url:
       defaultZone: http://discovery-service:8761/eureka
-
   instance:
     instance-id: ${spring.application.name}:${random.value}
     prefer-ip-address: true
 
 email:
   auto-verify: ${EMAIL_AUTO_VERIFY:false}
+
+feign:
+  client:
+    config:
+      product-service:
+        connectTimeout: 800
+        readTimeout: 1200
+        loggerLevel: none
+        retryer: feign.Retryer$NeverRetry
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      productClient:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 50
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
 
 kafka:
   consumer:

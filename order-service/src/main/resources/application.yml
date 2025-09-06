@@ -1,7 +1,6 @@
 spring:
   application:
     name: order-service
-
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mariadb://mariadb:3306/preorder}
     username: ${SPRING_DATASOURCE_USERNAME:taek}
@@ -13,17 +12,14 @@ spring:
       idle-timeout: 30000
       max-lifetime: 1800000
       connection-timeout: 30000
-
   data:
     redis:
       host: ${REDIS_HOST:redis}
       port: 6379
-
   jpa:
     hibernate:
       ddl-auto: create
     show-sql: true
-
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
     listener:
@@ -49,7 +45,7 @@ eureka:
     register-with-eureka: true
     registry-fetch-interval-seconds: 5
     service-url:
-      defaultZone: http://discovery-service:8761/eureka/
+      defaultZone: http://discovery-service:8761/eureka  # 슬래시 유무는 일관만 맞추면 OK
   instance:
     instance-id: ${spring.application.name}:${random.value}
     prefer-ip-address: true
@@ -64,7 +60,18 @@ feign:
         connectTimeout: 800
         readTimeout: 1200
         loggerLevel: none
-        retryer: 'feign.Retryer$NeverRetry'
+        retryer: feign.Retryer$NeverRetry
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      productClient:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 50
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
 
 logging:
   level:

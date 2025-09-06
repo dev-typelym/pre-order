@@ -13,6 +13,7 @@ import com.app.preorder.common.exception.custom.CartNotFoundException;
 import com.app.preorder.common.exception.custom.FeignException;
 import com.app.preorder.common.exception.custom.InvalidCartOperationException;
 import com.app.preorder.common.exception.custom.ProductNotFoundException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -37,8 +38,8 @@ public class CartServiceImpl implements CartService{
     private final ProductServiceClient productServiceClient;
 
     // 카트 존재 보장
-    @Transactional
     @Override
+    @Transactional
     public void ensureCartExists(Long memberId) {
         try {
             cartRepository.saveAndFlush(
@@ -55,7 +56,9 @@ public class CartServiceImpl implements CartService{
     }
 
     // 카트 아이템 추가
+    @Override
     @Transactional
+    @CircuitBreaker(name = "productClient")
     public void addCartItem(Long memberId, Long productId, Long quantity) {
         if (quantity == null || quantity <= 0) {
             throw new InvalidCartOperationException("수량은 1 이상이어야 합니다.");
@@ -133,6 +136,7 @@ public class CartServiceImpl implements CartService{
     // 카트 목록
     @Override
     @Transactional(readOnly = true)
+    @CircuitBreaker(name = "productClient")
     public Page<CartItemResponse> getCartItemsWithPaging(int page, Long memberId) {
         Page<CartItem> cartItems = cartItemRepository.findCartItemsByMemberId(PageRequest.of(page, 10), memberId);
 
