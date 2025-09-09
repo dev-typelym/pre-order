@@ -19,7 +19,6 @@ import java.util.List;
 @Table(
         name = "tbl_order",
         indexes = {
-                // DB 컬럼명 기준으로 적는 게 안전함 (status, expires_at)
                 @Index(name = "ix_order_status_expires_at", columnList = "status, expires_at")
         }
 )
@@ -54,6 +53,10 @@ public class Order extends AuditPeriod {
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
+    // ★ 추가: 주문 타입 (CART | BUY_NOW)
+    @Column(name = "order_type", length = 16, nullable = false)
+    private String orderType;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
@@ -79,13 +82,20 @@ public class Order extends AuditPeriod {
     public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
 
     @Builder
-    public Order(String orderNumber, Long memberId, OrderAddress deliveryAddress, OrderStatus status,
-                 BigDecimal orderPrice, LocalDateTime orderDate) {
+    public Order(String orderNumber,
+                 Long memberId,
+                 OrderAddress deliveryAddress,
+                 OrderStatus status,
+                 BigDecimal orderPrice,
+                 LocalDateTime orderDate,
+                 String orderType
+    ) {
         this.orderNumber = orderNumber;
         this.memberId = memberId;
         this.deliveryAddress = deliveryAddress;
         this.status = status;
         this.orderPrice = orderPrice;
         this.orderDate = orderDate;
+        this.orderType = (orderType == null ? "BUY_NOW" : orderType);
     }
 }

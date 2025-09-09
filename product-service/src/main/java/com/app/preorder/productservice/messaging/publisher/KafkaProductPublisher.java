@@ -15,7 +15,7 @@ import java.time.Instant;
 
 @Component
 @RequiredArgsConstructor
-public class KafkaProductEventPublisher implements ProductEventPublisher {
+public class KafkaProductPublisher implements ProductEventPublisher {
 
     private final ObjectMapper om;
     private final ProductOutboxEventRepository outboxRepo;
