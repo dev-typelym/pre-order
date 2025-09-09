@@ -1,6 +1,7 @@
 package com.app.preorder.common.messaging.event;
 
 public record StockEvent(
+        String eventId,
         String type,        // "STOCK_CHANGED" | "SOLD_OUT" ... (확장 여지)
         long productId,
         Long available,     // null 허용 (타입별로 없을 수 있음)

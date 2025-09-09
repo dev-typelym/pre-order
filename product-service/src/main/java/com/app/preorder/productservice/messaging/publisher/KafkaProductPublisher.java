@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -23,36 +24,46 @@ public class KafkaProductPublisher implements ProductEventPublisher {
     @Override
     @Transactional
     public void publishStockChangedEvent(long productId, long availableAfter) {
+        var evt = new StockEvent(
+                UUID.randomUUID().toString(),  // ✅ eventId
+                "STOCK_CHANGED",
+                productId,
+                availableAfter,
+                Instant.now().toString()
+        );
         try {
-            var evt  = new StockEvent("STOCK_CHANGED", productId, availableAfter, Instant.now().toString());
-            var json = om.writeValueAsString(evt);
-
+            String json = om.writeValueAsString(evt);
             outboxRepo.save(ProductOutboxEvent.builder()
                     .topic(KafkaTopics.INVENTORY_STOCK_EVENTS_V1)
-                    .partitionKey(String.valueOf(productId)) // 파티션 키 = productId
+                    .partitionKey(String.valueOf(productId))
                     .payloadJson(json)
-                    .status(com.app.preorder.common.type.OutboxStatus.NEW)
+                    .status(OutboxStatus.NEW)
                     .build());
         } catch (Exception e) {
-            throw new RuntimeException("프로덕트 아웃박스 적재 실패", e);
+            throw new RuntimeException("ProductOutbox 적재 실패(StockEvent: STOCK_CHANGED)", e);
         }
     }
 
     @Override
     @Transactional
     public void publishSoldOutEvent(long productId) {
+        var evt = new StockEvent(
+                UUID.randomUUID().toString(),  // ✅ eventId
+                "SOLD_OUT",
+                productId,
+                0L,                            // 품절이므로 available=0
+                Instant.now().toString()
+        );
         try {
-            var evt  = new StockEvent("SOLD_OUT", productId, 0L, Instant.now().toString());
-            var json = om.writeValueAsString(evt);
-
+            String json = om.writeValueAsString(evt);
             outboxRepo.save(ProductOutboxEvent.builder()
                     .topic(KafkaTopics.INVENTORY_STOCK_EVENTS_V1)
                     .partitionKey(String.valueOf(productId))
                     .payloadJson(json)
-                    .status(com.app.preorder.common.type.OutboxStatus.NEW)
+                    .status(OutboxStatus.NEW)
                     .build());
         } catch (Exception e) {
-            throw new RuntimeException("프로덕트 아웃박스 적재 실패", e);
+            throw new RuntimeException("ProductOutbox 적재 실패(StockEvent: SOLD_OUT)", e);
         }
     }
 

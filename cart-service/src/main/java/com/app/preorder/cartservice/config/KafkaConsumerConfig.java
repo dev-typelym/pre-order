@@ -1,11 +1,14 @@
 package com.app.preorder.cartservice.config;
 
 import com.app.preorder.common.messaging.command.CartCreateRequest;
+import com.app.preorder.common.messaging.event.MemberDeactivatedEvent; // ✅ 추가
+import com.app.preorder.common.messaging.event.OrderCompletedEvent;   // ✅ 추가
+import com.app.preorder.common.messaging.event.StockEvent;            // ✅ 추가
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.springframework.beans.factory.annotation.Value; // ★ 추가
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -33,6 +36,9 @@ public class KafkaConsumerConfig {
     @Value("${kafka.consumer.cart-create.concurrency:3}")
     private int cartConcurrency;
 
+    @Value("${kafka.consumer.cart-inbox.concurrency:3}") // ✅ 추가: 인박스 공통 컨커런시
+    private int inboxConcurrency;
+
     @Bean
     public Map<String, Object> baseProps() {
         Map<String, Object> props = new HashMap<>();
@@ -43,6 +49,8 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         return props;
     }
+
+    /* ===================== CartCreate (기존) ===================== */
 
     @Bean
     public ConsumerFactory<String, CartCreateRequest> cartCreateConsumerFactory() {
@@ -72,13 +80,81 @@ public class KafkaConsumerConfig {
         f.setConsumerFactory(cartCreateConsumerFactory());
         f.setCommonErrorHandler(errorHandler(kafkaTemplate));
         f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
-
-        f.setConcurrency(cartConcurrency); // ★ 변경: 고정값(3) 대신 프로퍼티 바인딩
-
+        f.getContainerProperties().setMissingTopicsFatal(false); // ✅ 구독자 안전
+        f.setConcurrency(cartConcurrency);
         return f;
     }
 
-    /** DLT/Outbox 용 제네릭 프로듀서 */
+    /* ===================== Inbox: MemberDeactivated ===================== */
+
+    @Bean
+    public ConsumerFactory<String, MemberDeactivatedEvent> memberDeactivatedConsumerFactory() {
+        JsonDeserializer<MemberDeactivatedEvent> value = new JsonDeserializer<>(MemberDeactivatedEvent.class, false);
+        value.addTrustedPackages("com.app.preorder.common.messaging");
+        value.setUseTypeHeaders(false);
+        return new DefaultKafkaConsumerFactory<>(baseProps(), new StringDeserializer(), value);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, MemberDeactivatedEvent>
+    memberDeactivatedKafkaListenerContainerFactory(KafkaTemplate<Object, Object> kafkaTemplate) {
+        ConcurrentKafkaListenerContainerFactory<String, MemberDeactivatedEvent> f =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        f.setConsumerFactory(memberDeactivatedConsumerFactory());
+        f.setCommonErrorHandler(errorHandler(kafkaTemplate));
+        f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        f.getContainerProperties().setMissingTopicsFatal(false); // ✅ 구독자 안전
+        f.setConcurrency(inboxConcurrency);
+        return f;
+    }
+
+    /* ===================== Inbox: StockEvent (SOLD_OUT 등) ===================== */
+
+    @Bean
+    public ConsumerFactory<String, StockEvent> stockEventsConsumerFactory() {
+        JsonDeserializer<StockEvent> value = new JsonDeserializer<>(StockEvent.class, false);
+        value.addTrustedPackages("com.app.preorder.common.messaging");
+        value.setUseTypeHeaders(false);
+        return new DefaultKafkaConsumerFactory<>(baseProps(), new StringDeserializer(), value);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, StockEvent>
+    stockEventsKafkaListenerContainerFactory(KafkaTemplate<Object, Object> kafkaTemplate) {
+        ConcurrentKafkaListenerContainerFactory<String, StockEvent> f =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        f.setConsumerFactory(stockEventsConsumerFactory());
+        f.setCommonErrorHandler(errorHandler(kafkaTemplate));
+        f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        f.getContainerProperties().setMissingTopicsFatal(false); // ✅ 구독자 안전
+        f.setConcurrency(inboxConcurrency);
+        return f;
+    }
+
+    /* ===================== Inbox: OrderCompleted ===================== */
+
+    @Bean
+    public ConsumerFactory<String, OrderCompletedEvent> orderCompletedConsumerFactory() {
+        JsonDeserializer<OrderCompletedEvent> value = new JsonDeserializer<>(OrderCompletedEvent.class, false);
+        value.addTrustedPackages("com.app.preorder.common.messaging");
+        value.setUseTypeHeaders(false);
+        return new DefaultKafkaConsumerFactory<>(baseProps(), new StringDeserializer(), value);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, OrderCompletedEvent>
+    orderCompletedKafkaListenerContainerFactory(KafkaTemplate<Object, Object> kafkaTemplate) {
+        ConcurrentKafkaListenerContainerFactory<String, OrderCompletedEvent> f =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        f.setConsumerFactory(orderCompletedConsumerFactory());
+        f.setCommonErrorHandler(errorHandler(kafkaTemplate));
+        f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        f.getContainerProperties().setMissingTopicsFatal(false); // ✅ 구독자 안전
+        f.setConcurrency(inboxConcurrency);
+        return f;
+    }
+
+    /** ===================== DLT/Outbox 용 제네릭 프로듀서 (기존) ===================== */
     @Bean
     public ProducerFactory<Object, Object> genericProducerFactory() {
         Map<String, Object> p = Map.of(

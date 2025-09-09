@@ -21,6 +21,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+	implementation project(':common-lib')
+
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor' // IDE 메타데이터
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'io.projectreactor:reactor-test'

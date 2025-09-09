@@ -1,14 +1,13 @@
 package com.app.preorder.cartservice.service.cart;
 
-
 import com.app.preorder.cartservice.client.ProductServiceClient;
-import com.app.preorder.cartservice.dto.cart.CartItemResponse;
 import com.app.preorder.cartservice.domain.entity.Cart;
 import com.app.preorder.cartservice.domain.entity.CartItem;
+import com.app.preorder.cartservice.dto.cart.CartItemResponse;
 import com.app.preorder.cartservice.factory.CartFactory;
-import com.app.preorder.common.dto.ProductInternal;
-import com.app.preorder.cartservice.repository.cartItem.CartItemRepository;
 import com.app.preorder.cartservice.repository.cart.CartRepository;
+import com.app.preorder.cartservice.repository.cartItem.CartItemRepository;
+import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.exception.custom.CartNotFoundException;
 import com.app.preorder.common.exception.custom.FeignException;
 import com.app.preorder.common.exception.custom.InvalidCartOperationException;
@@ -21,7 +20,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -30,7 +28,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class CartServiceImpl implements CartService{
+public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
@@ -64,10 +62,10 @@ public class CartServiceImpl implements CartService{
             throw new InvalidCartOperationException("수량은 1 이상이어야 합니다.");
         }
 
-        //  카트 존재 보장 (Lazy Guard)
+        // 카트 존재 보장 (Lazy Guard)
         ensureCartExists(memberId);
 
-        //  상품 상태 확인
+        // 상품 상태 확인
         ProductInternal product = productServiceClient.getProductsByIds(List.of(productId)).get(0);
         if (!product.getStatus().name().equals("ENABLED")) {
             throw new InvalidCartOperationException("상품이 판매 가능 상태가 아닙니다.");
@@ -113,7 +111,7 @@ public class CartServiceImpl implements CartService{
         }
     }
 
-    // 카트 아이템 삭제
+    // 카트 아이템 삭제 (선택 삭제)
     @Override
     @Transactional
     public void deleteCartItems(Long memberId, List<Long> cartItemIds) {
@@ -170,5 +168,48 @@ public class CartServiceImpl implements CartService{
         return new PageImpl<>(responseList, cartItems.getPageable(), cartItems.getTotalElements());
     }
 
+    // ===== ▼ 신규: 인박스용 정리 로직 구현 =====
 
+    /** 멤버 탈퇴 → 해당 멤버의 카트 전체 삭제 */
+    @Override
+    @Transactional
+    public void deleteCart(Long memberId) {
+        Optional<Cart> cartOpt = cartRepository.findCartByMemberId(memberId);
+        if (cartOpt.isEmpty()) {
+            if (log.isDebugEnabled()) {
+                log.debug("[Cart] deleteCart: 카트 없음 -> memberId={}", memberId);
+            }
+            return; // 멱등
+        }
+        Cart cart = cartOpt.get();
+        // 연관관계에 cascade + orphanRemoval=true가 설정되어 있으면 아래 한 줄로 충분
+        cartRepository.delete(cart);
+        if (log.isInfoEnabled()) {
+            log.info("[Cart] deleteCart: 장바구니 삭제 완료 -> memberId={}", memberId);
+        }
+    }
+
+    /** 상품 SOLD_OUT/비가용 → 전체 카트에서 해당 상품들 제거 */
+    @Override
+    @Transactional
+    public void deleteItemsByProductIds(List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) return;
+        // QueryDSL 벌크 삭제 (CartItemQueryDslImpl에서 구현 필요)
+        cartItemRepository.deleteByProductIds(productIds);
+        if (log.isInfoEnabled()) {
+            log.info("[Cart] deleteItemsByProductIds: 전역 카트에서 상품들 삭제 -> productIds={}", productIds);
+        }
+    }
+
+    /** 주문완료(CART) → 해당 멤버의 카트에서 특정 상품들만 제거 */
+    @Override
+    @Transactional
+    public void deleteItemsByMemberAndProducts(Long memberId, List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) return;
+        // QueryDSL 벌크 삭제 (CartItemQueryDslImpl에서 구현 필요)
+        cartItemRepository.deleteByMemberIdAndProductIds(memberId, productIds);
+        if (log.isInfoEnabled()) {
+            log.info("[Cart] deleteItemsByMemberAndProducts: memberId={} productIds={}", memberId, productIds);
+        }
+    }
 }
