@@ -7,6 +7,7 @@ import com.app.preorder.orderservice.domain.order.UpdateOrderAddressRequest;
 import com.app.preorder.orderservice.domain.vo.OrderAddress;
 import com.app.preorder.orderservice.entity.Order;
 import com.app.preorder.orderservice.factory.OrderFactory;
+import com.app.preorder.orderservice.messaging.publisher.OrderEventPublisher; // ✅ 추가
 import com.app.preorder.orderservice.repository.OrderRepository;
 import com.app.preorder.orderservice.scheduler.OrderQuartzScheduler;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors; // ✅ 추가
 
 @RequiredArgsConstructor
 @Service
@@ -27,6 +29,7 @@ public class OrderTransactionalService {
     private final OrderRepository orderRepository;
     private final OrderQuartzScheduler orderQuartzScheduler;
     private final OrderFactory orderFactory;
+    private final OrderEventPublisher orderEventPublisher; // ✅ 추가
 
     // 홀드 타임(3분) + 지터
     private static final long HOLD_MINUTES = 3L;
@@ -63,12 +66,20 @@ public class OrderTransactionalService {
         orderRepository.save(order);
     }
 
-    // 결제 완료 상태 전이 및 스케줄 등록
+    // 결제 완료 상태 전이 및 스케줄 등록 (+ 주문완료 이벤트 Outbox 적재)
     @Transactional
     public void completeOrder(Order order) {
         order.updateOrderStatus(OrderStatus.ORDER_COMPLETE);
         order.setExpiresAt(null);
         orderRepository.save(order);
+
+        // ✅ ORDER_COMPLETED_V1 이벤트를 Outbox에 적재 (같은 트랜잭션)
+        Long memberId = order.getMemberId();
+        String orderType = String.valueOf(order.getOrderType()); // enum이면 .name()과 동일 효과
+        List<Long> productIds = order.getOrderItems().stream()
+                .map(oi -> oi.getProductId())
+                .collect(Collectors.toList());
+        orderEventPublisher.publishOrderCompleted(memberId, orderType, productIds);
 
         final Long orderId = order.getId();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -123,13 +134,12 @@ public class OrderTransactionalService {
         orderRepository.save(order);
     }
 
-    // 배송완료 상태 전이 트랜잭션
+    // 배송완료 상태 전이 트랜잭션 (✅ 원래 시그니처 유지)
     @Transactional
     public void updateOrderStatusToDelivered(Order order) {
         order.updateOrderStatus(OrderStatus.DELIVERY_COMPLETE);
         orderRepository.save(order);
     }
-
 
     // 반품 불가 상태 전이 트랜잭션(인스턴스 보유 시)
     @Transactional
