@@ -17,7 +17,7 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class KafkaOrderCommandPublisher implements OrderCommandPublisher {
+public class KafkaOrderPublisher implements OrderCommandPublisher {
 
     private final ObjectMapper om;
     private final OrderOutboxEventRepository outboxRepo;
