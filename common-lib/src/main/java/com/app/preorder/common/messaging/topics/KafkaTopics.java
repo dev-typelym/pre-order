@@ -10,5 +10,10 @@ public final class  KafkaTopics {
     public static final String INVENTORY_STOCK_COMMAND_RESULTS_V1 = "inventory.stock-command-results.v1";
 
     public static final String MEMBER_CART_CREATE_REQUEST_V1 = "member.cart-create-request.v1";
+
+    public static final String MEMBER_DEACTIVATED_V1 = "member.deactivated.v1";
+    public static final String PRODUCT_STATUS_CHANGED_V1 = "product.status.changed.v1";
+    public static final String ORDER_COMPLETED_V1 = "order.completed.v1";
+
     private KafkaTopics() {}
 }
