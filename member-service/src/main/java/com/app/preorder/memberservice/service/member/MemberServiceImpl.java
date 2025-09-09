@@ -19,7 +19,8 @@ import com.app.preorder.memberservice.dto.request.SignupRequest;
 import com.app.preorder.memberservice.dto.request.UpdateMemberRequest;
 import com.app.preorder.memberservice.dto.response.MemberDetailResponse;
 import com.app.preorder.memberservice.factory.MemberFactory;
-import com.app.preorder.memberservice.messaging.publisher.MemberCommandPublisher; // ✅ 추가
+import com.app.preorder.memberservice.messaging.publisher.MemberCommandPublisher; // 기존: 카트 생성 커맨드
+import com.app.preorder.memberservice.messaging.publisher.MemberEventPublisher;   // ✅ 추가: 멤버 이벤트(탈퇴)
 import com.app.preorder.memberservice.repository.MemberRepository;
 import com.app.preorder.memberservice.service.email.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +47,9 @@ public class MemberServiceImpl implements MemberService {
     private final HmacHashUtil hmacHashUtil;
     private final EmailService emailService;
     private final RedisUtil redisUtil;
-    private final MemberCommandPublisher memberCommandPublisher;
+
+    private final MemberCommandPublisher memberCommandPublisher; // 카트 생성 커맨드
+    private final MemberEventPublisher memberEventPublisher;     // ✅ 멤버 이벤트(탈퇴) 발행
 
     @Value("${email.auto-verify:false}")
     private boolean autoVerify;
@@ -238,5 +241,9 @@ public class MemberServiceImpl implements MemberService {
         }
 
         member.changeStatus(MemberStatus.INACTIVE);
+
+        // ✅ 탈퇴 이벤트 발행(Outbox 경유)
+        memberEventPublisher.publishMemberDeactivated(memberId);
+        log.info("[MemberService] 회원 탈퇴 처리 - memberId={}, MemberDeactivatedEvent 발행", memberId);
     }
 }
