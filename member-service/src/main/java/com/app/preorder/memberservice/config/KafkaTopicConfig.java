@@ -17,10 +17,26 @@ public class KafkaTopicConfig {
                 .build();
     }
 
+    @Bean
+    public NewTopic memberDeactivatedV1() {
+        return TopicBuilder.name(KafkaTopics.MEMBER_DEACTIVATED_V1)
+                .partitions(3)   // 멤버 기준 직렬화면 3도 충분, 필요시 6
+                .replicas(1)
+                .build();
+    }
+
     /** DLT (컨슈머에서 DeadLetterPublishingRecoverer 사용 시) */
     @Bean
     public NewTopic memberCartCreateRequestV1Dlt() {
         return TopicBuilder.name(KafkaTopics.MEMBER_CART_CREATE_REQUEST_V1 + ".DLT")
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic memberDeactivatedV1Dlt() {
+        return TopicBuilder.name(KafkaTopics.MEMBER_DEACTIVATED_V1 + ".DLT")
                 .partitions(3)
                 .replicas(1)
                 .build();
