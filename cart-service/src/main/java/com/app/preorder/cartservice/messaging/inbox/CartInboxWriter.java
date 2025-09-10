@@ -4,7 +4,9 @@ import com.app.preorder.common.messaging.command.CartCreateRequest;
 import com.app.preorder.common.messaging.event.MemberDeactivatedEvent; // ✅ 추가
 import com.app.preorder.common.messaging.event.StockEvent;            // ✅ 추가
 import com.app.preorder.common.messaging.event.OrderCompletedEvent;   // ✅ 추가
+import com.app.preorder.common.messaging.event.ProductStatusChangedEvent; // ✅ 추가
 import com.app.preorder.common.messaging.topics.KafkaTopics;
+import com.app.preorder.common.type.ProductStatus; // ✅ 추가
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,7 +66,7 @@ public class CartInboxWriter {
         }
     }
 
-    /** ✅ 추가: 재고 이벤트(SOLD_OUT/available==0만) 인박스 적재 */
+    /** ✅ 수정: 재고 이벤트(SOLD_OUT/availableAfter==0만) 인박스 적재 */
     @Transactional
     @KafkaListener(
             id = "cart-inbox-writer-stock-events",
@@ -74,9 +76,9 @@ public class CartInboxWriter {
     )
     public void onStockEvent(StockEvent evt) {
         try {
-            // 노이즈 컷: 품절/가용 0만 적재
+            // 노이즈 컷: 품절/가용 0만 적재 (필드명 일치: eventType / availableAfter)
             boolean soldOut = "SOLD_OUT".equalsIgnoreCase(evt.type());
-            boolean noneAvail = evt.available() != null && evt.available() == 0L;
+            boolean noneAvail = evt.available() == 0L;
             if (!(soldOut || noneAvail)) return;
 
             if (repo.existsByMessageKey(evt.eventId())) return;
@@ -110,6 +112,31 @@ public class CartInboxWriter {
             ));
         } catch (Exception e) {
             throw new RuntimeException("Inbox write failed (order-completed)", e);
+        }
+    }
+
+    /** ✅ 추가: 상품 상태 변경(DISABLED만) 인박스 적재 */
+    @Transactional
+    @KafkaListener(
+            id = "cart-inbox-writer-product-status",
+            topics = KafkaTopics.PRODUCT_STATUS_CHANGED_V1,
+            groupId = "cart-inbox-writer",
+            containerFactory = "productStatusChangedKafkaListenerContainerFactory"
+    )
+    public void onProductStatusChanged(ProductStatusChangedEvent evt) {
+        try {
+            // DISABLED만 인박스 적재하여 노이즈 최소화
+            if (evt.status() != ProductStatus.DISABLED) return; // ✅ 추가 필터
+            if (repo.existsByMessageKey(evt.eventId())) return;
+
+            String json = om.writeValueAsString(evt);
+            repo.save(CartInboxEvent.of(
+                    evt.eventId(),
+                    KafkaTopics.PRODUCT_STATUS_CHANGED_V1,
+                    json
+            ));
+        } catch (Exception e) {
+            throw new RuntimeException("Inbox write failed (product-status-changed)", e);
         }
     }
 }

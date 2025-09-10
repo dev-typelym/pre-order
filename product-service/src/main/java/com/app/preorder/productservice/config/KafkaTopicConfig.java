@@ -1,5 +1,6 @@
 package com.app.preorder.productservice.config;
 
+import com.app.preorder.common.messaging.topics.KafkaTopics; // ✅ 추가
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -61,6 +62,12 @@ public class KafkaTopicConfig {
         return topic("inventory.stock-command-results.v1", RETAIN_RESULT_MS);
     }
 
+    // ✅ 추가: 상품 상태 변경 이벤트 (30일 보관)
+    @Bean
+    public NewTopic productStatusChangedV1() {
+        return topic(KafkaTopics.PRODUCT_STATUS_CHANGED_V1, RETAIN_EVENT_MS);
+    }
+
     // ===== DLT 토픽들 (Dead Letter) =====
     @Bean
     public NewTopic stockEventsDlt() {
@@ -91,5 +98,10 @@ public class KafkaTopicConfig {
     @Bean
     public NewTopic stockCommandResultsDlt() {
         return topic("inventory.stock-command-results.v1.DLT", RETAIN_DLT_MS);
+    }
+
+    @Bean
+    public NewTopic productStatusChangedV1Dlt() {
+        return topic(KafkaTopics.PRODUCT_STATUS_CHANGED_V1 + ".DLT", RETAIN_DLT_MS);
     }
 }

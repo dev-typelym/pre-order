@@ -1,9 +1,10 @@
 package com.app.preorder.cartservice.config;
 
 import com.app.preorder.common.messaging.command.CartCreateRequest;
-import com.app.preorder.common.messaging.event.MemberDeactivatedEvent; // ✅ 추가
-import com.app.preorder.common.messaging.event.OrderCompletedEvent;   // ✅ 추가
-import com.app.preorder.common.messaging.event.StockEvent;            // ✅ 추가
+import com.app.preorder.common.messaging.event.MemberDeactivatedEvent;
+import com.app.preorder.common.messaging.event.OrderCompletedEvent;
+import com.app.preorder.common.messaging.event.StockEvent;
+import com.app.preorder.common.messaging.event.ProductStatusChangedEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -36,7 +37,7 @@ public class KafkaConsumerConfig {
     @Value("${kafka.consumer.cart-create.concurrency:3}")
     private int cartConcurrency;
 
-    @Value("${kafka.consumer.cart-inbox.concurrency:3}") // ✅ 추가: 인박스 공통 컨커런시
+    @Value("${kafka.consumer.cart-inbox.concurrency:3}")
     private int inboxConcurrency;
 
     @Bean
@@ -80,7 +81,7 @@ public class KafkaConsumerConfig {
         f.setConsumerFactory(cartCreateConsumerFactory());
         f.setCommonErrorHandler(errorHandler(kafkaTemplate));
         f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
-        f.getContainerProperties().setMissingTopicsFatal(false); // ✅ 구독자 안전
+        f.getContainerProperties().setMissingTopicsFatal(false);
         f.setConcurrency(cartConcurrency);
         return f;
     }
@@ -103,7 +104,7 @@ public class KafkaConsumerConfig {
         f.setConsumerFactory(memberDeactivatedConsumerFactory());
         f.setCommonErrorHandler(errorHandler(kafkaTemplate));
         f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
-        f.getContainerProperties().setMissingTopicsFatal(false); // ✅ 구독자 안전
+        f.getContainerProperties().setMissingTopicsFatal(false);
         f.setConcurrency(inboxConcurrency);
         return f;
     }
@@ -126,7 +127,7 @@ public class KafkaConsumerConfig {
         f.setConsumerFactory(stockEventsConsumerFactory());
         f.setCommonErrorHandler(errorHandler(kafkaTemplate));
         f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
-        f.getContainerProperties().setMissingTopicsFatal(false); // ✅ 구독자 안전
+        f.getContainerProperties().setMissingTopicsFatal(false);
         f.setConcurrency(inboxConcurrency);
         return f;
     }
@@ -149,7 +150,31 @@ public class KafkaConsumerConfig {
         f.setConsumerFactory(orderCompletedConsumerFactory());
         f.setCommonErrorHandler(errorHandler(kafkaTemplate));
         f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
-        f.getContainerProperties().setMissingTopicsFatal(false); // ✅ 구독자 안전
+        f.getContainerProperties().setMissingTopicsFatal(false);
+        f.setConcurrency(inboxConcurrency);
+        return f;
+    }
+
+    /* ===================== Inbox: ProductStatusChanged (DISABLED) ===================== */
+
+    @Bean
+    public ConsumerFactory<String, ProductStatusChangedEvent> productStatusChangedConsumerFactory() {
+        JsonDeserializer<ProductStatusChangedEvent> value =
+                new JsonDeserializer<>(ProductStatusChangedEvent.class, false);
+        value.addTrustedPackages("com.app.preorder.common.messaging");
+        value.setUseTypeHeaders(false);
+        return new DefaultKafkaConsumerFactory<>(baseProps(), new StringDeserializer(), value);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, ProductStatusChangedEvent>
+    productStatusChangedKafkaListenerContainerFactory(KafkaTemplate<Object, Object> kafkaTemplate) {
+        ConcurrentKafkaListenerContainerFactory<String, ProductStatusChangedEvent> f =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        f.setConsumerFactory(productStatusChangedConsumerFactory());
+        f.setCommonErrorHandler(errorHandler(kafkaTemplate));
+        f.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        f.getContainerProperties().setMissingTopicsFatal(false);
         f.setConcurrency(inboxConcurrency);
         return f;
     }

@@ -3,9 +3,11 @@ package com.app.preorder.productservice.service;
 import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.exception.custom.ProductNotFoundException;
 import com.app.preorder.common.type.CategoryType;
+import com.app.preorder.common.type.ProductStatus; // ✅ 추가
 import com.app.preorder.productservice.domain.entity.Product;
 import com.app.preorder.productservice.dto.product.*;
 import com.app.preorder.productservice.factory.ProductFactory;
+import com.app.preorder.productservice.messaging.publisher.ProductEventPublisher; // ✅ 추가
 import com.app.preorder.productservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,7 +26,8 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final ProductFactory productFactory;
-    private final AvailableCacheService availableCache; // ✅ 캐시 서비스 주입
+    private final AvailableCacheService availableCache;
+    private final ProductEventPublisher productEvents;
 
     // 상품 등록
     @Override
@@ -39,7 +42,15 @@ public class ProductServiceImpl implements ProductService {
     public void updateProduct(Long productId, ProductUpdateRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException("존재하지 않는 상품입니다."));
+
+        ProductStatus before = product.getStatus(); // ✅ 전 상태 백업
         productFactory.updateFrom(request, product);
+
+        if (request.getStatus() != null
+                && request.getStatus() == ProductStatus.DISABLED
+                && before != ProductStatus.DISABLED) {
+            productEvents.publishProductStatusChanged(productId, ProductStatus.DISABLED);
+        }
     }
 
     // 상품 삭제
@@ -59,7 +70,6 @@ public class ProductServiceImpl implements ProductService {
         List<Product> content = products.getContent();
         List<Long> productIds = content.stream().map(Product::getId).toList();
 
-        // ✅ 다건 캐시 조회 → 캐시 미스만 DB (AvailableCacheService 내부에서 처리)
         Map<Long, Long> availableMap = availableCache.getMany(productIds);
 
         List<ProductResponse> responses = content.stream()
@@ -101,18 +111,17 @@ public class ProductServiceImpl implements ProductService {
                 .toList();
     }
 
-    // 가용재고 단건 조회(숫자만 반환) — 폴링/배지용 경량 API
+    // 가용재고 단건 조회(숫자만 반환)
     @Override
     @Transactional(readOnly = true)
     public long getAvailable(Long productId) {
         return availableCache.get(productId);
     }
 
-    // 가용재고 다건 조회(카트/목록 재동기화용)
+    // 가용재고 다건 조회
     @Override
     @Transactional(readOnly = true)
     public List<ProductAvailableStockResponse> getAvailableQuantities(List<Long> productIds) {
-        // ✅ 캐시 다건
         Map<Long, Long> map = availableCache.getMany(productIds);
         return productIds.stream()
                 .map(pid -> new ProductAvailableStockResponse(pid, map.getOrDefault(pid, 0L)))
