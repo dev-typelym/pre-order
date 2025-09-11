@@ -41,7 +41,7 @@ public class MemberOutboxProcessor {
 
             } catch (Exception ex) {
                 log.warn("[Outbox][member] 전송 실패 id={}, topic={}, reason={}", e.getId(), e.getTopic(), ex.toString());
-                e.markFailed();
+                e.markFailed(ex.toString());
             }
         }
     }
