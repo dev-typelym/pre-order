@@ -1,5 +1,4 @@
-// product-service/src/main/java/com/app/preorder/productservice/config/KafkaPublisherConfig.java
-package com.app.preorder.productservice.config;
+package com.app.preorder.orderservice.config;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;

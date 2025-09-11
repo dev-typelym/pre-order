@@ -37,6 +37,9 @@ public class MemberOutboxEvent {
     @Column(nullable = false, length = 16)
     private OutboxStatus status; // ★ 공통 OutboxStatus: NEW/SENT/FAILED
 
+    @Column(name = "error_message")
+    private String errorMessage;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -56,5 +59,5 @@ public class MemberOutboxEvent {
     }
 
     public void markSent()   { this.status = OutboxStatus.SENT; }
-    public void markFailed() { this.status = OutboxStatus.FAILED; }
+    public void markFailed(String reason) { this.status = OutboxStatus.FAILED; this.errorMessage = reason; }
 }
