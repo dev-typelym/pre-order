@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface OrderOutboxEventRepository extends JpaRepository<OrderOutboxEvent, Long> {
     // PENDING 상위 100건 오래된 것부터
-    List<OrderOutboxEvent> findTop100ByStatusOrderByCreatedAtAsc(OutboxStatus status);
+    List<OrderOutboxEvent> findTop100ByStatusOrderByIdAsc(OutboxStatus status);
 }
