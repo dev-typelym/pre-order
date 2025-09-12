@@ -58,10 +58,9 @@ public class MemberController {
     /** 비밀번호 변경 */
     @PatchMapping("/me/password")
     public ResponseEntity<ApiResponse<Void>> changePassword(@RequestBody ChangePasswordRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        TokenPayload payload = (TokenPayload) authentication.getPrincipal();
+        TokenPayload payload = (TokenPayload) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         memberService.changePassword(payload.getId(), request.getCurrentPassword(), request.getNewPassword());
-        authServiceClient.logout(new LogoutRequest(request.getRefreshToken()));
+        authServiceClient.logoutAll(payload.getId());
         return ResponseEntity.ok(ApiResponse.success(null, "비밀번호를 변경하였습니다. 다시 로그인 해주세요."));
     }
 
