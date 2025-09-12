@@ -10,6 +10,7 @@ public interface AuthService {
     LoginResponse login(LoginRequest loginRequest);
     //  로그아웃
     void logout(LogoutRequest logoutRequest);
+    void logoutAllDevices(Long memberId);
     TokenResponse reissue(String refreshToken);
     boolean checkRefreshTokenStatus(Long memberId);
 }
