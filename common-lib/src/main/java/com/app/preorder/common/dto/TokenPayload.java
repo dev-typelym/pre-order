@@ -13,4 +13,5 @@ public class TokenPayload {
     private Long id;
     private String username;
     private Role role;
+    private String deviceId;
 }

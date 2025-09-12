@@ -32,21 +32,22 @@ public class JwtUtil {
     }
 
     // ✅ Access Token 생성
-    public String generateAccessToken(Long id, String username, String role) {
-        return doGenerateToken(id, username, role, ACCESS_TOKEN_EXPIRE_TIME);
+    public String generateAccessToken(Long id, String username, String role, String deviceId) {
+        return doGenerateToken(id, username, role, deviceId, ACCESS_TOKEN_EXPIRE_TIME);
     }
 
     // ✅ Refresh Token 생성
-    public String generateRefreshToken(Long id, String username, String role) {
-        return doGenerateToken(id, username, role, REFRESH_TOKEN_EXPIRE_TIME);
+    public String generateRefreshToken(Long id, String username, String role, String deviceId) {
+        return doGenerateToken(id, username, role, deviceId, REFRESH_TOKEN_EXPIRE_TIME);
     }
 
     // ✅ 실제 JWT 생성 로직
-    private String doGenerateToken(Long id, String username, String role, long expireTime) {
+    private String doGenerateToken(Long id, String username, String role, String deviceId, long expireTime) {
         Claims claims = Jwts.claims();
         claims.put("id", id);
         claims.put("username", username);
-        claims.put("role", role);  // 문자열로 받음
+        claims.put("role", role);
+        claims.put("deviceId", deviceId);
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -67,7 +68,8 @@ public class JwtUtil {
         Long id = Long.valueOf(claims.get("id", Long.class));
         String username = claims.get("username", String.class);
         Role role = Role.valueOf(claims.get("role", String.class));
+        String deviceId = claims.get("deviceId", String.class);
 
-        return new TokenPayload(id, username, role);
+        return new TokenPayload(id, username, role, deviceId);
     }
 }

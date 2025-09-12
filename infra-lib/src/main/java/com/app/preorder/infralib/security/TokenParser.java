@@ -32,8 +32,10 @@ public class TokenParser {
         Long id = claims.get("id", Long.class);
         String username = claims.get("username", String.class);
         String roleStr = claims.get("role", String.class);
+        String deviceId = claims.get("deviceId", String.class);
+
         Role role = Role.valueOf(roleStr);  // enum으로 변환
 
-        return new TokenPayload(id, username, role);
+        return new TokenPayload(id, username, role, deviceId);
     }
 }
