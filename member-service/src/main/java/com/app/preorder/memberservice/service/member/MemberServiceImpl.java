@@ -13,6 +13,7 @@ import com.app.preorder.infralib.util.EncryptUtil;
 import com.app.preorder.infralib.util.HmacHashUtil;
 import com.app.preorder.infralib.util.PasswordUtil;
 import com.app.preorder.infralib.util.RedisUtil;
+import com.app.preorder.memberservice.client.AuthServiceClient;
 import com.app.preorder.memberservice.domain.entity.Member;
 import com.app.preorder.memberservice.dto.request.DuplicateCheckRequest;
 import com.app.preorder.memberservice.dto.request.SignupRequest;
@@ -28,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -50,6 +53,7 @@ public class MemberServiceImpl implements MemberService {
 
     private final MemberCommandPublisher memberCommandPublisher; // 카트 생성 커맨드
     private final MemberEventPublisher memberEventPublisher;     // ✅ 멤버 이벤트(탈퇴) 발행
+    private final AuthServiceClient authServiceClient;
 
     @Value("${email.auto-verify:false}")
     private boolean autoVerify;
@@ -163,8 +167,17 @@ public class MemberServiceImpl implements MemberService {
         String encodedNewPassword = passwordUtil.encodePassword(newPassword);
         member.updatePassword(encodedNewPassword);
 
-        redisUtil.deleteData("RT:" + memberId);
-        log.info("[MemberService] 비밀번호 변경 - memberId: {}, 기존 RefreshToken 삭제 완료", memberId);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override public void afterCommit() {
+                try {
+                    authServiceClient.logoutAll(memberId);
+                    log.info("[MemberService] 비밀번호 변경 커밋 후 전체 로그아웃 트리거 - memberId: {}", memberId);
+                } catch (Exception e) {
+                    // 커밋은 이미 끝났으므로 여기서 실패해도 롤백되진 않음
+                    log.warn("[MemberService] 전체 로그아웃 호출 실패 - memberId: {}, cause: {}", memberId, e.toString());
+                }
+            }
+        });
     }
 
     // 아이디/이메일/전화번호 중복 확인
