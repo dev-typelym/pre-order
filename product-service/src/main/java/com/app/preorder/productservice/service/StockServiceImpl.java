@@ -1,13 +1,10 @@
 package com.app.preorder.productservice.service;
 
 import com.app.preorder.common.dto.StockRequestInternal;
-import com.app.preorder.common.dto.StockInternal;
 import com.app.preorder.common.exception.custom.InsufficientStockException;
 import com.app.preorder.common.exception.custom.InvalidStockRequestException;
 import com.app.preorder.common.exception.custom.RestockFailedException;
 import com.app.preorder.common.exception.custom.UnreserveFailedException;
-import com.app.preorder.productservice.domain.entity.Stock;
-import com.app.preorder.productservice.factory.ProductFactory;
 import com.app.preorder.productservice.messaging.publisher.ProductEventPublisher;
 import com.app.preorder.productservice.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
