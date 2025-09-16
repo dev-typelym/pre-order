@@ -53,7 +53,7 @@ public class StockServiceImpl implements StockService {
             }
 
             // 커밋 이후 캐시 무효화 + 재계산(웜업)만 수행
-            availableCache.refreshAfterCommit(touched);
+            availableCache.refreshCacheAfterCommit(touched);
         }
     }
 
@@ -85,7 +85,7 @@ public class StockServiceImpl implements StockService {
             }
 
             // 커밋 이후 캐시 무효화 + 재계산(웜업)
-            availableCache.refreshAfterCommit(touched);
+            availableCache.refreshCacheAfterCommit(touched);
         }
     }
 
@@ -138,7 +138,7 @@ public class StockServiceImpl implements StockService {
             }
 
             // 커밋 이후 캐시 무효화 + 재계산(웜업)
-            availableCache.refreshAfterCommit(touched);
+            availableCache.refreshCacheAfterCommit(touched);
         }
     }
 }

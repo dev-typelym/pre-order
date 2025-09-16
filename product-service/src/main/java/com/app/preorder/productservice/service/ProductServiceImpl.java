@@ -1,13 +1,14 @@
+// product-service/src/main/java/com/app/preorder/productservice/service/ProductServiceImpl.java
 package com.app.preorder.productservice.service;
 
 import com.app.preorder.common.dto.ProductInternal;
 import com.app.preorder.common.exception.custom.ProductNotFoundException;
 import com.app.preorder.common.type.CategoryType;
-import com.app.preorder.common.type.ProductStatus; // ✅ 추가
+import com.app.preorder.common.type.ProductStatus;
 import com.app.preorder.productservice.domain.entity.Product;
 import com.app.preorder.productservice.dto.product.*;
 import com.app.preorder.productservice.factory.ProductFactory;
-import com.app.preorder.productservice.messaging.publisher.ProductEventPublisher; // ✅ 추가
+import com.app.preorder.productservice.messaging.publisher.ProductEventPublisher;
 import com.app.preorder.productservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -34,7 +35,7 @@ public class ProductServiceImpl implements ProductService {
     public Long createProduct(ProductCreateRequest request) {
         Product product = productFactory.createFrom(request);
         productRepository.save(product);
-        availableCache.refreshAfterCommit(List.of(product.getId()));
+        availableCache.refreshCacheAfterCommit(List.of(product.getId()));
         return product.getId();
     }
 
@@ -44,7 +45,7 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException("존재하지 않는 상품입니다."));
 
-        ProductStatus before = product.getStatus(); // ✅ 전 상태 백업
+        ProductStatus before = product.getStatus();
         productFactory.updateFrom(request, product);
 
         if (request.getStatus() != null
@@ -60,6 +61,7 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException("존재하지 않는 상품입니다."));
         productRepository.delete(product);
+        availableCache.evictCacheAfterCommit(List.of(productId));
     }
 
     // 상품 목록 조회(페이지네이션 + 검색/카테고리 필터, 응답에 가용재고 포함)
@@ -71,7 +73,7 @@ public class ProductServiceImpl implements ProductService {
         List<Product> content = products.getContent();
         List<Long> productIds = content.stream().map(Product::getId).toList();
 
-        Map<Long, Long> availableMap = availableCache.getManyFastSWR(productIds);
+        Map<Long, Long> availableMap = availableCache.getCachedAvailableBulk(productIds);
 
         List<ProductResponse> responses = content.stream()
                 .map(p -> productFactory.toResponse(p, availableMap.getOrDefault(p.getId(), 0L)))
@@ -86,7 +88,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse getProductDetail(Long productId) {
         Product product = productRepository.findDetailById(productId)
                 .orElseThrow(() -> new ProductNotFoundException("해당 상품을 찾을 수 없습니다."));
-        long available = availableCache.getFastSWR(productId);
+        long available = availableCache.getCachedAvailable(productId);
         return productFactory.toResponse(product, available);
     }
 
@@ -116,14 +118,14 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public long getAvailable(Long productId) {
-        return availableCache.getFastSWR(productId);
+        return availableCache.getCachedAvailable(productId);
     }
 
     // 가용재고 다건 조회
     @Override
     @Transactional(readOnly = true)
     public List<ProductAvailableStockResponse> getAvailableQuantities(List<Long> productIds) {
-        Map<Long, Long> map = availableCache.getManyFastSWR(productIds);
+        Map<Long, Long> map = availableCache.getCachedAvailableBulk(productIds);
         return productIds.stream()
                 .map(pid -> new ProductAvailableStockResponse(pid, map.getOrDefault(pid, 0L)))
                 .toList();
