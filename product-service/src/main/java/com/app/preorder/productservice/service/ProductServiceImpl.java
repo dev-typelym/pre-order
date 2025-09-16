@@ -34,6 +34,7 @@ public class ProductServiceImpl implements ProductService {
     public Long createProduct(ProductCreateRequest request) {
         Product product = productFactory.createFrom(request);
         productRepository.save(product);
+        availableCache.refreshAfterCommit(List.of(product.getId()));
         return product.getId();
     }
 
@@ -70,7 +71,7 @@ public class ProductServiceImpl implements ProductService {
         List<Product> content = products.getContent();
         List<Long> productIds = content.stream().map(Product::getId).toList();
 
-        Map<Long, Long> availableMap = availableCache.getMany(productIds);
+        Map<Long, Long> availableMap = availableCache.getManyFastSWR(productIds);
 
         List<ProductResponse> responses = content.stream()
                 .map(p -> productFactory.toResponse(p, availableMap.getOrDefault(p.getId(), 0L)))
@@ -85,7 +86,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse getProductDetail(Long productId) {
         Product product = productRepository.findDetailById(productId)
                 .orElseThrow(() -> new ProductNotFoundException("해당 상품을 찾을 수 없습니다."));
-        long available = availableCache.get(productId);
+        long available = availableCache.getFastSWR(productId);
         return productFactory.toResponse(product, available);
     }
 
@@ -115,14 +116,14 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public long getAvailable(Long productId) {
-        return availableCache.get(productId);
+        return availableCache.getFastSWR(productId);
     }
 
     // 가용재고 다건 조회
     @Override
     @Transactional(readOnly = true)
     public List<ProductAvailableStockResponse> getAvailableQuantities(List<Long> productIds) {
-        Map<Long, Long> map = availableCache.getMany(productIds);
+        Map<Long, Long> map = availableCache.getManyFastSWR(productIds);
         return productIds.stream()
                 .map(pid -> new ProductAvailableStockResponse(pid, map.getOrDefault(pid, 0L)))
                 .toList();
