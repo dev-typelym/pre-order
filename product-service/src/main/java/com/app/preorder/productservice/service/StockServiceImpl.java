@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class StockServiceImpl implements StockService {
 
@@ -25,7 +26,6 @@ public class StockServiceImpl implements StockService {
 
     // 결제 준비: 가용분 확인해 reserved 증가(원자), 커밋 후 재고 변경 이벤트 발행
     @Override
-    @Transactional
     public void reserveStocks(List<StockRequestInternal> items) {
         if (items == null || items.isEmpty())
             throw new InvalidStockRequestException("요청 항목(items)은 비어 있을 수 없습니다.");
@@ -59,7 +59,6 @@ public class StockServiceImpl implements StockService {
 
     // 이탈/취소: reserved 감소(원자), 커밋 후 재고 변경 이벤트 발행
     @Override
-    @Transactional
     public void unreserveStocks(List<StockRequestInternal> items) {
         if (items == null || items.isEmpty())
             throw new InvalidStockRequestException("요청 항목(items)은 비어 있을 수 없습니다.");
@@ -94,7 +93,6 @@ public class StockServiceImpl implements StockService {
 
     // 결제 확정: qty와 reserved를 동일량 감소(원자), available 불변 → 이벤트 없음
     @Override
-    @Transactional
     public void commitStocks(List<StockRequestInternal> items) {
         if (items == null || items.isEmpty())
             throw new InvalidStockRequestException("요청 항목(items)은 비어 있을 수 없습니다.");
@@ -114,7 +112,6 @@ public class StockServiceImpl implements StockService {
 
     // 재입고/보상: qty 증가(원자), 커밋 후 재고 변경 이벤트 발행
     @Override
-    @Transactional
     public void restoreStocks(List<StockRequestInternal> items) {
         if (items == null || items.isEmpty())
             throw new InvalidStockRequestException("요청 항목(items)은 비어 있을 수 없습니다.");
