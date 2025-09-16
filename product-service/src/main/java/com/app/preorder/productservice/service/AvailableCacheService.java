@@ -9,7 +9,6 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -102,18 +101,6 @@ public class AvailableCacheService {
         return result;
     }
 
-    /** 변경 직후 무효화(단건) */
-    public void invalidate(long productId) {
-        redis.deleteData(cacheKey(productId));
-    }
-
-    /** 변경 직후 무효화(다건) */
-    public void invalidateMany(Collection<Long> productIds) {
-        if (productIds == null || productIds.isEmpty()) return;
-        Set<String> keys = productIds.stream().map(this::cacheKey).collect(Collectors.toSet());
-        redis.deleteDataBatch(keys);
-    }
-
     /**
      * 커밋 이후: 캐시 무효화 → 비동기 재빌드(SWR)
      * - 트랜잭션 있으면 afterCommit, 없으면 즉시 실행
@@ -122,7 +109,6 @@ public class AvailableCacheService {
         if (productIds == null || productIds.isEmpty()) return;
 
         Runnable work = () -> {
-            invalidateMany(productIds);
             rebuildAsync(productIds);
         };
 
