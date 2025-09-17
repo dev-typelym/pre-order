@@ -14,6 +14,7 @@ import com.app.preorder.common.exception.custom.RefreshTokenException;
 import com.app.preorder.common.type.MemberStatus;
 import com.app.preorder.infralib.util.JwtUtil;
 import com.app.preorder.infralib.util.RedisUtil;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final long refreshTokenExpireTimeInSeconds = 60 * 60 * 24 * 7;
 
     @Override
+    @CircuitBreaker(name = "memberClient", fallbackMethod = "loginFallback")
     public LoginResponse login(LoginRequest loginRequest) {
         String loginId = trim(loginRequest.getLoginId());
         String password = loginRequest.getPassword();
