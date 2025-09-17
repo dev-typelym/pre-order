@@ -11,9 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
-import static com.querydsl.core.group.GroupBy.groupBy;
-
-
 @RequiredArgsConstructor
 public class StockQueryDslImpl implements StockQueryDsl {
 

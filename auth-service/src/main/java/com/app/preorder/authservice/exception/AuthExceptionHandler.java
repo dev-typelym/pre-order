@@ -1,10 +1,7 @@
 package com.app.preorder.authservice.exception;
 
-import com.app.preorder.common.exception.custom.ForbiddenException;
-import com.app.preorder.common.exception.custom.RefreshTokenException;
-import com.app.preorder.common.exception.custom.UserNotFoundException;
 import com.app.preorder.common.dto.ApiResponse;
-import com.app.preorder.common.exception.custom.FeignException;
+import com.app.preorder.common.exception.custom.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +19,24 @@ public class AuthExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(ApiResponse.failure("서비스 간 통신 오류가 발생했습니다.", "AUTH_FEIGN_COMMUNICATION_ERROR"));
+    }
+
+    // 로그인 자격 증명 실패 (아이디/비밀번호 불일치)
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidCredentials(InvalidCredentialsException ex) {
+        log.warn("[Auth] 자격 증명 실패: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.failure("아이디/비밀번호가 올바르지 않습니다.", "AUTH_INVALID_CREDENTIALS"));
+    }
+
+    // 멤버서비스 의존성 장애/지연 (타임아웃·5xx 등)
+    @ExceptionHandler(MemberServiceUnavailableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMemberUnavailable(MemberServiceUnavailableException ex) {
+        log.error("[Auth] member-service 의존성 장애: {}", ex.getMessage(), ex);
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.failure("로그인 서비스가 일시적으로 지연 중입니다.", "AUTH_MEMBER_UNAVAILABLE"));
     }
 
     // 사용자 정보를 찾을 수 없음
