@@ -7,9 +7,7 @@ plugins {
 group = 'com.app.preorder'
 version = '0.0.1-SNAPSHOT'
 
-java {
-	toolchain { languageVersion = JavaLanguageVersion.of(21) }
-}
+java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
 
 def querydslDir = "$buildDir/generated/querydsl"
 
@@ -28,19 +26,21 @@ ext {
 }
 
 dependencies {
-	// Spring Core
+	// Spring Boot 기본
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.kafka:spring-kafka'
 
 	// Cloud / Networking
 	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 	implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
-	implementation 'org.springframework.kafka:spring-kafka'
 
-	// Resilience
+	// Resilience4j (서킷브레이커)
 	implementation 'io.github.resilience4j:resilience4j-spring-boot3'
+	implementation 'io.github.resilience4j:resilience4j-circuitbreaker'
 	implementation 'org.springframework.boot:spring-boot-starter-aop'
 
 	// DB Driver
