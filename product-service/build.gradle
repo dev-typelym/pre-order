@@ -44,6 +44,9 @@ dependencies {
     // DB Driver
     implementation 'org.mariadb.jdbc:mariadb-java-client'
 
+    // commons-lang3
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+
     // 내부 공용 모듈
     implementation project(':infra-lib')
     implementation project(':common-lib')

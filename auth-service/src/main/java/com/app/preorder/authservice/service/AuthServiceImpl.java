@@ -36,7 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final long refreshTokenExpireTimeInSeconds = 60 * 60 * 24 * 7;
 
     @Override
-    @CircuitBreaker(name = "memberClient", fallbackMethod = "loginFallback")
+    @CircuitBreaker(name = "memberClient")
     public LoginResponse login(LoginRequest loginRequest) {
         String loginId = trim(loginRequest.getLoginId());
         String password = loginRequest.getPassword();
