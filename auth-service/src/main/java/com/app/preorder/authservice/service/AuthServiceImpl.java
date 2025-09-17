@@ -8,9 +8,7 @@ import com.app.preorder.authservice.dto.response.TokenResponse;
 import com.app.preorder.common.dto.MemberInternal;
 import com.app.preorder.common.dto.TokenPayload;
 import com.app.preorder.common.dto.VerifyPasswordInternal;
-import com.app.preorder.common.exception.custom.FeignException;
-import com.app.preorder.common.exception.custom.ForbiddenException;
-import com.app.preorder.common.exception.custom.RefreshTokenException;
+import com.app.preorder.common.exception.custom.*;
 import com.app.preorder.common.type.MemberStatus;
 import com.app.preorder.infralib.util.JwtUtil;
 import com.app.preorder.infralib.util.RedisUtil;
@@ -36,7 +34,6 @@ public class AuthServiceImpl implements AuthService {
     private final long refreshTokenExpireTimeInSeconds = 60 * 60 * 24 * 7;
 
     @Override
-    @CircuitBreaker(name = "memberClient")
     public LoginResponse login(LoginRequest loginRequest) {
         String loginId = trim(loginRequest.getLoginId());
         String password = loginRequest.getPassword();
@@ -45,28 +42,30 @@ public class AuthServiceImpl implements AuthService {
         try {
             member = memberServiceClient.verifyPassword(new VerifyPasswordInternal(loginId, password));
         } catch (feign.FeignException e) {
-            log.error("[AuthService] 로그인 중 회원 서비스 통신 실패 - loginId: {}, 사유: {}", loginId, e.getMessage());
-            throw new FeignException("회원 서비스 통신 실패", e);
+            int s = e.status();
+            if (s == 401 || s == 404) {
+                throw new InvalidCredentialsException("아이디/비밀번호가 올바르지 않습니다.");
+            }
+            // 나머지는 의존성 장애로 표준화
+            log.error("[AuthService] member 호출 실패 status={}, msg={}, body={}",
+                    s, e.getMessage(), e.contentUTF8());
+            throw new MemberServiceUnavailableException("member-service unavailable", e);
         }
 
         if (member.getStatus() != MemberStatus.ACTIVE) {
             throw new ForbiddenException("이메일 인증이 필요합니다.");
         }
 
-        // ✅ 기기(세션) 식별자
         String deviceId = java.util.UUID.randomUUID().toString();
-
-        // ✅ deviceId 포함 발급
         String accessToken  = jwtUtil.generateAccessToken(member.getId(), member.getLoginId(), member.getRole().name(), deviceId);
         String refreshToken = jwtUtil.generateRefreshToken(member.getId(), member.getLoginId(), member.getRole().name(), deviceId);
 
-        // ✅ RT 저장 + 인덱스 추가
         try {
             redisUtil.setDataExpire("RT:" + member.getId() + ":" + deviceId, refreshToken, refreshTokenExpireTimeInSeconds);
-            redisUtil.addSet("RTIDX:" + member.getId(), deviceId); // ← 인덱스 세트
-            log.info("✅ Redis 저장 완료: RT:{}:{}, 인덱스 추가", member.getId(), deviceId);
-        } catch (Exception e) {
-            log.error("❌ Redis 저장 실패", e);
+            redisUtil.addSet("RTIDX:" + member.getId(), deviceId);
+            log.info("Redis 저장 완료: RT:{}:{}, 인덱스 추가", member.getId(), deviceId);
+        } catch (Exception ex) {
+            log.error("Redis 저장 실패", ex);
         }
 
         return new LoginResponse(accessToken, refreshToken);
