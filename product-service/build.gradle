@@ -18,43 +18,56 @@ sourceSets {
 }
 
 configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
-    }
+    compileOnly { extendsFrom annotationProcessor }
 }
 
-repositories {
-    mavenCentral()
+repositories { mavenCentral() }
+
+ext {
+    set('springCloudVersion', '2023.0.2') // Boot 3.2.x 호환
 }
 
 dependencies {
+    // Spring Boot 기본
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation 'org.apache.commons:commons-lang3:3.13.0'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Cloud / Discovery
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+
+    // Messaging
     implementation 'org.springframework.kafka:spring-kafka'
-    implementation "org.springframework.cloud:spring-cloud-starter-loadbalancer"
 
-
+    // DB Driver
     implementation 'org.mariadb.jdbc:mariadb-java-client'
 
-    //  infra-lib
+    // 내부 공용 모듈
     implementation project(':infra-lib')
-
-    //  common-lib
     implementation project(':common-lib')
 
+    // QueryDSL
     implementation "com.querydsl:querydsl-jpa:5.0.0:jakarta"
     annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
     annotationProcessor "jakarta.persistence:jakarta.persistence-api:3.1.0"
     annotationProcessor "jakarta.annotation:jakarta.annotation-api:2.1.1"
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
+dependencyManagement {
+    imports { mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}" }
 }
+
+tasks.named('test') { useJUnitPlatform() }
 
 tasks.named('bootJar') {
     bootJar ->
@@ -62,6 +75,4 @@ tasks.named('bootJar') {
         bootJar.archiveFileName = 'app.jar'
 }
 
-tasks.named('jar') {
-    enabled = false
-}
+tasks.named('jar') { enabled = false }

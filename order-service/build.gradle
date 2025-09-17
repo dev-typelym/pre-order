@@ -28,12 +28,13 @@ ext {
 }
 
 dependencies {
-    // Spring Core
+    // Spring Boot 기본
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-quartz'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
 
     // Cloud / Networking
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
@@ -41,8 +42,9 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
     implementation 'org.springframework.kafka:spring-kafka'
 
-    // Resilience
+    // Resilience4j (서킷브레이커 어노테이션 & 코어)
     implementation 'io.github.resilience4j:resilience4j-spring-boot3'
+    implementation 'io.github.resilience4j:resilience4j-circuitbreaker'
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 
     // DB Driver

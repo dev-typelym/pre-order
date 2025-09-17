@@ -24,7 +24,6 @@ import java.util.Map;
 @Configuration
 public class KafkaConsumerConfig {
 
-    // ★ 환경변수/YA​ML로 조절 가능하게
     @Value("${kafka.consumer.command.concurrency:6}")
     private int commandConcurrency; // Reserve/Commit/Unreserve/Restore 용
 
