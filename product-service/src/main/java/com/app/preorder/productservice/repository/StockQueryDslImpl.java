@@ -2,14 +2,14 @@ package com.app.preorder.productservice.repository;
 
 import com.app.preorder.productservice.domain.entity.QStock;
 import com.app.preorder.productservice.domain.entity.Stock;
+import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static com.querydsl.core.group.GroupBy.groupBy;
 
@@ -92,14 +92,29 @@ public class StockQueryDslImpl implements StockQueryDsl {
     // ------------ ✅ 가용 재고 조회 ------------
     @Override
     public Map<Long, Long> findAvailableMapByProductIds(List<Long> productIds) {
-        QStock s = QStock.stock;
+        if (productIds == null || productIds.isEmpty()) return Collections.emptyMap();
 
-        return query
+        QStock s = QStock.stock;
+        NumberExpression<Long> available =
+                s.stockQuantity.coalesce(0L).subtract(s.reserved.coalesce(0L));
+
+        List<Tuple> rows = query
+                .select(s.product.id, available)
                 .from(s)
-                .where(s.product.id.in(productIds))                    // 연관이면 s.product.id.in(...)
-                .transform(groupBy(s.product.id)                        // 연관이면 s.product.id
-                        .as(s.stockQuantity.coalesce(0L)
-                                .subtract(s.reserved.coalesce(0L))));
+                .where(s.product.id.in(productIds))
+                .fetch();
+
+        Map<Long, Long> map = new HashMap<>();
+        for (Tuple t : rows) {
+            Long pid = t.get(s.product.id);
+            Long val = t.get(available);
+            if (pid != null && val != null) {
+                map.put(pid, val);
+            }
+        }
+        // 필요하면 요청했는데 행이 없는 상품을 0으로 채우기:
+        // for (Long pid : productIds) map.putIfAbsent(pid, 0L);
+        return map;
     }
 }
 
