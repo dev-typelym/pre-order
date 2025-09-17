@@ -69,26 +69,9 @@ feign:
   client:
     config:
       member-service:
-        connectTimeout: 500
-        readTimeout: 800
-        loggerLevel: none
+        connectTimeout: 1500
+        readTimeout: 3000
+        loggerLevel: basic
         retryer: feign.Retryer$NeverRetry
 
-resilience4j:
-  circuitbreaker:
-    instances:
-      memberClient:
-        slidingWindowType: COUNT_BASED
-        slidingWindowSize: 50
-        minimumNumberOfCalls: 20
-        failureRateThreshold: 50
-        slowCallRateThreshold: 50
-        slowCallDurationThreshold: 700ms
-        waitDurationInOpenState: 10s
-        permittedNumberOfCallsInHalfOpenState: 5
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        recordExceptions:
-          - java.io.IOException
-          - java.util.concurrent.TimeoutException
-          - io.netty.channel.ConnectTimeoutException
-          - feign.RetryableException
+
