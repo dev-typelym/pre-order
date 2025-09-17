@@ -68,7 +68,7 @@ email:
 feign:
   client:
     config:
-      auth-service:
+      member-service:
         connectTimeout: 500
         readTimeout: 800
         loggerLevel: none
