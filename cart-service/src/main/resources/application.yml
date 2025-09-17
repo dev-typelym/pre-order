@@ -60,10 +60,18 @@ resilience4j:
       productClient:
         slidingWindowType: COUNT_BASED
         slidingWindowSize: 50
+        minimumNumberOfCalls: 20
         failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: 1s
         waitDurationInOpenState: 10s
         permittedNumberOfCallsInHalfOpenState: 5
         automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - io.netty.channel.ConnectTimeoutException
+          - feign.RetryableException
 
 kafka:
   consumer:
