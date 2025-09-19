@@ -4,12 +4,16 @@ import com.app.preorder.common.exception.custom.InsufficientStockException;
 import com.app.preorder.productservice.domain.entity.audit.AuditPeriod;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.LazyToOne;
+import org.hibernate.annotations.LazyToOneOption;
 
 @Entity
 @Getter
 @ToString(exclude = "product")
 @Table(name = "tbl_stock")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@BatchSize(size = 100)
 public class Stock extends AuditPeriod {
 
     @Id
@@ -24,6 +28,7 @@ public class Stock extends AuditPeriod {
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false, unique = true)
+    @LazyToOne(LazyToOneOption.NO_PROXY)
     private Product product;
 
     @Builder

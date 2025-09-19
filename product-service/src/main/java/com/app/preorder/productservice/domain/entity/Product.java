@@ -7,17 +7,19 @@
     import com.app.preorder.productservice.domain.vo.SalesPeriod;
     import jakarta.persistence.*;
     import lombok.*;
+    import org.hibernate.annotations.BatchSize;
+    import org.hibernate.annotations.LazyToOne;
+    import org.hibernate.annotations.LazyToOneOption;
 
 
     import java.math.BigDecimal;
-    import java.util.ArrayList;
-    import java.util.List;
 
     @Entity
     @Getter
     @ToString(exclude = "stock")
     @Table(name = "tbl_product")
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @BatchSize(size = 100)
     public class Product extends AuditPeriod {
 
         @Id
@@ -45,6 +47,7 @@
         private SalesPeriod salesPeriod;
 
         @OneToOne(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+        @LazyToOne(LazyToOneOption.NO_PROXY)
         private Stock stock;
 
         @Builder
