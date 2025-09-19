@@ -6,6 +6,8 @@ const BATCH_SIZE = 30;
 const tokens = [];
 const failedUsers = [];
 
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
 async function createUser(i) {
     const loginId = `user${i}`;
     const email = `user${i}@example.com`;
@@ -19,26 +21,33 @@ async function createUser(i) {
         postalCode: `131${String(i % 100).padStart(2, '0')}`
     };
 
+    // 1) 회원가입은 '한 번만' 시도 (409면 이미 존재 → OK로 간주)
+    try {
+        await axios.post('http://localhost:8082/api/members/signup', {
+            loginId, email, password, name, phone, address
+        }, { timeout: 5000 });
+    } catch (error) {
+        const status = error.response?.status;
+        const code = error.response?.data?.errorCode;
+        if (status === 409 || code === 'MEMBER_DUPLICATE_VALUE') {
+            // 이미 만들어진 계정이면 가입은 통과로 본다
+            console.warn(`⚠️ ${i + 1}: 이미 존재하는 계정(409) → 로그인만 진행`);
+        } else {
+            console.warn(`❌ ${i + 1}: 회원가입 실패:`, error.response?.data || error.message);
+            failedUsers.push(loginId);
+            return;
+        }
+    }
+
+    // 2) 로그인은 별도 재시도 루프 (가입 재시도 금지!)
     let retry = 0;
     const maxRetry = 3;
 
     while (retry < maxRetry) {
         try {
-            // 회원가입
-            await axios.post('http://localhost:8082/api/members/signup', {
-                loginId,
-                email,
-                password,
-                name,
-                phone,
-                address
-            });
-
-            // 로그인
             const res = await axios.post('http://localhost:8081/api/auth/login', {
-                loginId,
-                password
-            });
+                loginId, password
+            }, { timeout: 5000 });
 
             tokens.push({
                 loginId,
@@ -46,32 +55,38 @@ async function createUser(i) {
                 refreshToken: res.data.data.refreshToken
             });
 
-            console.log(`✅ ${i + 1}/${NUM_USERS} 생성 완료 (retry: ${retry})`);
+            console.log(`✅ ${i + 1}/${NUM_USERS} 생성 완료 (login retry: ${retry})`);
             return;
         } catch (error) {
             retry++;
-            console.warn(`⚠️ ${i + 1}번째 실패 시도 (retry: ${retry}):`, error.response?.data || error.message);
-            await new Promise(resolve => setTimeout(resolve, 500 * retry));
+            const status = error.response?.status;
+            console.warn(`⚠️ ${i + 1} 로그인 실패 (retry: ${retry}):`, error.response?.data || error.message);
+
+            // 401은 자격 증명 실패 → 재가입 금지, 재시도해도 소용없으면 바로 종료
+            if (status === 401) {
+                console.warn(`⛔ ${i + 1}: 401(자격 증명 실패) → 중단`);
+                break;
+            }
+
+            // 5xx/네트워크 지연 등만 짧게 백오프 후 재시도
+            await sleep(500 * retry);
         }
     }
 
-    console.error(`❌ ${i + 1}번째 실패 (최대 재시도 초과)`);
+    console.error(`❌ ${i + 1}번째 실패 (로그인 최대 재시도 초과)`);
     failedUsers.push(loginId);
 }
 
 async function main() {
     for (let i = 0; i < NUM_USERS; i += BATCH_SIZE) {
         const batch = [];
-
         for (let j = i; j < i + BATCH_SIZE && j < NUM_USERS; j++) {
             batch.push(createUser(j));
         }
-
         await Promise.all(batch);
         console.log(`✅ Batch 완료: ${i + 1} ~ ${Math.min(i + BATCH_SIZE, NUM_USERS)}`);
     }
 
-    // 결과 파일 저장
     fs.writeFileSync('./tokens.json', JSON.stringify(tokens, null, 2));
     console.log(`💾 tokens.json 저장 완료 (총 ${tokens.length}명)`);
 

@@ -40,6 +40,9 @@ public class ProductSecurityConfig {
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        //  헬스 & 프로메테우스
+                        .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/prometheus").permitAll()
+
                         //  사용자 공개 API
                         .requestMatchers("/api/products/**").permitAll()
 

@@ -2,7 +2,7 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { SharedArray } from 'k6/data';
 
-const users = new SharedArray("users", () => JSON.parse(open('./tokens.json')));
+const users = new SharedArray('users', () => JSON.parse(open('./tokens.json')));
 
 export const options = {
     stages: [
@@ -21,11 +21,15 @@ export const options = {
 };
 
 function refreshAccessToken(user) {
-    const res = http.post('http://localhost:8081/api/auth/refresh', JSON.stringify({
-        refreshToken: user.refreshToken
-    }), {
-        headers: { 'Content-Type': 'application/json' }
-    });
+    const res = http.post(
+        'http://localhost:8081/api/auth/refresh',
+        JSON.stringify({ refreshToken: user.refreshToken }),
+        {
+            headers: { 'Content-Type': 'application/json' },
+            // (선택) 대시보드에서 구분하고 싶으면 라벨 고정
+            tags: { name: 'POST http://localhost:8081/api/auth/refresh' },
+        }
+    );
 
     if (res.status === 200) {
         const data = JSON.parse(res.body).data;
@@ -40,12 +44,19 @@ function authorizedRequest(url, method, user) {
         'Content-Type': 'application/json',
     };
 
-    let res = http.get(url, { headers });
+    // ✅ 실제 호출은 게이트웨이(8086)지만, 라벨은 예전(8085)로 고정
+    let res = http.get(url, {
+        headers,
+        tags: { name: 'GET http://localhost:8085/api/products' },
+    });
 
     if (res.status === 401) {
         refreshAccessToken(user);
         headers.Authorization = `Bearer ${user.token}`;
-        res = http.get(url, { headers });
+        res = http.get(url, {
+            headers,
+            tags: { name: 'GET http://localhost:8085/api/products' },
+        });
     }
 
     return res;
@@ -53,7 +64,8 @@ function authorizedRequest(url, method, user) {
 
 export default function () {
     const user = Object.assign({}, users[Math.floor(Math.random() * users.length)]);
-    const res = authorizedRequest('http://localhost:8085/api/products', 'GET', user);
+    // 🔁 호출 대상만 게이트웨이로 변경(8086)
+    const res = authorizedRequest('http://localhost:8086/api/products', 'GET', user);
     check(res, { '✅ 상품 목록 조회 성공': (r) => r.status === 200 });
     sleep(Math.random() * 1);
 }
