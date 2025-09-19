@@ -52,8 +52,8 @@ public class StockServiceImpl implements StockService {
                 if (available == 0) stockEvents.publishSoldOutEvent(pid);
             }
 
-            // 커밋 이후 캐시 무효화 + 재계산(웜업)만 수행
-            availableCache.refreshCacheAfterCommit(touched);
+            // ✅ 커밋 이후 캐시 최신값으로 덮어쓰기(웜업)
+            availableCache.refreshAfterCommit(touched);
         }
     }
 
@@ -84,14 +84,14 @@ public class StockServiceImpl implements StockService {
                 stockEvents.publishStockChangedEvent(pid, available);
             }
 
-            // 커밋 이후 캐시 무효화 + 재계산(웜업)
-            availableCache.refreshCacheAfterCommit(touched);
+            // ✅ 커밋 이후 캐시 최신값으로 덮어쓰기(웜업)
+            availableCache.refreshAfterCommit(touched);
         }
     }
 
     /* ========== 실제 차감(배치) ========== */
 
-    // 결제 확정: qty와 reserved를 동일량 감소(원자), available 불변 → 이벤트 없음
+    // 결제 확정: qty와 reserved를 동일량 감소(원자), available 불변 → 이벤트/캐시 변경 없음
     @Override
     public void commitStocks(List<StockRequestInternal> items) {
         if (items == null || items.isEmpty())
@@ -137,8 +137,8 @@ public class StockServiceImpl implements StockService {
                 stockEvents.publishStockChangedEvent(pid, available);
             }
 
-            // 커밋 이후 캐시 무효화 + 재계산(웜업)
-            availableCache.refreshCacheAfterCommit(touched);
+            // ✅ 커밋 이후 캐시 최신값으로 덮어쓰기(웜업)
+            availableCache.refreshAfterCommit(touched);
         }
     }
 }

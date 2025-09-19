@@ -1,106 +1,180 @@
 package com.app.preorder.productservice.service;
 
 import com.app.preorder.infralib.util.RedisUtil;
+import com.app.preorder.productservice.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
 
-@Slf4j
+/**
+ * 가용 재고 캐시 서비스
+ * - Redis MGET → 미스만 DB 일괄 조회 → SETEX(지터)로 덮어쓰기
+ * - 커밋 이후엔 무효화 대신 "DB→SETEX 덮어쓰기"로 바로 웜업
+ * - 삭제/숨김은 afterCommit에서 EVICT(DEL)
+ * - 대용량 배치 대비 안전 청크(500)
+ */
 @Service
 @RequiredArgsConstructor
 public class AvailableCacheService {
 
-    private static final String CACHE_KEY_PREFIX = "stock:avail:";
-    // 소프트 TTL(밀리초) — 오래된 값이면 백그라운드 갱신 트리거
-    private static final long CACHE_TTL_SOFT_MS = 3_000L;
+    private static final String AVAIL_PREFIX = "stock:avail:";
+    // 현실적인 TTL/지터: 너무 짧지 않게, 스탬피드 완화
+    private static final long TTL_SECONDS = 5L;
+    private static final long TTL_JITTER_SECONDS = 2L; // 0~2초 지터
+
+    // 대용량 pid 배치 안정 가드(평소엔 영향 미미)
+    private static final int CHUNK_SIZE = 500;
 
     private final RedisUtil redis;
-    private final AvailableCacheAsyncWorker worker;  // ✅ 워커 주입
+    private final StockRepository stockRepository;
 
-    /* ===== READ: 캐시 우선(SWR) ===== */
-    public long getCachedAvailable(long productId) {
-        String raw = redis.getData(cacheKey(productId));
-        long[] decoded = decode(raw);
-        long now = System.currentTimeMillis();
+    private String cacheKey(long pid) { return AVAIL_PREFIX + pid; }
 
-        if (decoded != null) {
-            long value = Math.max(0L, decoded[0]);
-            long ts = decoded[1];
-            if (ts > 0 && now - ts > CACHE_TTL_SOFT_MS) scheduleRebuild(Set.of(productId));
-            return value;
-        }
-        scheduleRebuild(Set.of(productId)); // 콜드: 0 반환 + 비동기 채움
-        return 0L;
+    /** 단건 조회: 내부적으로 배치 경로 사용 */
+    public long getAvailable(long productId) {
+        return getAvailableMap(Collections.singletonList(productId))
+                .getOrDefault(productId, 0L);
     }
 
-    public Map<Long, Long> getCachedAvailableBulk(List<Long> productIds) {
+    /**
+     * 다건 조회:
+     * 1) Redis MGET
+     * 2) 미스만 모아(중복 제거) DB 일괄 조회 (청크 분할)
+     * 3) SETEX(+지터)로 캐시 덮어쓰기 → 웜업
+     */
+    public Map<Long, Long> getAvailableMap(List<Long> productIds) {
         if (productIds == null || productIds.isEmpty()) return Collections.emptyMap();
-        List<String> keys = productIds.stream().map(this::cacheKey).toList();
-        List<String> raws = redis.getDataMulti(keys);
 
-        long now = System.currentTimeMillis();
-        Map<Long, Long> out = new LinkedHashMap<>(productIds.size());
-        List<Long> toRebuild = new ArrayList<>();
+        // 입력 보존 순서 유지 + 중복 제거
+        List<Long> uniqueIds = new ArrayList<>(new LinkedHashSet<>(productIds));
+        Map<Long, Long> result = new LinkedHashMap<>(uniqueIds.size());
 
-        for (int i = 0; i < productIds.size(); i++) {
-            long pid = productIds.get(i);
-            String raw = (raws != null && i < raws.size()) ? raws.get(i) : null;
-            long[] decoded = decode(raw);
-            if (decoded != null) {
-                long v = Math.max(0L, decoded[0]);
-                long ts = decoded[1];
-                if (ts > 0 && now - ts > CACHE_TTL_SOFT_MS) toRebuild.add(pid);
-                out.put(pid, v);
-            } else {
-                toRebuild.add(pid);
-                out.put(pid, 0L);
+        // 1) 캐시 일괄 조회
+        List<String> keys = uniqueIds.stream().map(this::cacheKey).toList();
+        List<String> cachedValues = redis.getDataMulti(keys);
+
+        List<Long> misses = new ArrayList<>();
+        for (int i = 0; i < uniqueIds.size(); i++) {
+            Long pid = uniqueIds.get(i);
+            String raw = (cachedValues != null && i < cachedValues.size()) ? cachedValues.get(i) : null;
+            if (raw != null) {
+                try {
+                    result.put(pid, Long.parseLong(raw));
+                    continue;
+                } catch (NumberFormatException ignore) {
+                    // 캐시 값이 손상된 경우 미스로 처리
+                }
+            }
+            misses.add(pid);
+        }
+
+        // 2) 미스만 DB 조회(+청크)
+        if (!misses.isEmpty()) {
+            for (int i = 0; i < misses.size(); i += CHUNK_SIZE) {
+                List<Long> sub = misses.subList(i, Math.min(i + CHUNK_SIZE, misses.size()));
+
+                // 엔티티 로드 금지, 바로 pid->available 맵 조회
+                Map<Long, Long> fromDb = stockRepository.findAvailableMapByProductIds(sub);
+
+                // 3) 캐시 덮어쓰기(SETEX+지터) 및 결과 합치기
+                Map<String, String> toCache = new LinkedHashMap<>(sub.size());
+                for (Long pid : sub) {
+                    long available = Math.max(0L, fromDb.getOrDefault(pid, 0L)); // 음수/NULL 하한 보정
+                    result.put(pid, available);
+                    toCache.put(cacheKey(pid), Long.toString(available));
+                }
+                redis.setDataExpireBatch(toCache, TTL_SECONDS, TTL_JITTER_SECONDS);
             }
         }
-        if (!toRebuild.isEmpty()) scheduleRebuild(toRebuild);
-        return out;
+
+        // 요청한 전체 목록 기준으로도 0 보정 보장(혹시 모를 누락 방지)
+        Map<Long, Long> orderedOut = new LinkedHashMap<>(productIds.size());
+        for (Long pid : productIds) {
+            orderedOut.put(pid, result.getOrDefault(pid, 0L));
+        }
+        return orderedOut;
     }
 
-    /* ===== WRITE: 커밋 후 처리 ===== */
-    public void refreshCacheAfterCommit(Collection<Long> productIds) {
+    /** 단건 무효화 (특별 필요시에만; 기본 전략은 덮어쓰기) */
+    public void invalidate(long productId) {
+        redis.deleteData(cacheKey(productId));
+    }
+
+    /** 다건 무효화 (특별 필요시에만; 기본 전략은 덮어쓰기) */
+    public void invalidateMany(Collection<Long> productIds) {
         if (productIds == null || productIds.isEmpty()) return;
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+        Set<String> keys = new HashSet<>();
+        for (Long pid : productIds) {
+            if (pid != null) keys.add(cacheKey(pid));
+        }
+        if (!keys.isEmpty()) redis.deleteDataBatch(keys);
+    }
+
+    /**
+     * 커밋 이후 최신값으로 바로 캐시 덮어쓰기(= 웜업)
+     * - 무효화→미스 유도 방식 아님 → "0 보이는 공백" 방지
+     * - 트랜잭션이 있으면 afterCommit, 없으면 즉시 실행
+     * - 생성/재고변경/가격변경 등에 사용
+     */
+    public void refreshAfterCommit(Collection<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) return;
+
+        Runnable work = () -> {
+            // null 제거 + 중복 제거
+            List<Long> ids = new ArrayList<>(new LinkedHashSet<>(productIds));
+            for (int i = 0; i < ids.size(); i += CHUNK_SIZE) {
+                List<Long> sub = ids.subList(i, Math.min(i + CHUNK_SIZE, ids.size()));
+                Map<Long, Long> fromDb = stockRepository.findAvailableMapByProductIds(sub);
+
+                Map<String, String> toCache = new LinkedHashMap<>(sub.size());
+                for (Long pid : sub) {
+                    long available = Math.max(0L, fromDb.getOrDefault(pid, 0L));
+                    toCache.put(cacheKey(pid), Long.toString(available));
+                }
+                redis.setDataExpireBatch(toCache, TTL_SECONDS, TTL_JITTER_SECONDS);
+            }
+        };
+
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override public void afterCommit() { worker.rebuildCacheAsync(productIds); }
+                @Override public void afterCommit() { work.run(); }
             });
         } else {
-            worker.rebuildCacheAsync(productIds);
+            work.run();
         }
     }
 
-    public void evictCacheAfterCommit(Collection<Long> productIds) {
+    /**
+     * ✅ 커밋 이후 캐시 삭제(EVICT)
+     * - 상품 삭제/숨김(비활성화) 시 사용
+     * - 트랜잭션이 있으면 afterCommit, 없으면 즉시 실행
+     */
+    public void evictAfterCommit(Collection<Long> productIds) {
         if (productIds == null || productIds.isEmpty()) return;
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+
+        Runnable work = () -> {
+            List<Long> ids = new ArrayList<>();
+            for (Long id : productIds) if (id != null) ids.add(id);
+
+            for (int i = 0; i < ids.size(); i += CHUNK_SIZE) {
+                List<Long> sub = ids.subList(i, Math.min(i + CHUNK_SIZE, ids.size()));
+                Set<String> keys = new HashSet<>(sub.size());
+                for (Long pid : sub) keys.add(cacheKey(pid));
+                if (!keys.isEmpty()) redis.deleteDataBatch(keys);
+            }
+        };
+
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override public void afterCommit() { worker.evictCacheAsync(productIds); }
+                @Override public void afterCommit() { work.run(); }
             });
         } else {
-            worker.evictCacheAsync(productIds);
+            work.run();
         }
     }
 
-    /* ===== 내부 유틸 ===== */
-    private void scheduleRebuild(Collection<Long> ids) { worker.rebuildCacheAsync(ids); }
-    private String cacheKey(long productId) { return CACHE_KEY_PREFIX + productId; }
-
-    /** 저장 포맷: "value|timestampMillis" */
-    private static long[] decode(String raw) {
-        if (raw == null) return null;
-        int sep = raw.indexOf('|');
-        try {
-            if (sep < 0) return new long[]{ Long.parseLong(raw), 0L };
-            return new long[]{
-                    Long.parseLong(raw.substring(0, sep)),
-                    Long.parseLong(raw.substring(sep + 1))
-            };
-        } catch (Exception e) { return null; }
-    }
+    public void evictAfterCommit(long productId) { evictAfterCommit(Collections.singletonList(productId)); }
 }

@@ -1,96 +1,93 @@
-    package com.app.preorder.productservice.domain.entity;
+package com.app.preorder.productservice.domain.entity;
 
-    import com.app.preorder.common.exception.custom.ProductAlreadyHasStockException;
-    import com.app.preorder.common.type.CategoryType;
-    import com.app.preorder.common.type.ProductStatus;
-    import com.app.preorder.productservice.domain.entity.audit.AuditPeriod;
-    import com.app.preorder.productservice.domain.vo.SalesPeriod;
-    import jakarta.persistence.*;
-    import lombok.*;
-    import org.hibernate.annotations.BatchSize;
-    import org.hibernate.annotations.LazyToOne;
-    import org.hibernate.annotations.LazyToOneOption;
+import com.app.preorder.common.exception.custom.ProductAlreadyHasStockException;
+import com.app.preorder.common.type.CategoryType;
+import com.app.preorder.common.type.ProductStatus;
+import com.app.preorder.productservice.domain.entity.audit.AuditPeriod;
+import com.app.preorder.productservice.domain.vo.SalesPeriod;
+import jakarta.persistence.*;
+import lombok.*;
 
+import java.math.BigDecimal;
 
-    import java.math.BigDecimal;
+@Entity
+@Getter
+@ToString(exclude = "stock")
+@Table(name = "tbl_product")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Product extends AuditPeriod {
 
-    @Entity
-    @Getter
-    @ToString(exclude = "stock")
-    @Table(name = "tbl_product")
-    @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @BatchSize(size = 100)
-    public class Product extends AuditPeriod {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        private Long id;
+    @Column(nullable = false)
+    private String productName;
 
-        @Column(nullable = false)
-        private String productName;
+    @Column(nullable = false)
+    private BigDecimal productPrice;
 
-        @Column(nullable = false)
-        private BigDecimal productPrice;
+    @Column(nullable = false)
+    private String description;
 
-        @Column(nullable = false)
-        private String description;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CategoryType category;
 
-        @Enumerated(EnumType.STRING)
-        @Column(nullable = false)
-        private CategoryType category;
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ProductStatus status = ProductStatus.ENABLED;
 
-        @Column(nullable = false)
-        @Enumerated(EnumType.STRING)
-        private ProductStatus status = ProductStatus.ENABLED;
+    @Embedded
+    private SalesPeriod salesPeriod;
 
-        @Embedded
-        private SalesPeriod salesPeriod;
+    @OneToOne(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Stock stock;
 
-        @OneToOne(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-        @LazyToOne(LazyToOneOption.NO_PROXY)
-        private Stock stock;
-
-        @Builder
-        public Product(String productName, BigDecimal productPrice, String description, CategoryType category, SalesPeriod salesPeriod) {
-            this.productName = productName;
-            this.productPrice = productPrice;
-            this.description = description;
-            this.category = category;
-            this.salesPeriod = salesPeriod;
-            this.status = ProductStatus.ENABLED;
-        }
-
-
-        // === 도메인 메서드 ===
-        public void updateProductName(String productName) {
-            this.productName = productName;
-        }
-
-        public void updateProductPrice(BigDecimal productPrice) {
-            this.productPrice = productPrice;
-        }
-
-        public void updateDescription(String description) {
-            this.description = description;
-        }
-
-        public void updateCategory(CategoryType category) {
-            this.category = category;
-        }
-
-        public void updateStatus(ProductStatus status) {
-            this.status = status;
-        }
-
-        public void updatePeriod(SalesPeriod salesPeriod) {
-            this.salesPeriod = salesPeriod;
-        }
-
-
-        public void assignStock(Stock stock) {
-            if (this.stock != null) {
-                throw new ProductAlreadyHasStockException("이미 재고가 연결된 상품");
-            }
-            this.stock = stock;
-        }
+    @Builder
+    public Product(String productName, BigDecimal productPrice, String description, CategoryType category, SalesPeriod salesPeriod) {
+        this.productName = productName;
+        this.productPrice = productPrice;
+        this.description = description;
+        this.category = category;
+        this.salesPeriod = salesPeriod;
+        this.status = ProductStatus.ENABLED;
     }
+
+    // === 도메인 메서드 ===
+    public void updateProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public void updateProductPrice(BigDecimal productPrice) {
+        this.productPrice = productPrice;
+    }
+
+    public void updateDescription(String description) {
+        this.description = description;
+    }
+
+    public void updateCategory(CategoryType category) {
+        this.category = category;
+    }
+
+    public void updateStatus(ProductStatus status) {
+        this.status = status;
+    }
+
+    public void updatePeriod(SalesPeriod salesPeriod) {
+        this.salesPeriod = salesPeriod;
+    }
+
+    // 재고 연결(양방향 동기화: inverse + owning)
+    public void assignStock(Stock stock) {
+        if (this.stock != null) {
+            throw new ProductAlreadyHasStockException("이미 재고가 연결된 상품");
+        }
+        if (stock == null) {
+            throw new IllegalArgumentException("stock is null");
+        }
+        this.stock = stock;       // inverse
+        stock.setProduct(this);   // owning (@JoinColumn) 쪽 역참조
+    }
+}

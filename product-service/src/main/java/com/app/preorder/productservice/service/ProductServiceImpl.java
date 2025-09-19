@@ -1,4 +1,3 @@
-// product-service/src/main/java/com/app/preorder/productservice/service/ProductServiceImpl.java
 package com.app.preorder.productservice.service;
 
 import com.app.preorder.common.dto.ProductInternal;
@@ -35,7 +34,8 @@ public class ProductServiceImpl implements ProductService {
     public Long createProduct(ProductCreateRequest request) {
         Product product = productFactory.createFrom(request);
         productRepository.save(product);
-        availableCache.refreshCacheAfterCommit(List.of(product.getId()));
+        // ✅ 생성 직후 캐시 웜업(덮어쓰기)
+        availableCache.refreshAfterCommit(List.of(product.getId()));
         return product.getId();
     }
 
@@ -48,10 +48,15 @@ public class ProductServiceImpl implements ProductService {
         ProductStatus before = product.getStatus();
         productFactory.updateFrom(request, product);
 
+        // 상태가 DISABLED로 바뀌면: 캐시 제거 + 이벤트 발행
         if (request.getStatus() != null
                 && request.getStatus() == ProductStatus.DISABLED
                 && before != ProductStatus.DISABLED) {
             productEvents.publishProductStatusChanged(productId, ProductStatus.DISABLED);
+            availableCache.evictAfterCommit(productId);
+        } else {
+            // 그 외 변경(가격/기간/명칭 등)은 보수적으로 최신값으로 덮어쓰기
+            availableCache.refreshAfterCommit(List.of(productId));
         }
     }
 
@@ -61,7 +66,8 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException("존재하지 않는 상품입니다."));
         productRepository.delete(product);
-        availableCache.evictCacheAfterCommit(List.of(productId));
+        // ✅ 커밋 후 캐시 삭제(EVICT)
+        availableCache.evictAfterCommit(productId);
     }
 
     // 상품 목록 조회(페이지네이션 + 검색/카테고리 필터, 응답에 가용재고 포함)
@@ -73,7 +79,8 @@ public class ProductServiceImpl implements ProductService {
         List<Product> content = products.getContent();
         List<Long> productIds = content.stream().map(Product::getId).toList();
 
-        Map<Long, Long> availableMap = availableCache.getCachedAvailableBulk(productIds);
+        // ✅ 캐시 우선 + 미스만 일괄 DB → SETEX(지터) 덮어쓰기
+        Map<Long, Long> availableMap = availableCache.getAvailableMap(productIds);
 
         List<ProductResponse> responses = content.stream()
                 .map(p -> productFactory.toResponse(p, availableMap.getOrDefault(p.getId(), 0L)))
@@ -88,7 +95,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse getProductDetail(Long productId) {
         Product product = productRepository.findDetailById(productId)
                 .orElseThrow(() -> new ProductNotFoundException("해당 상품을 찾을 수 없습니다."));
-        long available = availableCache.getCachedAvailable(productId);
+        long available = availableCache.getAvailable(productId);
         return productFactory.toResponse(product, available);
     }
 
@@ -118,14 +125,14 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public long getAvailable(Long productId) {
-        return availableCache.getCachedAvailable(productId);
+        return availableCache.getAvailable(productId);
     }
 
     // 가용재고 다건 조회
     @Override
     @Transactional(readOnly = true)
     public List<ProductAvailableStockResponse> getAvailableQuantities(List<Long> productIds) {
-        Map<Long, Long> map = availableCache.getCachedAvailableBulk(productIds);
+        Map<Long, Long> map = availableCache.getAvailableMap(productIds);
         return productIds.stream()
                 .map(pid -> new ProductAvailableStockResponse(pid, map.getOrDefault(pid, 0L)))
                 .toList();
