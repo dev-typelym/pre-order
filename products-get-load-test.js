@@ -4,6 +4,9 @@ import { SharedArray } from 'k6/data';
 
 const users = new SharedArray('users', () => JSON.parse(open('./tokens.json')));
 
+// 🔁 변경점: VU별로 고정해서 쓸 유저 슬롯
+let myUser;
+
 export const options = {
     stages: [
         { duration: '1m', target: 500 },
@@ -26,7 +29,6 @@ function refreshAccessToken(user) {
         JSON.stringify({ refreshToken: user.refreshToken }),
         {
             headers: { 'Content-Type': 'application/json' },
-            // (선택) 대시보드에서 구분하고 싶으면 라벨 고정
             tags: { name: 'POST http://localhost:8081/api/auth/refresh' },
         }
     );
@@ -63,9 +65,13 @@ function authorizedRequest(url, method, user) {
 }
 
 export default function () {
-    const user = Object.assign({}, users[Math.floor(Math.random() * users.length)]);
-    // 🔁 호출 대상만 게이트웨이로 변경(8086)
-    const res = authorizedRequest('http://localhost:8086/api/products', 'GET', user);
+    // 🔁 변경점: 이 VU가 테스트 내내 같은 유저를 사용
+    if (!myUser) {
+        const idx = (__VU - 1) % users.length;              // VU ID는 1부터 시작
+        myUser = JSON.parse(JSON.stringify(users[idx]));    // 이 VU 전용 복사본
+    }
+
+    const res = authorizedRequest('http://localhost:8086/api/products', 'GET', myUser);
     check(res, { '✅ 상품 목록 조회 성공': (r) => r.status === 200 });
     sleep(Math.random() * 1);
 }

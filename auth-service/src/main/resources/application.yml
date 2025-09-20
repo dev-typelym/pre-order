@@ -7,9 +7,8 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:taek}
     password: ${SPRING_DATASOURCE_PASSWORD:1234}
     driver-class-name: org.mariadb.jdbc.Driver
-
     hikari:
-      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:50}
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:40}   # Auth는 DB IO가 적음 — 40 권장(환경변수로 조정 가능)
       minimum-idle: 10
       idle-timeout: 30000
       max-lifetime: 1800000
@@ -18,12 +17,21 @@ spring:
   data:
     redis:
       host: ${REDIS_HOST:redis}
-      port: 6379
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      lettuce:
+        pool:                 # Redis 커넥션 풀 튜닝(스파이크 흡수)
+          max-active: 64
+          max-idle: 16
+          min-idle: 8
+          time-between-eviction-runs: 60s
 
   jpa:
     hibernate:
       ddl-auto: create
-    show-sql: true
+    open-in-view: false        # 컨트롤러 레이어 LAZY 접근 차단
+    show-sql: false            # 부하 테스트/운영에서 SQL 로그 OFF
+    properties:
+      hibernate.default_batch_fetch_size: 100  # N+1 가드(우발적 LAZY 접근시 배치 로딩)
 
   security:
     oauth2:
@@ -49,6 +57,11 @@ jwt:
 
 server:
   port: 8081
+  tomcat:                      # Auth는 동시성 낮음 — 톰캣 스레드도 적정치로
+    threads:
+      max: 150
+    accept-count: 1000
+    connection-timeout: 10000
 
 eureka:
   client:
@@ -57,7 +70,6 @@ eureka:
     registry-fetch-interval-seconds: 5
     service-url:
       defaultZone: http://discovery-service:8761/eureka
-
   instance:
     instance-id: ${spring.application.name}:${random.value}
     prefer-ip-address: true
@@ -69,9 +81,16 @@ feign:
   client:
     config:
       member-service:
-        connectTimeout: 1500
-        readTimeout: 3000
+        connectTimeout: 1500    # 요청한 값 유지
+        readTimeout: 3000       # 요청한 값 유지
         loggerLevel: basic
         retryer: feign.Retryer$NeverRetry
 
-
+logging:
+  level:
+    root: WARN
+    org.hibernate: WARN
+    com.zaxxer.hikari: WARN
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+    org.springframework.cloud: WARN

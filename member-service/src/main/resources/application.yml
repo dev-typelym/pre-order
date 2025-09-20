@@ -7,9 +7,8 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:taek}
     password: ${SPRING_DATASOURCE_PASSWORD:1234}
     driver-class-name: org.mariadb.jdbc.Driver
-
     hikari:
-      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:50}
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:50}   # 멤버 서비스 권장치(읽기 중심, 짧은 TX)
       minimum-idle: 10
       idle-timeout: 30000
       max-lifetime: 1800000
@@ -18,12 +17,21 @@ spring:
   data:
     redis:
       host: ${REDIS_HOST:redis}
-      port: 6379
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      lettuce:
+        pool:
+          max-active: 64
+          max-idle: 16
+          min-idle: 8
+          time-between-eviction-runs: 60s
 
   jpa:
+    open-in-view: false                  # 컨트롤러 레이어에서 LAZY 접근 차단
     hibernate:
       ddl-auto: create
-    show-sql: true
+    show-sql: false                      # 부하/운영시 비활성화
+    properties:
+      hibernate.default_batch_fetch_size: 100   # 우발적 LAZY 로딩 N+1 가드
 
   mail:
     host: smtp.gmail.com
@@ -44,6 +52,14 @@ spring:
     admin:
       fail-fast: false
 
+server:
+  port: 8082
+  tomcat:
+    threads:
+      max: 200
+    accept-count: 1000
+    connection-timeout: 10000
+
 jwt:
   secret: ${JWT_SECRET:Pr5aQ!9zdT7XgW2mXyCb$$Hr4LdS6kJvB}
 
@@ -54,9 +70,6 @@ aes:
 hmac:
   secret-key: ${HMAC_SECRET_KEY:Dh8tS$$3uLw5ZxP2kQy9VgR7fNj1TbV0a}
 
-server:
-  port: 8082
-
 eureka:
   client:
     fetch-registry: true
@@ -64,7 +77,6 @@ eureka:
     registry-fetch-interval-seconds: 5
     service-url:
       defaultZone: http://discovery-service:8761/eureka
-
   instance:
     instance-id: ${spring.application.name}:${random.value}
     prefer-ip-address: true
@@ -76,7 +88,13 @@ feign:
   client:
     config:
       auth-service:
-        connectTimeout: 500
-        readTimeout: 800
+        connectTimeout: 1000
+        readTimeout: 1800
         loggerLevel: none
         retryer: feign.Retryer$NeverRetry
+
+logging:
+  level:
+    root: WARN
+    org.hibernate: WARN
+    com.zaxxer.hikari: WARN

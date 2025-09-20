@@ -1,25 +1,38 @@
 spring:
   application:
     name: cart-service
+
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mariadb://mariadb:3306/preorder}
     username: ${SPRING_DATASOURCE_USERNAME:taek}
     password: ${SPRING_DATASOURCE_PASSWORD:1234}
     driver-class-name: org.mariadb.jdbc.Driver
     hikari:
-      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:50}
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:60}
       minimum-idle: 10
       idle-timeout: 30000
       max-lifetime: 1800000
       connection-timeout: 30000
+
   data:
     redis:
       host: ${REDIS_HOST:redis}
-      port: 6379
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      lettuce:
+        pool:
+          max-active: 96
+          max-idle: 24
+          min-idle: 8
+          time-between-eviction-runs: 60s
+
   jpa:
     hibernate:
       ddl-auto: create
-    show-sql: true
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate.default_batch_fetch_size: 100
+
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
     listener:
@@ -27,6 +40,11 @@ spring:
 
 server:
   port: 8083
+  tomcat:
+    threads:
+      max: 100
+    accept-count: 1000
+    connection-timeout: 10000
 
 jwt:
   secret: ${JWT_SECRET:Pr5aQ!9zdT7XgW2mXyCb$$Hr4LdS6kJvB}
@@ -49,8 +67,8 @@ feign:
   client:
     config:
       product-service:
-        connectTimeout: 800
-        readTimeout: 1200
+        connectTimeout: 1200
+        readTimeout: 2000
         loggerLevel: none
         retryer: feign.Retryer$NeverRetry
 
@@ -77,3 +95,11 @@ kafka:
   consumer:
     cart-create:
       concurrency: 3
+
+logging:
+  level:
+    root: WARN
+    org.hibernate: WARN
+    com.zaxxer.hikari: WARN
+    com.netflix.discovery: WARN
+    com.netflix.eureka: WARN
