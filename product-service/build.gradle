@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.2.5'
     id 'io.spring.dependency-management' version '1.1.4'
+    id 'org.hibernate.orm' version '6.4.4.Final'
 }
 
 group = 'com.app.preorder'
@@ -79,3 +80,11 @@ tasks.named('bootJar') {
 }
 
 tasks.named('jar') { enabled = false }
+
+hibernate {
+    enhancement {
+        enableLazyInitialization = true
+        enableDirtyTracking = true
+        enableAssociationManagement = true
+    }
+}
