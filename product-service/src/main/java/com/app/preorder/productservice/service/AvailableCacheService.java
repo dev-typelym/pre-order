@@ -22,8 +22,8 @@ public class AvailableCacheService {
 
     private static final String AVAIL_PREFIX = "stock:avail:";
     // 현실적인 TTL/지터: 너무 짧지 않게, 스탬피드 완화
-    private static final long TTL_SECONDS = 5L;
-    private static final long TTL_JITTER_SECONDS = 2L; // 0~2초 지터
+    private static final long TTL_SECONDS = 1800L;       // 30분
+    private static final long TTL_JITTER_SECONDS = 300L; // 5분
 
     // 대용량 pid 배치 안정 가드(평소엔 영향 미미)
     private static final int CHUNK_SIZE = 500;

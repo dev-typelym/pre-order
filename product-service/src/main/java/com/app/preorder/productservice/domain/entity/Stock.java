@@ -4,6 +4,8 @@ import com.app.preorder.common.exception.custom.InsufficientStockException;
 import com.app.preorder.productservice.domain.entity.audit.AuditPeriod;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.LazyToOne;
+import org.hibernate.annotations.LazyToOneOption;
 
 @Entity
 @Getter
@@ -24,12 +26,12 @@ public class Stock extends AuditPeriod {
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false, unique = true)
+    @LazyToOne(LazyToOneOption.NO_PROXY)
     private Product product;
 
     @Builder
-    public Stock(Long stockQuantity, Product product) {
+    public Stock(Long stockQuantity) {
         this.stockQuantity = stockQuantity;
-        this.product = product; // 빌더로 세팅해도, Product.assignStock(...)로 inverse도 맞춰주세요.
     }
 
     // (표시용) DTO 만들 때만 편하게 쓰는 계산값

@@ -33,7 +33,6 @@ public class ProductFactory {
         //  재고 생성
         Stock stock = Stock.builder()
                 .stockQuantity(request.getStockQuantity() != null ? request.getStockQuantity() : 0L)
-                .product(product)
                 .build();
 
         product.assignStock(stock);

@@ -7,6 +7,8 @@ import com.app.preorder.productservice.domain.entity.audit.AuditPeriod;
 import com.app.preorder.productservice.domain.vo.SalesPeriod;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.LazyToOne;
+import org.hibernate.annotations.LazyToOneOption;
 
 import java.math.BigDecimal;
 
@@ -42,6 +44,7 @@ public class Product extends AuditPeriod {
     private SalesPeriod salesPeriod;
 
     @OneToOne(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @LazyToOne(LazyToOneOption.NO_PROXY)
     private Stock stock;
 
     @Builder

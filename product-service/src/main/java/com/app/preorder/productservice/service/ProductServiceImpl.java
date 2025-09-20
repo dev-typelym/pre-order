@@ -74,7 +74,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public Page<ProductResponse> getProducts(int page, ProductSearchRequest searchRequest, CategoryType categoryType) {
-        Page<Product> products = productRepository.findAllBySearchConditions(PageRequest.of(page, 5), searchRequest, categoryType);
+        Page<Product> products = productRepository.findAllBySearchConditions(PageRequest.of(page, 10), searchRequest, categoryType);
 
         List<Product> content = products.getContent();
         List<Long> productIds = content.stream().map(Product::getId).toList();

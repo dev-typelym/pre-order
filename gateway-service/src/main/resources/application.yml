@@ -6,9 +6,10 @@ spring:
     name: gateway-service
 
   data:
-    redis:                     # ✅ RRL이 쓰는 Redis 연결 정보 (필수)
+    redis:
       host: ${SPRING_DATA_REDIS_HOST:redis}
       port: ${SPRING_DATA_REDIS_PORT:6379}
+      # 리액티브 Lettuce는 멀티플렉싱이라 별도 풀 설정 불필요
 
   cloud:
     gateway:
@@ -17,8 +18,16 @@ spring:
           enabled: false
 
       httpclient:
+        # ✅ Reactor Netty 커넥션 풀(고정 상한)
+        pool:
+          type: FIXED               # ELASTIC 대신 FIXED (폭주 시 안정성)
+          maxConnections: 6000      # 동시 keep-alive 연결 상한
+          acquireTimeout: 500       # 풀이 바쁠 때 대기 최대 500ms
+          maxIdleTime: 30s          # 유휴 커넥션 정리
+          maxLifeTime: 300s         # 오래 산 커넥션 교체
         connect-timeout: 2000
         response-timeout: 4s
+        wiretap: false              # 디버깅용 패킷 로그 OFF(성능)
 
       routes:
         # 0) 내부 API 차단
@@ -43,7 +52,8 @@ spring:
                 statusCodes: [500,502,503,504]
             - name: RequestRateLimiter
               args:
-                key-resolver: "#{@userKeyResolver}"
+                key-resolver: "#{@userKeyResolver}"     # 사용자별 키 리졸버 Bean 필요
+                deny-empty-key: true
                 redis-rate-limiter.replenishRate: 400
                 redis-rate-limiter.burstCapacity: 800
 
@@ -61,6 +71,7 @@ spring:
             - name: RequestRateLimiter
               args:
                 key-resolver: "#{@userKeyResolver}"
+                deny-empty-key: true
                 redis-rate-limiter.replenishRate: 200
                 redis-rate-limiter.burstCapacity: 400
 
@@ -73,6 +84,7 @@ spring:
             - name: RequestRateLimiter
               args:
                 key-resolver: "#{@userKeyResolver}"
+                deny-empty-key: true
                 redis-rate-limiter.replenishRate: 300
                 redis-rate-limiter.burstCapacity: 600
 
@@ -85,6 +97,7 @@ spring:
             - name: RequestRateLimiter
               args:
                 key-resolver: "#{@userKeyResolver}"
+                deny-empty-key: true
                 redis-rate-limiter.replenishRate: 300
                 redis-rate-limiter.burstCapacity: 600
 
@@ -97,8 +110,15 @@ spring:
             - name: RequestRateLimiter
               args:
                 key-resolver: "#{@userKeyResolver}"
+                deny-empty-key: true
                 redis-rate-limiter.replenishRate: 200
                 redis-rate-limiter.burstCapacity: 400
+
+  # ⚕️ 헬스체크 기반 LB(죽은 인스턴스 우회)
+  cloud.loadbalancer:
+    health-check:
+      enabled: true
+      interval: 5s
 
 eureka:
   client:
@@ -157,3 +177,9 @@ resilience4j:
         timeoutDuration: 4s
       orderCB:
         timeoutDuration: 4s
+
+logging:
+  level:
+    root: WARN
+    reactor.netty: WARN
+    org.springframework.cloud.gateway: INFO
