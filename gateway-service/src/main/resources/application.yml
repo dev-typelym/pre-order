@@ -1,5 +1,5 @@
 server:
-  port: 8086
+  port: 8087
 
 spring:
   application:
@@ -9,7 +9,6 @@ spring:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:redis}
       port: ${SPRING_DATA_REDIS_PORT:6379}
-      # 리액티브 Lettuce는 멀티플렉싱이라 별도 풀 설정 불필요
 
   cloud:
     gateway:
@@ -18,16 +17,15 @@ spring:
           enabled: false
 
       httpclient:
-        # ✅ Reactor Netty 커넥션 풀(고정 상한)
         pool:
-          type: FIXED               # ELASTIC 대신 FIXED (폭주 시 안정성)
-          maxConnections: 6000      # 동시 keep-alive 연결 상한
-          acquireTimeout: 500       # 풀이 바쁠 때 대기 최대 500ms
-          maxIdleTime: 30s          # 유휴 커넥션 정리
-          maxLifeTime: 300s         # 오래 산 커넥션 교체
+          type: FIXED
+          maxConnections: 6000
+          acquireTimeout: 500
+          maxIdleTime: 30s
+          maxLifeTime: 300s
         connect-timeout: 2000
         response-timeout: 4s
-        wiretap: false              # 디버깅용 패킷 로그 OFF(성능)
+        wiretap: false
 
       routes:
         # 0) 내부 API 차단
@@ -39,7 +37,7 @@ spring:
             - name: SetStatus
               args: { status: 403 }
 
-        # 1) Product — CB + QoS
+        # 1) Product — CircuitBreaker만
         - id: product
           uri: lb://product-service
           predicates:
@@ -50,14 +48,8 @@ spring:
                 name: productCB
                 fallbackUri: forward:/__fallback
                 statusCodes: [500,502,503,504]
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"     # 사용자별 키 리졸버 Bean 필요
-                deny-empty-key: true
-                redis-rate-limiter.replenishRate: 400
-                redis-rate-limiter.burstCapacity: 800
 
-        # 2) Order — CB + QoS
+        # 2) Order — CircuitBreaker만
         - id: order
           uri: lb://order-service
           predicates:
@@ -68,57 +60,29 @@ spring:
                 name: orderCB
                 fallbackUri: forward:/__fallback
                 statusCodes: [500,502,503,504]
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                deny-empty-key: true
-                redis-rate-limiter.replenishRate: 200
-                redis-rate-limiter.burstCapacity: 400
 
-        # 3) Auth — QoS만
+        # 3) Auth — QoS 제거
         - id: auth
           uri: lb://auth-service
           predicates:
             - Path=/api/auth/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                deny-empty-key: true
-                redis-rate-limiter.replenishRate: 300
-                redis-rate-limiter.burstCapacity: 600
 
-        # 4) Members — QoS만
+        # 4) Member — QoS 제거
         - id: member
           uri: lb://member-service
           predicates:
             - Path=/api/members/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                deny-empty-key: true
-                redis-rate-limiter.replenishRate: 300
-                redis-rate-limiter.burstCapacity: 600
 
-        # 5) Cart
+        # 5) Cart — QoS 제거
         - id: cart
           uri: lb://cart-service
           predicates:
             - Path=/api/carts/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                deny-empty-key: true
-                redis-rate-limiter.replenishRate: 200
-                redis-rate-limiter.burstCapacity: 400
 
-  # ⚕️ 헬스체크 기반 LB(죽은 인스턴스 우회)
-  cloud.loadbalancer:
-    health-check:
-      enabled: true
-      interval: 5s
+    loadbalancer:
+      health-check:
+        enabled: true
+        interval: 5s
 
 eureka:
   client:

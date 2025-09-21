@@ -4,8 +4,7 @@ services:
   mariadb:
     image: mariadb:10.5.5
     container_name: mariadb
-    ports:
-      - "3307:3306"
+    ports: ["3307:3306"]
     environment:
       MYSQL_ROOT_PASSWORD: 1234
       MYSQL_DATABASE: preorder
@@ -28,12 +27,9 @@ services:
   redis:
     image: redis:latest
     container_name: redis
-    ports:
-      - "6379:6379"
-    environment:
-      - TZ=Asia/Seoul
-    volumes:
-      - redis_data:/data
+    ports: ["6379:6379"]
+    environment: [ "TZ=Asia/Seoul" ]
+    volumes: [ "redis_data:/data" ]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -46,7 +42,6 @@ services:
     container_name: kafka
     environment:
       - TZ=Asia/Seoul
-      # ✅ KRaft (단일 노드)
       - KAFKA_KRAFT_CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk
       - KAFKA_CFG_NODE_ID=1
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
@@ -57,10 +52,8 @@ services:
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=false
-    ports:
-      - "9094:9094"
-    volumes:
-      - kafka_data:/bitnami/kafka
+    ports: ["9094:9094"]
+    volumes: [ "kafka_data:/bitnami/kafka" ]
     healthcheck:
       test: ["CMD-SHELL", "/opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list > /dev/null 2>&1"]
       interval: 10s
@@ -69,13 +62,10 @@ services:
     restart: unless-stopped
 
   discovery-service:
-    build:
-      context: ./discovery-service
+    build: { context: ./discovery-service }
     container_name: discovery-service
-    ports:
-      - "8761:8761"
-    environment:
-      - TZ=Asia/Seoul
+    ports: ["8761:8761"]
+    environment: [ "TZ=Asia/Seoul" ]
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8761/actuator/health"]
       interval: 10s
@@ -84,29 +74,24 @@ services:
     restart: unless-stopped
 
   gateway-service:
-    build:
-      context: ./gateway-service
+    build: { context: ./gateway-service }
     container_name: gateway-service
-    ports:
-      - "8086:8086"
+    ports: ["8087:8087"]                            # ⬅️ 호스트/내부 모두 8087
     environment:
       - TZ=Asia/Seoul
-      # ✅ Eureka/Redis는 컨테이너 DNS 이름으로 주입
+      - SERVER_PORT=8087                           # ⬅️ 내부 포트 8087로 고정
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
+      # - GATEWAY_RATELIMITER_ENABLED=false        # (선택) 테스트 중 RateLimiter 끌 때만
     depends_on:
-      discovery-service:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      discovery-service: { condition: service_healthy }
+      redis: { condition: service_healthy }
     restart: unless-stopped
 
   auth-service:
-    build:
-      context: ./auth-service
-    ports:
-      - "8081:8081"
+    build: { context: ./auth-service }
+    ports: ["8081:8081"]
     environment:
       - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
@@ -120,23 +105,20 @@ services:
       - HMAC_SECRET_KEY=${HMAC_SECRET_KEY}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
-      - HIKARI_MAX_POOL_SIZE=${HIKARI_MAX_POOL_SIZE}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
+      # A-order에선 보조 서비스 최소 풀
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=6
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=0
     depends_on:
-      mariadb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      discovery-service:
-        condition: service_healthy
+      mariadb: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      discovery-service: { condition: service_healthy }
     restart: unless-stopped
 
   member-service:
-    build:
-      context: ./member-service
-    ports:
-      - "8082:8082"
+    build: { context: ./member-service }
+    ports: ["8082:8082"]
     environment:
       - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
@@ -148,28 +130,22 @@ services:
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - EMAIL_AUTO_VERIFY=${EMAIL_AUTO_VERIFY}
-      - HIKARI_MAX_POOL_SIZE=${HIKARI_MAX_POOL_SIZE}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=6
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=0
     depends_on:
-      mariadb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      auth-service:
-        condition: service_started
-      discovery-service:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
+      mariadb: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      auth-service: { condition: service_started }
+      discovery-service: { condition: service_healthy }
+      kafka: { condition: service_healthy }
     restart: unless-stopped
 
   cart-service:
-    build:
-      context: ./cart-service
-    ports:
-      - "8083:8083"
+    build: { context: ./cart-service }
+    ports: ["8083:8083"]
     environment:
       - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
@@ -179,24 +155,19 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=6
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=0
     depends_on:
-      mariadb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      member-service:
-        condition: service_started
-      discovery-service:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
+      mariadb: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      member-service: { condition: service_started }
+      discovery-service: { condition: service_healthy }
+      kafka: { condition: service_healthy }
     restart: unless-stopped
 
   order-service:
-    build:
-      context: ./order-service
-    ports:
-      - "8084:8084"
+    build: { context: ./order-service }
+    ports: ["8084:8084"]
     environment:
       - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
@@ -206,24 +177,20 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
+      # A-order 주력: order 15/2
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=15
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=2
     depends_on:
-      mariadb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      member-service:
-        condition: service_started
-      discovery-service:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
+      mariadb: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      member-service: { condition: service_started }
+      discovery-service: { condition: service_healthy }
+      kafka: { condition: service_healthy }
     restart: unless-stopped
 
   product-service:
-    build:
-      context: ./product-service
-    ports:
-      - "8085:8085"
+    build: { context: ./product-service }
+    ports: ["8085:8085"]
     environment:
       - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
@@ -233,22 +200,22 @@ services:
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
+      # A-order 주력: product 20/2
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=20
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=2
+      # (선택) 네 YAML이 ${HIKARI_MAX_POOL_SIZE} 참조하므로 같이 맞춰도 됨
+      - HIKARI_MAX_POOL_SIZE=20
     depends_on:
-      mariadb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      discovery-service:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
+      mariadb: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      discovery-service: { condition: service_healthy }
+      kafka: { condition: service_healthy }
     restart: unless-stopped
 
   influxdb:
     image: influxdb:2.7
     container_name: influxdb
-    ports:
-      - "8087:8086"
+    ports: ["8086:8086"]                       # ⬅️ 호스트/내부 8086
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_USERNAME}
@@ -256,8 +223,7 @@ services:
       - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_ORG}
       - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET}
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_TOKEN}
-    volumes:
-      - influxdb_data:/var/lib/influxdb2
+    volumes: [ "influxdb_data:/var/lib/influxdb2" ]
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8086/health"]
       interval: 10s
@@ -268,16 +234,13 @@ services:
   grafana:
     image: grafana/grafana
     container_name: grafana
-    ports:
-      - "3000:3000"
+    ports: ["3000:3000"]
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     depends_on:
-      influxdb:
-        condition: service_healthy
-    volumes:
-      - grafana_data:/var/lib/grafana
+      influxdb: { condition: service_healthy }
+    volumes: [ "grafana_data:/var/lib/grafana" ]
     restart: unless-stopped
 
 volumes:
