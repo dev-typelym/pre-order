@@ -1,4 +1,3 @@
-// order-service/src/main/java/com/app/preorder/orderservice/service/OrderServiceImpl.java
 package com.app.preorder.orderservice.service;
 
 import com.app.preorder.common.dto.ProductInternal;
@@ -30,7 +29,6 @@ public class OrderServiceImpl implements OrderService {
 
     // ▼ Invoker 제거, 조회용 Feign만 유지
     private final ProductServiceClient productClient;
-
     private final OrderRepository orderRepository;
     private final OrderFactory orderFactory;
     private final OrderQuartzScheduler orderQuartzScheduler;
@@ -93,6 +91,12 @@ public class OrderServiceImpl implements OrderService {
     public void attemptPayment(Long orderId, Long memberId) {
         Order order = findOrder(orderId);
         if (!order.getMemberId().equals(memberId)) throw new ForbiddenException("본인 주문만 결제 시도 가능합니다.");
+
+        // 이미 PROCESSING이면 멱등 성공 처리
+        if (order.getStatus() == OrderStatus.PAYMENT_PROCESSING) {
+            return;
+        }
+
         if (order.getStatus() != OrderStatus.PAYMENT_PREPARING) throw new InvalidOrderStatusException("결제 시도를 할 수 없는 상태입니다.");
         try {
             idem.begin(orderId, "ATTEMPT", null);
@@ -107,9 +111,8 @@ public class OrderServiceImpl implements OrderService {
     public void completePayment(Long orderId, Long memberId) {
         Order order = findOrder(orderId);
         if (!order.getMemberId().equals(memberId)) throw new ForbiddenException("본인 주문만 결제 완료 가능합니다.");
-        if (order.getStatus() != OrderStatus.PAYMENT_PREPARING
-                && order.getStatus() != OrderStatus.PAYMENT_PROCESSING) {
-            throw new InvalidOrderStatusException("결제를 완료할 수 없는 상태입니다.");
+        if (order.getStatus() != OrderStatus.PAYMENT_PROCESSING) {
+            throw new InvalidOrderStatusException("예약 확인 전에는 결제를 완료할 수 없습니다.");
         }
 
         List<StockRequestInternal> items = order.getOrderItems().stream()
