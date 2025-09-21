@@ -8,31 +8,35 @@ group = 'com.app.preorder'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+	toolchain { languageVersion = JavaLanguageVersion.of(21) }
 }
 
-repositories {
-	mavenCentral()
+repositories { mavenCentral() }
+
+ext {
+	set('springCloudVersion', '2023.0.2')
 }
 
 dependencies {
 	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-server'
 
+	// ★ 메트릭 노출(가볍게)
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	runtimeOnly   'io.micrometer:micrometer-registry-prometheus'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
+dependencyManagement {
+	imports { mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}" }
 }
+
+tasks.named('test') { useJUnitPlatform() }
 
 tasks.named('bootJar') {
 	it.mainClass.set('com.app.preorder.discoveryservice.DiscoveryServiceApplication')
 	it.archiveFileName = 'app.jar'
 }
 
-tasks.named('jar') {
-	enabled = false
-}
+tasks.named('jar') { enabled = false }

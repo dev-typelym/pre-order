@@ -40,7 +40,12 @@ public class OrderSecurityConfig {
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        // ★ 메트릭/헬스 공개
+                        .requestMatchers("/actuator/health", "/actuator/health/**",
+                                "/actuator/metrics", "/actuator/prometheus").permitAll()
+                        // 내부 호출 (Feign)
                         .requestMatchers("/api/internal/**").permitAll()
+                        // 나머지 인증 필요
                         .anyRequest().authenticated()
                 );
 

@@ -79,6 +79,11 @@ kafka:
     event:
       concurrency: 6
 
+# ★ Product Inbox 처리 주기 (기본 700ms → 200ms로 단축)
+inbox:
+  product:
+    process-interval-ms: 200
+
 logging:
   level:
     root: WARN
@@ -91,4 +96,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,metrics
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}

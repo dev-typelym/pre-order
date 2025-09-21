@@ -41,6 +41,12 @@ public class AuthSecurityConfig {
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .authorizeHttpRequests(requests -> requests
+
+                        .requestMatchers(
+                                "/actuator/health", "/actuator/health/**",
+                                "/actuator/metrics", "/actuator/prometheus"
+                        ).permitAll()
+
                         //  공개 API
                         .requestMatchers(
                                 "/api/auth/login",

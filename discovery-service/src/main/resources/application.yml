@@ -26,17 +26,21 @@ eureka:
     response-cache-auto-expiration-in-seconds: 30   # 응답 캐시 TTL
     use-read-only-response-cache: true              # 읽기 전용 캐시 사용(락 경합 감소)
 
-    # (옵션) 대규모 환경에서 심각한 네트워크 장애 시만 비활성 선택
-    # enable-self-preservation: false
-
 logging:
   level:
     root: WARN
     com.netflix.eureka: WARN
     com.netflix.discovery: WARN
 
+# ★ 액추에이터/프로메테우스(최소)
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}

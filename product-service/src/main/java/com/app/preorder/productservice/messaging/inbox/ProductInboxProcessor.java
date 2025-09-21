@@ -29,7 +29,7 @@ public class ProductInboxProcessor {
     private final ProductEventPublisher resultPublisher;
     private final ObjectMapper om;
 
-    @Scheduled(fixedDelayString = "${inbox.product.process-interval-ms:700}")
+    @Scheduled(fixedDelayString = "${inbox.product.process-interval-ms:200}")
     @Transactional
     public void flush() {
         List<ProductInboxEvent> batch =

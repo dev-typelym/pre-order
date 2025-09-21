@@ -16,11 +16,15 @@ spring:
         locator:
           enabled: false
 
+      # ★ Gateway 자체 메트릭 활성화
+      metrics:
+        enabled: true
+
       httpclient:
         pool:
           type: FIXED
           maxConnections: 6000
-          acquireTimeout: 500
+          acquireTimeout: 2000
           maxIdleTime: 30s
           maxLifeTime: 300s
         connect-timeout: 2000
@@ -91,11 +95,18 @@ eureka:
   instance:
     prefer-ip-address: true
 
+# ★ Actuator/Prometheus 노출
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
 
 resilience4j:
   circuitbreaker:
