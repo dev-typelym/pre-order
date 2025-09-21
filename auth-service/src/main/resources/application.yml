@@ -77,9 +77,14 @@ logging:
     org.springframework.security: WARN
     org.springframework.cloud: WARN
 
-# (필수) actuator 메트릭 노출
 management:
   endpoints:
     web:
       exposure:
-        include: health,metrics
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}

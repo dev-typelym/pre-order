@@ -40,6 +40,11 @@ public class MemberSecurityConfig {
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/actuator/health", "/actuator/health/**",
+                                "/actuator/metrics", "/actuator/prometheus"
+                        ).permitAll()
+
                         //  공개 API
                         .requestMatchers(
                                 "/api/members/signup",

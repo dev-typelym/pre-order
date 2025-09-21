@@ -40,6 +40,11 @@ public class CartSecurityConfig {
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .authorizeHttpRequests(requests -> requests
+                        .requestMatchers(
+                                "/actuator/health", "/actuator/health/**",
+                                "/actuator/metrics", "/actuator/prometheus"
+                        ).permitAll()
+
                         //  내부 호출 (Feign 등)
                         .requestMatchers("/api/internal/**").permitAll()
 
