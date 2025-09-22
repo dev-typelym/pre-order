@@ -2,7 +2,7 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { SharedArray } from 'k6/data';
-import { Counter } from 'k6/metrics';
+import { Counter, Rate } from 'k6/metrics';
 import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.4/index.js';
 
 const GW  = __ENV.GW     || 'http://localhost:8087';
@@ -25,9 +25,14 @@ function pickToken() {
     return __ENV.TOKEN || null;
 }
 
-export const step_prepare = new Counter('border_prepare_step');
-export const step_attempt = new Counter('border_attempt_step');
+// ── 퍼널 카운터(단계 진입/완료) ───────────────────────────────────
+export const step_prepare  = new Counter('border_prepare_step');
+export const step_attempt  = new Counter('border_attempt_step');
 export const step_complete = new Counter('border_complete_2xx_step');
+
+// ── 상태 지표(장애/경쟁) ─────────────────────────────────────────
+export const system_fail  = new Rate('system_fail');   // 5xx/timeout만
+export const conflict_409 = new Rate('conflict_409');  // 409 비율
 
 export const options = {
     tags: { run_id: RUN },
@@ -45,11 +50,15 @@ export const options = {
         },
     },
     thresholds: {
-        http_req_failed: ['rate<0.05'],
+        // 퍼널 보드의 합격/불합격은 진짜 장애만 기준
+        system_fail: ['rate<0.05'],
+
+        // 지연 목표(참고용)
         'http_req_duration{ep:prepare}':  ['p(95)<1500'],
         'http_req_duration{ep:attempt}':  ['p(95)<1500'],
         'http_req_duration{ep:complete}': ['p(95)<1500'],
     },
+    discardResponseBodies: true,
     summaryTrendStats: ['avg','p(95)','p(99)'],
 };
 
@@ -72,8 +81,14 @@ export default function () {
     const cnt = 1;
 
     // 1) 준비
-    let res = http.post(API.prepare(pid, cnt), null, { headers: headers(token), tags: { ep: 'prepare', run_id: RUN } });
+    let res = http.post(API.prepare(pid, cnt), null, {
+        headers: headers(token),
+        // 동적 URL(orderId)로 시계열 폭증 방지: name을 고정
+        tags: { ep: 'prepare', name: '/api/orders/prepare', run_id: RUN },
+    });
     step_prepare.add(1);
+    system_fail.add(res.status === 0 || res.status >= 500);
+    conflict_409.add(res.status === 409);
     check(res, { 'prepare 2xx': r => r.status >= 200 && r.status < 300 });
     if (!(res.status >= 200 && res.status < 300)) return;
 
@@ -84,8 +99,13 @@ export default function () {
     if (!orderId) return;
 
     // 2) 시도
-    res = http.post(API.attempt(orderId), null, { headers: headers(token), tags: { ep: 'attempt', run_id: RUN } });
+    res = http.post(API.attempt(orderId), null, {
+        headers: headers(token),
+        tags: { ep: 'attempt', name: '/api/orders/attempt', run_id: RUN },
+    });
     step_attempt.add(1);
+    system_fail.add(res.status === 0 || res.status >= 500);
+    conflict_409.add(res.status === 409);
     check(res, { 'attempt 2xx': r => r.status >= 200 && r.status < 300 });
     if (!(res.status >= 200 && res.status < 300)) return;
 
@@ -93,7 +113,12 @@ export default function () {
     if (Math.random() < DROP_ATTEMPT) return;
 
     // 3) 완료
-    res = http.post(API.complete(orderId), null, { headers: headers(token), tags: { ep: 'complete', run_id: RUN } });
+    res = http.post(API.complete(orderId), null, {
+        headers: headers(token),
+        tags: { ep: 'complete', name: '/api/orders/complete', run_id: RUN },
+    });
+    system_fail.add(res.status === 0 || res.status >= 500);
+    conflict_409.add(res.status === 409);
     if (res.status >= 200 && res.status < 300) step_complete.add(1);
     check(res, { 'complete 2xx': r => r.status >= 200 && r.status < 300 });
 
@@ -104,8 +129,9 @@ export function handleSummary(data) {
     const prep = data.metrics.border_prepare_step?.values?.count || 0;
     const att  = data.metrics.border_attempt_step?.values?.count || 0;
     const comp = data.metrics.border_complete_2xx_step?.values?.count || 0;
-    const pa = prep ? (att / prep) * 100 : 0;
-    const ac = att  ? (comp / att) * 100 : 0;
+
+    const pa  = prep ? (att / prep) * 100 : 0;
+    const ac  = att  ? (comp / att) * 100 : 0;
     const e2e = prep ? (comp / prep) * 100 : 0;
 
     console.log(`\n[RUN_ID] ${RUN}`);

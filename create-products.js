@@ -1,7 +1,7 @@
 const axios = require('axios');
 
-let accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImRldmljZUlkIjoiYTRkYThkODItYWI3OC00NWEzLTkzNzEtZTMwNmE3NjExNWNhIiwiaWF0IjoxNzU4NDc3MTExLCJleHAiOjE3NTg1NjM1MTF9.BPrfPa1UG1AjSvY-vp-qP2X9lJ_mDttXqwjbe3_l9JM";
-let refreshToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImRldmljZUlkIjoiYTRkYThkODItYWI3OC00NWEzLTkzNzEtZTMwNmE3NjExNWNhIiwiaWF0IjoxNzU4NDc3MTExLCJleHAiOjE3NTkwODE5MTF9.sz8udvxvgsX9As_yC3CbGA8MGfANn1m-WZbnSeaKBNA";
+let accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImRldmljZUlkIjoiMjVkOTE5Y2MtZjIyZC00ZDU5LWI2MjItNWIzZWU4MTRkZmNmIiwiaWF0IjoxNzU4NTM1OTM3LCJleHAiOjE3NTg2MjIzMzd9.m0soh-NaGaBq1OvBCYlBlrbTVgksUTXhRszJVXNsbMM";
+let refreshToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pblVzZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImRldmljZUlkIjoiMjVkOTE5Y2MtZjIyZC00ZDU5LWI2MjItNWIzZWU4MTRkZmNmIiwiaWF0IjoxNzU4NTM1OTM3LCJleHAiOjE3NTkxNDA3Mzd9.arYRa5_LNAsgXbjPjF11tTj46Se6rsRMyNz5uw2sRDk";
 
 const NUM_PRODUCTS = parseInt(process.env.NUM_PRODUCTS || '10', 10);     // 상품 개수
 const STOCK_QTY    = parseInt(process.env.STOCK_QTY    || '100000', 10); // 🔥 각 상품 재고
