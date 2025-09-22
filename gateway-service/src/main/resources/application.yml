@@ -95,7 +95,7 @@ eureka:
   instance:
     prefer-ip-address: true
 
-# ★ Actuator/Prometheus 노출
+# ★ Actuator/Prometheus + Netty 메트릭 노출
 management:
   endpoints:
     web:
@@ -107,6 +107,9 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+    enable:
+      reactor.netty: true   # ★ Netty 풀 메트릭 보이게
+  # (추가 설정 없이 /actuator/metrics/reactor.netty.connection.provider.* 로 확인 가능)
 
 resilience4j:
   circuitbreaker:
