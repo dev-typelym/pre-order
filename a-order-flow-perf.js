@@ -2,6 +2,7 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { SharedArray } from 'k6/data';
+import { Rate } from 'k6/metrics';
 import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.4/index.js';
 
 // ===== 실행 파라미터 =====
@@ -25,6 +26,10 @@ function pickToken() {
     return __ENV.TOKEN || null;
 }
 
+// ===== 커스텀 메트릭 =====
+export const system_fail  = new Rate('system_fail');   // 5xx/타임아웃만
+export const conflict_409 = new Rate('conflict_409');  // 409(경쟁) 비율
+
 export const options = {
     tags: { run_id: RUN },
     scenarios: {
@@ -42,7 +47,10 @@ export const options = {
         },
     },
     thresholds: {
-        http_req_failed: ['rate<0.05'],
+        // 합격/불합격은 "진짜 장애"만으로 판정
+        system_fail: ['rate<0.05'],
+
+        // 속도 목표 (엔드포인트별)
         'http_req_duration{ep:prepare}':  ['p(95)<1500'],
         ...(USE_ATTEMPT ? { 'http_req_duration{ep:attempt}': ['p(95)<1500'] } : {}),
         'http_req_duration{ep:complete}': ['p(95)<1500'],
@@ -69,7 +77,14 @@ export default function () {
     const cnt = 1;
 
     // 1) 준비
-    let res = http.post(API.prepare(pid, cnt), null, { headers: headers(token), tags: { ep: 'prepare', run_id: RUN } });
+    let res = http.post(API.prepare(pid, cnt), null, {
+        headers: headers(token),
+        // name 태그를 고정 경로로 → 시계열 폭증 방지
+        tags: { ep: 'prepare', name: '/api/orders/prepare', run_id: RUN },
+    });
+    // 메트릭 기록 (장애/경쟁 분리)
+    system_fail.add(res.status === 0 || res.status >= 500);
+    conflict_409.add(res.status === 409);
     check(res, { 'prepare 2xx': r => r.status >= 200 && r.status < 300 });
     if (!(res.status >= 200 && res.status < 300)) return;
 
@@ -78,13 +93,23 @@ export default function () {
 
     // 2) (옵션) 시도
     if (USE_ATTEMPT) {
-        res = http.post(API.attempt(orderId), null, { headers: headers(token), tags: { ep: 'attempt', run_id: RUN } });
+        res = http.post(API.attempt(orderId), null, {
+            headers: headers(token),
+            tags: { ep: 'attempt', name: '/api/orders/attempt', run_id: RUN },
+        });
+        system_fail.add(res.status === 0 || res.status >= 500);
+        conflict_409.add(res.status === 409);
         check(res, { 'attempt 2xx': r => r.status >= 200 && r.status < 300 });
         if (!(res.status >= 200 && res.status < 300)) return;
     }
 
     // 3) 완료
-    res = http.post(API.complete(orderId), null, { headers: headers(token), tags: { ep: 'complete', run_id: RUN } });
+    res = http.post(API.complete(orderId), null, {
+        headers: headers(token),
+        tags: { ep: 'complete', name: '/api/orders/complete', run_id: RUN },
+    });
+    system_fail.add(res.status === 0 || res.status >= 500);
+    conflict_409.add(res.status === 409);
     check(res, { 'complete 2xx': r => r.status >= 200 && r.status < 300 });
 
     sleep(0.03);
