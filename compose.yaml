@@ -76,14 +76,13 @@ services:
   gateway-service:
     build: { context: ./gateway-service }
     container_name: gateway-service
-    ports: ["8087:8087"]                            # ⬅️ 호스트/내부 모두 8087
+    ports: ["8087:8087"]
     environment:
       - TZ=Asia/Seoul
-      - SERVER_PORT=8087                           # ⬅️ 내부 포트 8087로 고정
+      - SERVER_PORT=8087
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
-      # - GATEWAY_RATELIMITER_ENABLED=false        # (선택) 테스트 중 RateLimiter 끌 때만
     depends_on:
       discovery-service: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -107,7 +106,6 @@ services:
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
-      # A-order에선 보조 서비스 최소 풀
       - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=6
       - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=0
     depends_on:
@@ -177,9 +175,11 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
-      # A-order 주력: order 15/2
-      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=15
-      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=2
+      # ▲ 주력: order 60/10
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=60
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=10
+      - HIKARI_MAX_POOL_SIZE=60
+      - HIKARI_MIN_IDLE=10
     depends_on:
       mariadb: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -200,11 +200,11 @@ services:
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - TZ=Asia/Seoul
-      # A-order 주력: product 20/2
-      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=20
-      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=2
-      # (선택) 네 YAML이 ${HIKARI_MAX_POOL_SIZE} 참조하므로 같이 맞춰도 됨
-      - HIKARI_MAX_POOL_SIZE=20
+      # ▲ product 60/10
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=60
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=10
+      - HIKARI_MAX_POOL_SIZE=60
+      - HIKARI_MIN_IDLE=10
     depends_on:
       mariadb: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -215,7 +215,7 @@ services:
   influxdb:
     image: influxdb:2.7
     container_name: influxdb
-    ports: ["8086:8086"]                       # ⬅️ 호스트/내부 8086
+    ports: ["8086:8086"]
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_USERNAME}

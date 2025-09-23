@@ -3,13 +3,13 @@ package com.app.preorder.productservice.messaging.inbox;
 import com.app.preorder.common.messaging.command.*;
 import com.app.preorder.common.messaging.event.StockCommandResult;
 import com.app.preorder.common.messaging.topics.KafkaTopics;
-import com.app.preorder.common.type.InboxStatus;
 import com.app.preorder.common.type.StockCommandResultType;
 import com.app.preorder.productservice.messaging.publisher.ProductEventPublisher;
 import com.app.preorder.productservice.service.StockService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 
-import static com.app.preorder.common.type.StockCommandResultType.*; // ★ enum 상수 static import
+import static com.app.preorder.common.type.StockCommandResultType.*;
 
 @Slf4j
 @Component
@@ -29,11 +29,23 @@ public class ProductInboxProcessor {
     private final ProductEventPublisher resultPublisher;
     private final ObjectMapper om;
 
+    @Value("${inbox.product.process-batch-size:1000}")
+    private int batchSize;
+
+    /**
+     * 1) PENDING 행을 FOR UPDATE로 잠가 선점
+     * 2) 잠근 id들만 로드해서 처리
+     * 3) 성공: markProcessed(), 실패: markFailed(reason)
+     */
     @Scheduled(fixedDelayString = "${inbox.product.process-interval-ms:200}")
-    @Transactional
+    @Transactional(noRollbackFor = Exception.class)
     public void flush() {
-        List<ProductInboxEvent> batch =
-                inboxRepo.findTop100ByStatusOrderByIdAsc(InboxStatus.PENDING);
+        // 1) 선점(락)
+        List<Long> ids = inboxRepo.lockPendingIds(batchSize);
+        if (ids.isEmpty()) return;
+
+        // 2) 처리 대상 로드
+        List<ProductInboxEvent> batch = inboxRepo.findByIdInOrderByIdAsc(ids);
 
         for (ProductInboxEvent e : batch) {
             try {
@@ -68,13 +80,12 @@ public class ProductInboxProcessor {
                         stockService.restoreStocks(req.items());
                         publishResult(req.eventId(), req.orderId(), RESTORED, null);
                     }
-                    default -> throw new IllegalArgumentException("지원되지 않는 토픽입니다: " + e.getTopic());
+                    default -> throw new IllegalArgumentException("지원되지 않는 토픽: " + e.getTopic());
                 }
-                e.markProcessed();
+                e.markProcessed();                // ★ 여기
             } catch (Exception ex) {
-                log.warn("[Inbox][product] 처리 실패 id={}, topic={}, 사유={}",
-                        e.getId(), e.getTopic(), ex.toString());
-                e.markFailed(ex.toString());
+                log.warn("[Inbox][product] 처리 실패 id={}, topic={}, 이유={}", e.getId(), e.getTopic(), ex.toString());
+                e.markFailed(ex.toString());      // ★ 여기
             }
         }
     }
