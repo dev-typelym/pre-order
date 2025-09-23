@@ -20,14 +20,24 @@ public class KafkaPublisherConfig {
     /** 프로듀서 공통 옵션 */
     private Map<String, Object> baseProps(String bootstrap) {
         Map<String, Object> props = new HashMap<>();
+        // 기본
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false); // 타입 헤더 OFF
+
+        // 신뢰성
         props.put(ProducerConfig.ACKS_CONFIG, "all");
         props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
         props.put(ProducerConfig.RETRIES_CONFIG, 10);
         props.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 30_000);
-        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+
+        // 성능/안전 보강 (제품과 동일)
+        props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
+        props.put(ProducerConfig.LINGER_MS_CONFIG, 10);
+        props.put(ProducerConfig.BATCH_SIZE_CONFIG, 65_536);
+        props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "lz4");
+        props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 15_000);
 
         return props;
     }
