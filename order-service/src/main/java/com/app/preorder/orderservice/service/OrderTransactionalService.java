@@ -19,7 +19,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom; // ✅ Random 대신
+
 import java.util.stream.Collectors; // ✅ 추가
 
 @RequiredArgsConstructor
@@ -31,13 +32,13 @@ public class OrderTransactionalService {
     private final OrderFactory orderFactory;
     private final OrderEventPublisher orderEventPublisher; // ✅ 추가
 
-    // 홀드 타임(3분) + 지터
-    private static final long HOLD_MINUTES = 3L;
-    private static final Random RND = new Random();
+    // 🔒 홀드 타임: 15분(900초) + 지터(최대 120초) — yml 안 씀, 코드 고정
+    private static final long HOLD_SECONDS = 900L;        // 15분
+    private static final int HOLD_JITTER_SECONDS = 120;   // 0~120초 랜덤 지터
+
     private static LocalDateTime holdUntil() {
-        long base = HOLD_MINUTES * 60;
-        long jitter = RND.nextInt(60);
-        return LocalDateTime.now().plusSeconds(base + jitter);
+        int jitter = ThreadLocalRandom.current().nextInt(HOLD_JITTER_SECONDS + 1);
+        return LocalDateTime.now().plusSeconds(HOLD_SECONDS + jitter);
     }
 
     // 단건 주문 생성 트랜잭션
