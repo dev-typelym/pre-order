@@ -106,6 +106,13 @@ public class OrderTransactionalService {
         orderRepository.save(order);
     }
 
+    // 만료 취소: ORDER_CANCEL로 전이하되 expiresAt은 유지(집계용)
+    @Transactional
+    public void cancelOrderByExpiry(Order order) {
+        order.updateOrderStatus(OrderStatus.ORDER_CANCEL);
+        orderRepository.save(order);
+    }
+
     // 주문 취소 상태 전이 트랜잭션
     @Transactional
     public void cancelOrderInTransaction(Order order) {
