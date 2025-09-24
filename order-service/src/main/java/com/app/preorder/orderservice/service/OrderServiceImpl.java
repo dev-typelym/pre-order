@@ -40,12 +40,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @CircuitBreaker(name = "productClient")
     public Long prepareSingleOrder(Long memberId, Long productId, Long quantity) {
-        List<ProductInternal> products;
-        try {
-            products = productClient.getProductsByIds(List.of(productId));
-        } catch (Exception e) {
-            throw new RuntimeException("상품 조회 실패", e);
-        }
+        // Feign 예외를 그대로 전파하여 핸들러가 원본 상태코드를 전달하도록 함
+        List<ProductInternal> products = productClient.getProductsByIds(List.of(productId));
         if (products.isEmpty()) throw new ProductNotFoundException("상품을 찾을 수 없습니다.");
 
         // 주문 먼저 저장(상태: PAYMENT_PREPARING 등)
@@ -67,12 +63,8 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toMap(OrderItemRequest::getProductId, OrderItemRequest::getQuantity));
         List<Long> productIds = new ArrayList<>(quantityMap.keySet());
 
-        List<ProductInternal> products;
-        try {
-            products = productClient.getProductsByIds(productIds);
-        } catch (Exception e) {
-            throw new RuntimeException("상품 조회 실패", e);
-        }
+        // Feign 예외를 그대로 전파하여 핸들러가 원본 상태코드를 전달하도록 함
+        List<ProductInternal> products = productClient.getProductsByIds(productIds);
         if (products.isEmpty()) throw new ProductNotFoundException("상품을 찾을 수 없습니다.");
 
         Long orderId = orderTransactionalService.saveOrderFromCartInTransaction(memberId, products, quantityMap);
