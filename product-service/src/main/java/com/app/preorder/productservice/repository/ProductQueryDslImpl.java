@@ -63,17 +63,17 @@ public class ProductQueryDslImpl implements ProductQueryDsl{
 
 
     //    싱픔 상세보기
-    @Override
     public Optional<Product> findDetailById(Long productId) {
         LocalDateTime now = LocalDateTime.now();
 
+        BooleanExpression statusEnabled = product.status.eq(ProductStatus.ENABLED);
         BooleanExpression openStart = product.salesPeriod.startAt.isNull()
                 .or(product.salesPeriod.startAt.loe(now));
         BooleanExpression openEnd = product.salesPeriod.endAt.isNull()
                 .or(product.salesPeriod.endAt.goe(now));
 
         Product result = query.selectFrom(product)
-                .where(product.id.eq(productId), openStart, openEnd)
+                .where(product.id.eq(productId), statusEnabled, openStart, openEnd)
                 .fetchOne();
 
         return Optional.ofNullable(result);
