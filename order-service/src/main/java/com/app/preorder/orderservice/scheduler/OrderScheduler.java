@@ -55,7 +55,7 @@ public class OrderScheduler {
                         .toList();
 
                 publisher.publishUnreserveCommand(o.getId(), items);
-                tx.cancelOrderInTransaction(o); // 내부에서 expiresAt=null 처리 권장
+                tx.cancelOrderByExpiry(o); // 내부에서 expiresAt=null 처리 권장
                 log.info("[SWEEP] expired→UNRESERVE: orderId={}", o.getId());
             }
 
