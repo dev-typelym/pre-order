@@ -1,6 +1,5 @@
 package com.app.preorder.productservice.messaging.inbox;
 
-import com.app.preorder.common.type.InboxStatus;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,18 +10,19 @@ import java.util.List;
 @Repository
 public interface ProductInboxEventRepository extends JpaRepository<ProductInboxEvent, Long> {
 
-    /** 멱등키 존재 여부(엔티티 로딩 없이 체크) */
-    boolean existsByMessageKey(String messageKey);
+    // 1) 인박스 적재: UNIQUE(message_key) 기반 멱등 업서트
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query(value = """
+        INSERT INTO product_inbox_event (message_key, topic, payload_json, status, created_at, updated_at)
+        VALUES (:messageKey, :topic, :payloadJson, 'PENDING', NOW(6), NOW(6))
+        ON DUPLICATE KEY UPDATE message_key = message_key
+        """, nativeQuery = true)
+    int upsertPending(@Param("messageKey") String messageKey,
+                      @Param("topic") String topic,
+                      @Param("payloadJson") String payloadJson);
 
-    /** (구방식) Top-N 읽기 — 남겨둬도 되고, 이제는 사용하지 않을 예정 */
-    List<ProductInboxEvent> findTop100ByStatusOrderByIdAsc(InboxStatus status);
-
-    // ---------- PENDING을 “상태 변경 없이” 행 잠금으로 선점(클레임) ----------
-
-    /**
-     * PENDING 행들 중 앞에서부터 LIMIT개 id를 FOR UPDATE로 잠근다.
-     * (같은 트랜잭션 내 다른 스레드/인스턴스가 중복 집지 못함)
-     */
+    // 2) 처리 대상 행 선점(트랜잭션 내 FOR UPDATE로 잠금)
     @Query(value = """
         SELECT id
           FROM product_inbox_event
@@ -31,9 +31,9 @@ public interface ProductInboxEventRepository extends JpaRepository<ProductInboxE
          LIMIT :limit
          FOR UPDATE
         """, nativeQuery = true)
-    @Transactional // 트랜잭션 안에서 호출되어야 락이 유지된다
+    @Transactional
     List<Long> lockPendingIds(@Param("limit") int limit);
 
-    /** 잠근 id들만 읽어서 처리 */
+    // 3) 선점한 id만 로드해서 처리
     List<ProductInboxEvent> findByIdInOrderByIdAsc(List<Long> ids);
 }
