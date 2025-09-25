@@ -1,4 +1,3 @@
-// product-service/src/main/java/com/app/preorder/productservice/messaging/writer/ProductInboxWriter.java
 package com.app.preorder.productservice.messaging.inbox;
 
 import com.app.preorder.common.messaging.command.*;
@@ -6,7 +5,6 @@ import com.app.preorder.common.messaging.topics.KafkaTopics;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,16 +65,14 @@ public class ProductInboxWriter {
         writeInbox(req.eventId(), KafkaTopics.INVENTORY_STOCK_UNRESERVE_REQUEST_V1, req);
     }
 
-    // ---- private helpers (보통 아래로) ----
+    // ---- private helpers ----
     private void writeInbox(String eventId, String topic, Object payload) {
         try {
-            // 사전 멱등 체크: existsBy... 사용으로 불필요한 엔티티 로딩 회피
-            if (inboxRepo.existsByMessageKey(eventId)) return;
-
             String payloadJson = om.writeValueAsString(payload);
-            inboxRepo.save(ProductInboxEvent.of(eventId, topic, payloadJson));
-        } catch (DataIntegrityViolationException dup) {
-            // UNIQUE(message_key) 충돌 → 동시성/재처리에서 이미 적재됨
+
+            // UNIQUE(message_key) 기반 멱등 업서트 (중복이면 조용히 no-op)
+            inboxRepo.upsertPending(eventId, topic, payloadJson);
+
         } catch (Exception e) {
             log.warn("[Inbox][product] 적재 실패 eventId={}, topic={}, reason={}", eventId, topic, e.toString());
             throw new RuntimeException("Inbox 적재 실패", e);

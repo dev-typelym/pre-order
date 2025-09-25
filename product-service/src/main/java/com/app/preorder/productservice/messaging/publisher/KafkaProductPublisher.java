@@ -5,11 +5,9 @@ import com.app.preorder.common.messaging.event.StockCommandResult;
 import com.app.preorder.common.messaging.event.StockEvent;
 import com.app.preorder.common.messaging.topics.KafkaTopics;
 import com.app.preorder.common.type.ProductStatus;
-import com.app.preorder.productservice.messaging.outbox.ProductOutboxEvent;
 import com.app.preorder.productservice.messaging.outbox.ProductOutboxEventRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +25,7 @@ public class KafkaProductPublisher implements ProductEventPublisher {
     @Transactional
     public void publishStockChangedEvent(long productId, long availableAfter) {
         var evt = new StockEvent(
-                UUID.randomUUID().toString(),   // message_key로 사용
+                UUID.randomUUID().toString(),   // message_key
                 "STOCK_CHANGED",
                 productId,
                 availableAfter,
@@ -35,16 +33,14 @@ public class KafkaProductPublisher implements ProductEventPublisher {
         );
         try {
             String json = om.writeValueAsString(evt);
-            outboxRepo.save(ProductOutboxEvent.of(
+            outboxRepo.upsertNew(
+                    evt.eventId(),                                // message_key(멱등키)
                     KafkaTopics.INVENTORY_STOCK_EVENTS_V1,
-                    String.valueOf(productId),
-                    evt.eventId(),               // 멱등키
+                    String.valueOf(productId),                    // partition_key
                     json
-            ));
-        } catch (DataIntegrityViolationException dup) {
-            // UNIQUE(message_key) 충돌은 멱등 재시도로 간주하고 무시
+            );
         } catch (Exception e) {
-            throw new RuntimeException("ProductOutbox 적재 실패(StockEvent: STOCK_CHANGED)", e);
+            throw new RuntimeException("ProductOutbox 업서트 실패(StockEvent: STOCK_CHANGED)", e);
         }
     }
 
@@ -60,16 +56,14 @@ public class KafkaProductPublisher implements ProductEventPublisher {
         );
         try {
             String json = om.writeValueAsString(evt);
-            outboxRepo.save(ProductOutboxEvent.of(
+            outboxRepo.upsertNew(
+                    evt.eventId(),
                     KafkaTopics.INVENTORY_STOCK_EVENTS_V1,
                     String.valueOf(productId),
-                    evt.eventId(),               // 멱등키
                     json
-            ));
-        } catch (DataIntegrityViolationException dup) {
-            // 멱등 재시도 무시
+            );
         } catch (Exception e) {
-            throw new RuntimeException("ProductOutbox 적재 실패(StockEvent: SOLD_OUT)", e);
+            throw new RuntimeException("ProductOutbox 업서트 실패(StockEvent: SOLD_OUT)", e);
         }
     }
 
@@ -78,16 +72,14 @@ public class KafkaProductPublisher implements ProductEventPublisher {
     public void publishStockCommandResult(StockCommandResult result) {
         try {
             String json = om.writeValueAsString(result);
-            outboxRepo.save(ProductOutboxEvent.of(
+            outboxRepo.upsertNew(
+                    result.eventId(),                               // 요청 eventId = 멱등키
                     KafkaTopics.INVENTORY_STOCK_COMMAND_RESULTS_V1,
                     String.valueOf(result.orderId()),
-                    result.eventId(),            // 멱등키 (요청 eventId 재사용)
                     json
-            ));
-        } catch (DataIntegrityViolationException dup) {
-            // 멱등 재시도 무시
+            );
         } catch (Exception e) {
-            throw new RuntimeException("ProductOutbox 적재 실패(StockCommandResult)", e);
+            throw new RuntimeException("ProductOutbox 업서트 실패(StockCommandResult)", e);
         }
     }
 
@@ -102,16 +94,14 @@ public class KafkaProductPublisher implements ProductEventPublisher {
         );
         try {
             String json = om.writeValueAsString(evt);
-            outboxRepo.save(ProductOutboxEvent.of(
+            outboxRepo.upsertNew(
+                    evt.eventId(),
                     KafkaTopics.PRODUCT_STATUS_CHANGED_V1,
                     String.valueOf(productId),
-                    evt.eventId(),               // 멱등키
                     json
-            ));
-        } catch (DataIntegrityViolationException dup) {
-            // 멱등 재시도 무시
+            );
         } catch (Exception e) {
-            throw new RuntimeException("ProductOutbox 적재 실패(ProductStatusChanged)", e);
+            throw new RuntimeException("ProductOutbox 업서트 실패(ProductStatusChanged)", e);
         }
     }
 }
