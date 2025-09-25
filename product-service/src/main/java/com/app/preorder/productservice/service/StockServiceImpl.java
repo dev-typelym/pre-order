@@ -2,7 +2,6 @@ package com.app.preorder.productservice.service;
 
 import com.app.preorder.common.dto.StockRequestInternal;
 import com.app.preorder.common.exception.custom.InsufficientStockException;
-import com.app.preorder.common.exception.custom.InvalidStockRequestException;
 import com.app.preorder.common.exception.custom.RestockFailedException;
 import com.app.preorder.common.exception.custom.UnreserveFailedException;
 import com.app.preorder.productservice.messaging.publisher.ProductEventPublisher;
@@ -28,15 +27,17 @@ public class StockServiceImpl implements StockService {
     @Override
     public void reserveStocks(List<StockRequestInternal> items) {
         if (items == null || items.isEmpty()) {
-            throw new InvalidStockRequestException("요청 항목 목록(items)은 비어 있을 수 없습니다."); // 400
+            // ✅ 입력 오류 → 400
+            throw new IllegalArgumentException("요청 항목 목록(items)은 비어 있을 수 없습니다.");
         }
 
         Set<Long> touched = new LinkedHashSet<>();
         for (var it : items) {
             long pid = it.getProductId(), qty = it.getQuantity();
             if (qty <= 0) {
-                throw new InvalidStockRequestException(
-                        "수량(quantity)은 1 이상이어야 합니다. productId=" + pid + ", quantity=" + qty); // 400
+                // ✅ 입력 오류 → 400
+                throw new IllegalArgumentException(
+                        "수량(quantity)은 1 이상이어야 합니다. productId=" + pid + ", quantity=" + qty);
             }
 
             if (stockRepository.reserve(pid, qty) != 1) {
@@ -64,15 +65,17 @@ public class StockServiceImpl implements StockService {
     @Override
     public void unreserveStocks(List<StockRequestInternal> items) {
         if (items == null || items.isEmpty()) {
-            throw new InvalidStockRequestException("요청 항목 목록(items)은 비어 있을 수 없습니다."); // 400
+            // ✅ 입력 오류 → 400
+            throw new IllegalArgumentException("요청 항목 목록(items)은 비어 있을 수 없습니다.");
         }
 
         Set<Long> touched = new LinkedHashSet<>();
         for (var it : items) {
             long pid = it.getProductId(), qty = it.getQuantity();
             if (qty <= 0) {
-                throw new InvalidStockRequestException(
-                        "수량(quantity)은 1 이상이어야 합니다. productId=" + pid + ", quantity=" + qty); // 400
+                // ✅ 입력 오류 → 400
+                throw new IllegalArgumentException(
+                        "수량(quantity)은 1 이상이어야 합니다. productId=" + pid + ", quantity=" + qty);
             }
 
             if (stockRepository.unreserve(pid, qty) != 1) {
@@ -101,14 +104,16 @@ public class StockServiceImpl implements StockService {
     @Override
     public void commitStocks(List<StockRequestInternal> items) {
         if (items == null || items.isEmpty()) {
-            throw new InvalidStockRequestException("요청 항목 목록(items)은 비어 있을 수 없습니다."); // 400
+            // ✅ 입력 오류 → 400
+            throw new IllegalArgumentException("요청 항목 목록(items)은 비어 있을 수 없습니다.");
         }
 
         for (var it : items) {
             long pid = it.getProductId(), qty = it.getQuantity();
             if (qty <= 0) {
-                throw new InvalidStockRequestException(
-                        "수량(quantity)은 1 이상이어야 합니다. productId=" + pid + ", quantity=" + qty); // 400
+                // ✅ 입력 오류 → 400
+                throw new IllegalArgumentException(
+                        "수량(quantity)은 1 이상이어야 합니다. productId=" + pid + ", quantity=" + qty);
             }
 
             if (stockRepository.commit(pid, qty) != 1) {
@@ -126,15 +131,17 @@ public class StockServiceImpl implements StockService {
     @Override
     public void restoreStocks(List<StockRequestInternal> items) {
         if (items == null || items.isEmpty()) {
-            throw new InvalidStockRequestException("요청 항목 목록(items)은 비어 있을 수 없습니다."); // 400
+            // ✅ 입력 오류 → 400
+            throw new IllegalArgumentException("요청 항목 목록(items)은 비어 있을 수 없습니다.");
         }
 
         Set<Long> touched = new LinkedHashSet<>();
         for (var it : items) {
             long pid = it.getProductId(), qty = it.getQuantity();
             if (qty <= 0) {
-                throw new InvalidStockRequestException(
-                        "수량(quantity)은 1 이상이어야 합니다. productId=" + pid + ", quantity=" + qty); // 400
+                // ✅ 입력 오류 → 400
+                throw new IllegalArgumentException(
+                        "수량(quantity)은 1 이상이어야 합니다. productId=" + pid + ", quantity=" + qty);
             }
 
             if (stockRepository.restock(pid, qty) != 1) {
@@ -157,4 +164,3 @@ public class StockServiceImpl implements StockService {
         }
     }
 }
-
